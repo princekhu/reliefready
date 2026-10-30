@@ -1,0 +1,32 @@
+# Render Blueprint: creates the API service and a PostgreSQL database.
+# Render dashboard -> New -> Blueprint -> pick this repository.
+services:
+  - type: web
+    name: reliefready-api
+    runtime: python
+    rootDir: backend
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: DATABASE_URL
+        fromDatabase:
+          name: reliefready-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: SMS_WEBHOOK_TOKEN
+        generateValue: true
+      - key: ALLOWED_ORIGINS
+        value: https://princekhu.github.io
+      - key: SEED_DEMO
+        value: "1"
+
+databases:
+  - name: reliefready-db
+    plan: free
+    databaseName: reliefready
+    user: reliefready
