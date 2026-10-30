@@ -1,0 +1,761 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="icon.svg">
+<title>ReliefReady Planner</title>
+<meta name="description" content="Plan how limited relief supplies reach flood-affected locations: priority ranking, allocation under stock and truck limits, and what-if recalculation.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: field-console. Two working columns (situation + controls | plan + outcome), full-width reference below. */
+:root{
+  --bg:#ECEFEE; --surface:#FFFFFF; --sunk:#F4F6F5; --ink:#15202A; --muted:#56636C; --line:#D3DAD8;
+  --accent:#1C5A97; --accent-soft:#DCE7F2; --accent-ink:#FFFFFF;
+  --flood:#CFE1EC; --flood-edge:#9FC1D6; --land:#E3E8E1;
+  --ok:#2C7A4B; --ok-bg:#DFEFE5; --warn:#9C5F0C; --warn-bg:#F6EAD3; --bad:#B4370F; --bad-bg:#F7DFD5;
+  --c-urgency:#C2551C; --c-people:#1C5A97; --c-vuln:#7A4E9C; --c-wait:#8A8F3A; --c-iso:#4A7F86;
+  --f-display:"Archivo","Arial Narrow",Arial,sans-serif;
+  --f-body:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+  --r:6px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1418; --surface:#162027; --sunk:#111A20; --ink:#E2E9EC; --muted:#93A2AA; --line:#2A3740;
+  --accent:#78AEE0; --accent-soft:#1D3347; --accent-ink:#0E1418;
+  --flood:#183041; --flood-edge:#2B5470; --land:#18222A;
+  --ok:#62BE88; --ok-bg:#173326; --warn:#E1AA4E; --warn-bg:#3A2C14; --bad:#F2825A; --bad-bg:#3D1F16;
+  --c-urgency:#EE8550; --c-people:#78AEE0; --c-vuln:#B892D6; --c-wait:#C4C86A; --c-iso:#79B9C0;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1418; --surface:#162027; --sunk:#111A20; --ink:#E2E9EC; --muted:#93A2AA; --line:#2A3740;
+  --accent:#78AEE0; --accent-soft:#1D3347; --accent-ink:#0E1418;
+  --flood:#183041; --flood-edge:#2B5470; --land:#18222A;
+  --ok:#62BE88; --ok-bg:#173326; --warn:#E1AA4E; --warn-bg:#3A2C14; --bad:#F2825A; --bad-bg:#3D1F16;
+  --c-urgency:#EE8550; --c-people:#78AEE0; --c-vuln:#B892D6; --c-wait:#C4C86A; --c-iso:#79B9C0;
+  color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-body)}
+h1,h2,h3{font-family:var(--f-display);font-stretch:82%;margin:0;text-wrap:balance;letter-spacing:.005em}
+.num,td.n,.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.wrap{max-width:1340px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* header */
+.top{background:var(--surface);border-bottom:1px solid var(--line)}
+.top .wrap{padding-block:18px 16px;display:flex;flex-wrap:wrap;gap:14px 40px;align-items:flex-end;justify-content:space-between}
+.brand{display:flex;gap:14px;align-items:center;min-width:0}
+.mark{width:40px;height:40px;flex:none}
+.brand h1{font-size:30px;font-weight:800;line-height:1}
+.brand p{margin:4px 0 0;color:var(--muted);font-size:13.5px}
+.kpis{display:flex;flex-wrap:wrap;gap:8px 28px}
+.kpi{display:flex;flex-direction:column;gap:1px;min-width:0}
+.kpi b{font:600 22px/1.1 var(--f-mono);font-variant-numeric:tabular-nums}
+.kpi span{font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+
+/* layout */
+.layout{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:20px;padding-block:20px 12px;align-items:start}
+.col{display:flex;flex-direction:column;gap:20px;min-width:0}
+.full{padding-block:8px 48px;display:flex;flex-direction:column;gap:20px}
+@media (max-width:980px){.layout{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);min-width:0}
+.ph{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline;justify-content:space-between;padding:14px 16px 10px;border-bottom:1px solid var(--line)}
+.ph h2{font-size:19px;font-weight:700}
+.ph .sub{color:var(--muted);font-size:13px}
+.pb{padding:14px 16px 16px}
+.step{font:600 11px/1 var(--f-mono);color:var(--accent);letter-spacing:.06em;margin-right:8px;vertical-align:2px}
+.hint{color:var(--muted);font-size:13px;margin:0}
+
+/* map */
+.map svg{display:block;width:100%;height:auto;max-width:100%}
+.map .land{fill:var(--land)}
+.map .flood{fill:var(--flood);stroke:var(--flood-edge);stroke-width:1}
+.map .rt{fill:none;stroke-width:2.5;stroke-linecap:round}
+.map .rt.open{stroke:var(--muted);opacity:.55}
+.map .rt.used{stroke:var(--accent);opacity:1;stroke-width:3.5}
+.map .rt.blocked{stroke:var(--bad);stroke-dasharray:6 6;opacity:.9}
+.map text{font:500 11.5px var(--f-body);fill:var(--ink);paint-order:stroke;stroke:var(--surface);stroke-width:3.5px;stroke-linejoin:round}
+.map text.h{font:500 10.5px var(--f-mono);fill:var(--muted)}
+.map text.nm{font:700 12.5px var(--f-body)}
+.map .depot{fill:var(--ink)}
+.map .v{stroke:var(--surface);stroke-width:2.5;cursor:default}
+.map .v.fulfilled{fill:var(--ok)} .map .v.partial{fill:var(--warn)} .map .v.unmet{fill:var(--bad)}
+.map .v.noaccess{fill:var(--surface);stroke:var(--bad);stroke-width:3;stroke-dasharray:4 3}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;padding:10px 16px 14px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+.legend i.l{width:18px;height:0;border-radius:0;border-top:3px solid var(--accent);vertical-align:3px}
+.legend i.lb{width:18px;height:0;border-radius:0;border-top:3px dashed var(--bad);vertical-align:3px}
+
+/* forms */
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field label,.lbl{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+input[type=number],input[type=text],select{background:var(--sunk);border:1px solid var(--line);border-radius:4px;padding:6px 8px;width:100%;min-width:0}
+input[type=number]{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.stockrow{display:grid;grid-template-columns:minmax(0,1fr) 96px;gap:4px 12px;align-items:center;padding-block:8px;border-bottom:1px dashed var(--line)}
+.stockrow:last-child{border-bottom:0}
+.stockrow .meter{grid-column:1/-1;height:6px;background:var(--sunk);border-radius:3px;overflow:hidden;border:1px solid var(--line)}
+.stockrow .meter span{display:block;height:100%;background:var(--accent)}
+.stockrow small{grid-column:1/-1;color:var(--muted);font-size:12px}
+.subhead{font:700 14px var(--f-display);font-stretch:85%;text-transform:uppercase;letter-spacing:.06em;margin:16px 0 6px;color:var(--muted)}
+.subhead:first-child{margin-top:0}
+.slider{display:grid;grid-template-columns:minmax(0,1fr) 44px;gap:2px 10px;align-items:center;margin-bottom:8px}
+.slider output{font:500 13px var(--f-mono);text-align:right}
+.slider .lbl{grid-column:1/-1;text-transform:none;letter-spacing:0;font-size:13px;color:var(--ink)}
+.btn{background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:7px 12px;cursor:pointer;font-weight:600;font-size:13.5px}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.primary:hover{color:var(--accent-ink);filter:brightness(1.08)}
+.btn.small{padding:4px 9px;font-size:12.5px}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+details>summary{cursor:pointer;font-weight:600;font-size:14px;padding-block:4px}
+details[open]>summary{margin-bottom:10px}
+
+/* ranking */
+.rank{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.rank li{display:grid;grid-template-columns:34px minmax(0,1fr) 52px;gap:4px 12px;padding:10px 0;border-bottom:1px solid var(--line);align-items:center}
+.rank li:last-child{border-bottom:0}
+.rank .pos{font:700 22px/1 var(--f-display);font-stretch:80%;color:var(--muted)}
+.rank .nm{font-weight:700}
+.rank .sc{font:600 18px var(--f-mono);text-align:right}
+.bar{grid-column:2/-1;display:flex;height:9px;background:var(--sunk);border-radius:2px;overflow:hidden}
+.bar span{display:block;height:100%}
+.why{grid-column:2/-1;font-size:12.5px;color:var(--muted)}
+.keys{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--muted);margin-bottom:8px}
+.keys i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+
+/* tables */
+.tw{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th{text-align:left;font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+td.n,th.n{text-align:right}
+.cell b{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-weight:600}
+.cell .of{color:var(--muted);font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.short{display:block;font-size:12px;color:var(--bad);font-family:var(--f-mono);white-space:nowrap}
+.short em{font-style:normal;font-family:var(--f-body);color:var(--muted)}
+.was{display:block;font-size:11.5px;color:var(--muted);font-family:var(--f-mono)}
+.pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
+.pill.fulfilled{background:var(--ok-bg);color:var(--ok)} .pill.partial{background:var(--warn-bg);color:var(--warn)} .pill.unmet{background:var(--bad-bg);color:var(--bad)}
+.loc small{display:block;color:var(--muted);font-size:12px}
+.hrs{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
+.hrs .track{height:12px;background:var(--sunk);border:1px solid var(--line);border-radius:3px;display:flex;overflow:hidden}
+.hrs .track span{height:100%;border-right:1px solid var(--surface)}
+.hrs .meta{display:flex;justify-content:space-between;font-size:12.5px;gap:8px;flex-wrap:wrap}
+.data td{padding:6px 6px} .data input,.data select{padding:4px 6px} .data input[type=number]{width:74px}
+.data .rts{display:flex;flex-direction:column;gap:4px;min-width:220px}
+.data .rts label{display:flex;gap:6px;align-items:center;font-size:12.5px}
+
+/* changes */
+.chg{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:0}
+.chg>li{padding:10px 0;border-bottom:1px solid var(--line)}
+.chg>li:last-child{border-bottom:0}
+.chg .head{display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center}
+.chg .deltas{margin:6px 0 0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:4px 18px;font-size:13px}
+.up{color:var(--ok)} .down{color:var(--bad)}
+.arrow{color:var(--muted)}
+.log{margin:0;padding:0;list-style:none;font-size:13px;display:flex;flex-direction:column;gap:4px}
+.log li{display:flex;gap:10px} .log time{font-family:var(--f-mono);color:var(--muted);font-size:12px;flex:none;padding-top:1px}
+.callout{background:var(--accent-soft);border-radius:4px;padding:10px 12px;font-size:13.5px}
+.note{white-space:pre-wrap;font:12.5px/1.55 var(--f-mono);background:var(--sunk);border:1px solid var(--line);border-radius:4px;padding:12px;max-height:340px;overflow:auto;margin:0}
+.presets{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
+.preset{text-align:left;padding:10px 12px;border:1px solid var(--line);background:var(--sunk);border-radius:4px;cursor:pointer}
+.preset:hover{border-color:var(--accent)}
+.preset b{display:block;font-size:13.5px}
+.preset span{font-size:12.5px;color:var(--muted)}
+.preset[disabled]{opacity:.5;cursor:not-allowed}
+
+/* how it works */
+.how{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px 28px}
+.how h3{font-size:17px;margin-bottom:6px}
+.how p,.how li{font-size:14px;max-width:62ch;margin:0 0 8px}
+.how ol,.how ul{padding-left:18px;margin:0}
+.formula{font:13px/1.6 var(--f-mono);background:var(--sunk);border:1px solid var(--line);border-radius:4px;padding:10px 12px;overflow-x:auto;white-space:pre}
+footer{color:var(--muted);font-size:12.5px;padding-block:0 32px}
+@media (prefers-reduced-motion:no-preference){.bar span,.stockrow .meter span{transition:width .35s ease}}
+</style>
+<style>[hidden]{display:none!important}img{max-width:100%}</style>
+</head>
+<body>
+
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 40 40" aria-hidden="true"><rect x="1" y="1" width="38" height="38" rx="6" fill="var(--accent)"/><path d="M9 26c4-3 7-3 11 0s7 3 11 0" fill="none" stroke="var(--accent-ink)" stroke-width="2.5" stroke-linecap="round"/><path d="M20 8v12M14 14h12" stroke="var(--accent-ink)" stroke-width="3" stroke-linecap="round"/></svg>
+      <div><h1><a href="index.html" style="color:inherit;text-decoration:none">ReliefReady</a></h1><p id="scenarioLine">Wayanad district flood · day 3 · one depot</p></div>
+    </div>
+    <div class="kpis" id="kpis"></div>
+    <nav style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn small" href="admin.html">Control room</a><a class="btn small" href="index.html">All apps</a></nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap layout">
+    <div class="col">
+      <section class="panel map" aria-labelledby="h-map">
+        <div class="ph"><h2 id="h-map"><span class="step">01</span>The picture</h2><span class="sub">Depot, affected locations, routes</span></div>
+        <div id="map"></div>
+        <div class="legend">
+          <span><i style="background:var(--ok)"></i>Fulfilled</span><span><i style="background:var(--warn)"></i>Partly fulfilled</span><span><i style="background:var(--bad)"></i>Unmet</span>
+          <span><i class="l"></i>Route used</span><span><i class="lb"></i>Blocked</span><span>Circle size = people affected</span>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="h-sup">
+        <div class="ph"><h2 id="h-sup">Supplies, fleet and rules</h2><span class="sub">Edit any number; the plan updates</span></div>
+        <div class="pb" id="supplies"></div>
+      </section>
+
+      <section class="panel" aria-labelledby="h-tw">
+        <div class="ph"><h2 id="h-tw"><span class="step">05</span>Simulate a change</h2><span class="sub">The plan recalculates and is compared with the baseline</span></div>
+        <div class="pb" id="twist"></div>
+      </section>
+    </div>
+
+    <div class="col">
+      <section class="panel" aria-labelledby="h-out">
+        <div class="ph"><h2 id="h-out"><span class="step">03–04</span>Distribution plan and outcome</h2><span class="sub" id="outSub"></span></div>
+        <div class="tw" id="outcome"></div>
+      </section>
+
+      <section class="panel" aria-labelledby="h-chg">
+        <div class="ph"><h2 id="h-chg">What changed vs. baseline</h2><span class="sub" id="chgSub"></span></div>
+        <div class="pb" id="changes"></div>
+      </section>
+
+      <section class="panel" aria-labelledby="h-rank">
+        <div class="ph"><h2 id="h-rank"><span class="step">02</span>Priority ranking</h2><span class="sub">Score out of 100, built from five criteria</span></div>
+        <div class="pb" id="rank"></div>
+      </section>
+
+      <section class="panel" aria-labelledby="h-trips">
+        <div class="ph"><h2 id="h-trips">Vehicle schedule</h2><span class="sub">One destination per trip, departures from 06:00</span></div>
+        <div class="pb" id="trips"></div>
+      </section>
+
+      <section class="panel" aria-labelledby="h-note">
+        <div class="ph"><h2 id="h-note">Decision note</h2><button class="btn small" id="copyNote" type="button">Copy note</button></div>
+        <div class="pb"><p class="hint" style="margin-bottom:10px">A plain-text record of what was sent where and why, for the district log or a WhatsApp update.</p><pre class="note" id="note"></pre></div>
+      </section>
+    </div>
+  </div>
+
+  <div class="wrap full">
+    <section class="panel" aria-labelledby="h-data">
+      <div class="ph"><h2 id="h-data">Affected locations and requests</h2><span class="sub">Field reports as entered by the coordinator</span></div>
+      <div class="tw" id="data"></div>
+    </section>
+
+    <section class="panel" id="how" aria-labelledby="h-how">
+      <div class="ph"><h2 id="h-how">How ReliefReady decides</h2><span class="sub">Every number on this page comes from these rules</span></div>
+      <div class="pb how" id="howBody"></div>
+    </section>
+  </div>
+  <footer class="wrap">Prototype for Anvathon 2026 · Domain 5, Problem Statement 3. Place names are real; quantities are illustrative. No live inventory is connected; edits are kept in this browser only.</footer>
+</main>
+
+<script>
+/* ===================== Model ===================== */
+const RES=[
+  {id:'water', name:'Drinking water', short:'Water', unit:'L',    kg:1},
+  {id:'infant',name:'Infant kits',    short:'Infant kits', unit:'kits', kg:2},
+  {id:'food',  name:'Food packets',   short:'Food', unit:'pkts', kg:1},
+];
+const RBY=Object.fromEntries(RES.map(r=>[r.id,r]));
+const CRIT=[
+  {id:'urgency',   name:'Urgency',              color:'var(--c-urgency)'},
+  {id:'people',    name:'People affected',      color:'var(--c-people)'},
+  {id:'vulnerable',name:'Vulnerable groups',    color:'var(--c-vuln)'},
+  {id:'wait',      name:'Days without aid',     color:'var(--c-wait)'},
+  {id:'isolation', name:'Cut off / detour',     color:'var(--c-iso)'},
+];
+const clone=o=>JSON.parse(JSON.stringify(o));
+
+function initialState(){return{
+  stock:{water:600,infant:15,food:400},
+  vehicles:[{id:'v1',name:'Truck 1',cap:500,hours:14}],
+  loadTime:0.5, floor:50,
+  weights:{urgency:35,people:25,vulnerable:20,wait:10,isolation:10},
+  depot:{name:'Kalpetta depot',x:330,y:288},
+  locations:[
+    {id:'kodipur',name:'Mundakkai',x:560,y:66,people:300,infants:14,vulnerable:48,days:3,urgency:5,
+     req:{water:450,infant:14,food:300},
+     routes:[{id:'kodipur-bridge',name:'Bridge road',hours:1.2,open:false},
+             {id:'kodipur-hill',name:'Estate road detour',hours:3.5,open:true,cx:660,cy:250}]},
+    {id:'belur',name:'Panamaram',x:170,y:108,people:180,infants:6,vulnerable:24,days:2,urgency:4,
+     req:{water:270,infant:6,food:180},
+     routes:[{id:'belur-road',name:'District road',hours:0.8,open:true}]},
+    {id:'hosur',name:'Vythiri',x:68,y:250,people:220,infants:5,vulnerable:53,days:3,urgency:4,
+     req:{water:300,infant:5,food:160},
+     routes:[{id:'hosur-road',name:'Lakkidi road',hours:1.6,open:true}]},
+    {id:'gangavati',name:'Meppadi GHSS camp',x:200,y:352,people:140,infants:4,vulnerable:16,days:1,urgency:3,
+     req:{water:180,infant:0,food:100},
+     routes:[{id:'gang-road',name:'School road',hours:1.0,open:true}]},
+    {id:'manch',name:'Muttil',x:468,y:342,people:90,infants:2,vulnerable:8,days:1,urgency:2,
+     req:{water:120,infant:0,food:60},
+     routes:[{id:'manch-road',name:'Village road',hours:0.5,open:true}]},
+  ],
+  log:[]
+};}
+
+function bestRoute(l){const o=l.routes.filter(r=>r.open&&r.hours>0);return o.length?o.reduce((a,b)=>b.hours<a.hours?b:a):null;}
+
+function scoreAll(st){
+  const maxP=Math.max(1,...st.locations.map(l=>l.people));
+  const W=st.weights, tot=Object.values(W).reduce((a,b)=>a+b,0)||1;
+  return st.locations.map(l=>{
+    const route=bestRoute(l);
+    const vulnShare=l.people?(l.infants+l.vulnerable)/l.people:0;
+    const c={
+      urgency:(Math.min(5,Math.max(1,l.urgency))-1)/4,
+      people:l.people/maxP,
+      vulnerable:Math.min(1,vulnShare/0.35),
+      wait:Math.min(1,l.days/4),
+      isolation:!route?1:(route===l.routes[0]?0:1),
+    };
+    const parts={};let score=0;
+    for(const k of Object.keys(c)){parts[k]=(W[k]||0)*c[k]/tot*100;score+=parts[k];}
+    return{loc:l,route,score,parts,c,vulnShare};
+  }).sort((a,b)=>b.score-a.score||b.loc.people-a.loc.people);
+}
+
+function plan(st){
+  const ranked=scoreAll(st);
+  const stock={...st.stock};
+  const veh=st.vehicles.map(v=>({...v,used:0,loads:{},items:{},order:[]}));
+  const alloc={},limit={};
+  ranked.forEach(r=>{alloc[r.loc.id]={water:0,infant:0,food:0};limit[r.loc.id]={};});
+  const tripH=r=>2*r.route.hours+st.loadTime;
+  const capKg=(v,r)=>{
+    if(v.cap<=0)return 0;
+    const cur=v.loads[r.loc.id]||0, slack=Math.ceil(cur/v.cap)*v.cap-cur;
+    const extra=Math.floor((v.hours-v.used+1e-9)/tripH(r));
+    return slack+Math.max(0,extra)*v.cap;
+  };
+  const carry=(v,r,res,units)=>{
+    const id=r.loc.id,kg=units*RBY[res].kg,cur=v.loads[id]||0;
+    v.used+=(Math.ceil((cur+kg)/v.cap)-Math.ceil(cur/v.cap))*tripH(r);
+    v.loads[id]=cur+kg;
+    if(!v.items[id]){v.items[id]={water:0,infant:0,food:0};v.order.push(id);}
+    v.items[id][res]+=units;
+  };
+  const give=(r,res,want)=>{
+    const id=r.loc.id;want=Math.max(0,want);if(!want)return;
+    const left=Math.min(want,stock[res]);let got=0;
+    for(const v of veh){
+      if(got>=left)break;
+      const units=Math.min(left-got,Math.floor(capKg(v,r)/RBY[res].kg));
+      if(units>0){carry(v,r,res,units);got+=units;}
+    }
+    stock[res]-=got;alloc[id][res]+=got;
+    if(got<want)limit[id][res]=veh.some(v=>capKg(v,r)>=RBY[res].kg)?'stock':'transport';else delete limit[id][res];
+  };
+  const reach=ranked.filter(r=>r.route);
+  const order=['water','infant','food'];
+  // Phase 1: equity floor
+  for(const r of reach)for(const res of order)give(r,res,Math.ceil((r.loc.req[res]||0)*st.floor/100)-alloc[r.loc.id][res]);
+  // Phase 2: top up by priority
+  for(const r of reach)for(const res of order)give(r,res,(r.loc.req[res]||0)-alloc[r.loc.id][res]);
+
+  const out=ranked.map((r,i)=>{
+    const l=r.loc,a=alloc[l.id],short={};let reqKg=0,gotKg=0,anyGot=false,allMet=true;
+    for(const res of RES){const q=l.req[res.id]||0;short[res.id]=Math.max(0,q-a[res.id]);reqKg+=q*res.kg;gotKg+=a[res.id]*res.kg;if(a[res.id]>0)anyGot=true;if(short[res.id]>0)allMet=false;
+      if(!r.route&&q>0)limit[l.id][res.id]='access';}
+    const status=allMet?'fulfilled':anyGot?'partial':'unmet';
+    return{id:l.id,name:l.name,rank:i+1,score:r.score,people:l.people,req:{...l.req},alloc:a,short,status,limit:limit[l.id],
+      routeName:r.route?r.route.name:null,routeHours:r.route?r.route.hours:null,reqKg,gotKg,r};
+  });
+
+  // trips
+  const trips=[];
+  for(const v of veh){
+    let t=6;
+    for(const id of v.order){
+      const r=ranked.find(x=>x.loc.id===id);const items={...v.items[id]};let guard=0;
+      while(RES.some(x=>items[x.id]>0)&&guard++<60){
+        let room=v.cap;const load={water:0,infant:0,food:0};
+        for(const res of ['infant','water','food']){const u=Math.min(items[res],Math.floor(room/RBY[res].kg));load[res]=u;items[res]-=u;room-=u*RBY[res].kg;}
+        const dep=t+st.loadTime,arr=dep+r.route.hours,back=arr+r.route.hours;
+        trips.push({veh:v.name,vid:v.id,loc:r.loc.name,route:r.route.name,dep,arr,back,load,kg:v.cap-room,start:t});t=back;
+      }
+    }
+  }
+  const tot={reqKg:out.reduce((s,o)=>s+o.reqKg,0),gotKg:out.reduce((s,o)=>s+o.gotKg,0),
+    people:out.reduce((s,o)=>s+o.people,0),served:out.filter(o=>o.status==='fulfilled').reduce((s,o)=>s+o.people,0),
+    reached:out.filter(o=>o.status!=='unmet').reduce((s,o)=>s+o.people,0)};
+  return{ranked,out,trips,veh,stockLeft:stock,tot,st};
+}
+
+function compare(B,P){
+  const bm=Object.fromEntries(B.out.map(o=>[o.id,o])),rows=[];
+  for(const o of P.out){
+    const b=bm[o.id];
+    if(!b){rows.push({kind:'new',o});continue;}
+    delete bm[o.id];
+    const d=RES.filter(r=>b.alloc[r.id]!==o.alloc[r.id]||b.req[r.id]!==o.req[r.id]).map(r=>({r,from:b.alloc[r.id],to:o.alloc[r.id],reqFrom:b.req[r.id],reqTo:o.req[r.id]}));
+    if(d.length||b.status!==o.status||b.rank!==o.rank||b.routeName!==o.routeName)rows.push({kind:'changed',o,b,d});
+  }
+  for(const id in bm)rows.push({kind:'removed',o:bm[id]});
+  return rows;
+}
+
+/* ===================== Formatting ===================== */
+const fmt=n=>Math.round(n).toLocaleString('en-IN');
+const clock=h=>{const m=Math.round(h*60),d=Math.floor(m/1440),mm=m%1440;return String(Math.floor(mm/60)).padStart(2,'0')+':'+String(mm%60).padStart(2,'0')+(d?` +${d}d`:'');};
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const STATUS={fulfilled:'Fulfilled',partial:'Partly fulfilled',unmet:'Unmet'};
+const REASON={stock:'stock ran out',transport:'no truck time left',access:'no open route'};
+const hrs=h=>(Math.round(h*10)/10)+' h';
+
+/* ===================== State ===================== */
+const KEY='reliefready.planner.v2';
+let S,BASE,BASE_PLAN,CUR;
+function loadSaved(){try{const raw=localStorage.getItem(KEY);if(raw){const d=JSON.parse(raw);if(d&&d.state&&d.base&&d.v===1)return d;}}catch(e){}return null;}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify({v:1,state:S,base:BASE}));}catch(e){}}
+function stamp(){const d=new Date();return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
+function logEvent(text){S.log.push({t:stamp(),text});}
+
+/* ===================== Render ===================== */
+function renderAll(){renderSupplies();renderTwist();renderData();renderHow();renderResults();}
+
+function renderResults(){
+  CUR=plan(S);
+  renderKpis();renderMap();renderOutcome();renderChanges();renderRank();renderTrips();renderNote();
+  persist();
+}
+
+function renderKpis(){
+  const t=CUR.tot,hUsed=CUR.veh.reduce((s,v)=>s+v.used,0),hAll=CUR.veh.reduce((s,v)=>s+v.hours,0);
+  const full=CUR.out.filter(o=>o.status==='fulfilled').length;
+  document.getElementById('kpis').innerHTML=[
+    [Math.round(t.reqKg?t.gotKg/t.reqKg*100:0)+'%','Of requests covered'],
+    [full+' / '+CUR.out.length,'Locations fully served'],
+    [fmt(t.reached)+' / '+fmt(t.people),'People reached'],
+    [hrs(hUsed)+' / '+hAll+' h','Vehicle time used'],
+  ].map(([b,s])=>`<div class="kpi"><b>${b}</b><span>${s}</span></div>`).join('');
+}
+
+function quad(p0,c,p1,t){return(1-t)*(1-t)*p0+2*(1-t)*t*c+t*t*p1;}
+function renderMap(){
+  const d=S.depot;let routes='',labels='',nodes='';
+  const om=Object.fromEntries(CUR.out.map(o=>[o.id,o]));
+  for(const l of S.locations){
+    const o=om[l.id],best=bestRoute(l);
+    for(const r of l.routes){
+      const cls=!r.open?'blocked':(r===best&&o.gotKg>0?'used':'open');
+      let path,mx,my;
+      if(r.cx!=null){path=`M${d.x} ${d.y} Q${r.cx} ${r.cy} ${l.x} ${l.y}`;mx=quad(d.x,r.cx,l.x,.5);my=quad(d.y,r.cy,l.y,.5);}
+      else{path=`M${d.x} ${d.y} L${l.x} ${l.y}`;mx=(d.x+l.x)/2;my=(d.y+l.y)/2;}
+      routes+=`<path class="rt ${cls}" d="${path}"><title>${esc(l.name)} · ${esc(r.name)} · ${r.hours} h one way · ${r.open?'open':'blocked'}</title></path>`;
+      if(!r.open)labels+=`<g transform="translate(${mx} ${my})"><circle r="9" fill="var(--surface)" stroke="var(--bad)" stroke-width="2"/><path d="M-4 -4L4 4M4 -4L-4 4" stroke="var(--bad)" stroke-width="2.2" stroke-linecap="round"/></g>`;
+      else labels+=`<text class="h" x="${mx+6}" y="${my-6}">${r.hours} h</text>`;
+    }
+    const rad=7+Math.sqrt(l.people)/1.5,noacc=!best;
+    const anchor=l.x>520?'end':l.x<120?'start':'middle';
+    const tx=anchor==='end'?l.x+rad:anchor==='start'?l.x-rad:l.x;
+    const ty=l.y<200?l.y-rad-8:l.y+rad+15;
+    const ty2=l.y<200?ty-14:ty+13;
+    nodes+=`<circle class="v ${noacc?'noaccess':o.status}" cx="${l.x}" cy="${l.y}" r="${rad}"><title>${esc(l.name)}: ${STATUS[o.status]}${noacc?' (no open route)':''}</title></circle>`;
+    nodes+=`<text font-size="11" text-anchor="middle" x="${l.x}" y="${l.y+4}" style="font:700 11px var(--f-mono);stroke-width:0;fill:${noacc?'var(--bad)':'var(--surface)'}">#${o.rank}</text>`;
+    const lines=l.y<200?[`${fmt(l.people)} people`,l.name]:[l.name,`${fmt(l.people)} people`];
+    nodes+=`<text class="${l.y<200?'':'nm'}" text-anchor="${anchor}" x="${tx}" y="${ty2}">${esc(lines[0])}</text><text class="${l.y<200?'nm':''}" text-anchor="${anchor}" x="${tx}" y="${ty}">${esc(lines[1])}</text>`;
+  }
+  const depot=`<rect class="depot" x="${d.x-9}" y="${d.y-9}" width="18" height="18" rx="2"/><path d="M${d.x} ${d.y-5}v10M${d.x-5} ${d.y}h10" stroke="var(--surface)" stroke-width="2.4" stroke-linecap="round"/><text class="nm" text-anchor="middle" x="${d.x}" y="${d.y+26}">${esc(d.name)}</text>`;
+  document.getElementById('map').innerHTML=`<svg viewBox="0 0 680 410" role="img" aria-label="Schematic map of the depot, affected locations and routes">
+    <rect class="land" x="0" y="0" width="680" height="410"/>
+    <path class="flood" d="M-10 150 C 120 130, 230 238, 370 196 S 570 120, 690 182 L690 236 C 580 176, 470 262, 370 252 S 140 188, -10 212 Z"/>
+    <text class="h" x="22" y="176" style="font-style:italic">Punnapuzha · flooded</text>
+    ${routes}${labels}${depot}${nodes}</svg>`;
+}
+
+function cellFor(o,res,b){
+  const q=o.req[res.id]||0;
+  if(!q&&!(b&&b.req[res.id]))return'<span class="of">—</span>';
+  let s=`<span class="cell"><b>${fmt(o.alloc[res.id])}</b><span class="of"> / ${fmt(q)}</span></span>`;
+  if(o.short[res.id]>0)s+=`<span class="short">short ${fmt(o.short[res.id])} <em>· ${REASON[o.limit[res.id]]||''}</em></span>`;
+  if(b&&b.alloc[res.id]!==o.alloc[res.id])s+=`<span class="was">was ${fmt(b.alloc[res.id])}</span>`;
+  return s;
+}
+function renderOutcome(){
+  const bm=S.log.length?Object.fromEntries(BASE_PLAN.out.map(o=>[o.id,o])):{};
+  const unit=RES.map(r=>`<th class="n">${r.short} <span style="text-transform:none">(${r.unit})</span></th>`).join('');
+  let rows='';
+  for(const o of CUR.out){
+    const b=bm[o.id];
+    const was=b&&b.status!==o.status?`<span class="was">was ${STATUS[b.status].toLowerCase()}</span>`:(S.log.length&&!b?'<span class="was">new location</span>':'');
+    rows+=`<tr><td class="n mono">#${o.rank}</td><td class="loc"><b>${esc(o.name)}</b><small>${fmt(o.people)} people · ${o.routeName?esc(o.routeName)+', '+o.routeHours+' h':'no open route'}</small></td>
+      <td><span class="pill ${o.status}">${STATUS[o.status]}</span>${was}</td>
+      ${RES.map(r=>`<td class="n">${cellFor(o,r,b)}</td>`).join('')}</tr>`;
+  }
+  const left=RES.map(r=>`<td class="n"><span class="cell"><b>${fmt(CUR.stockLeft[r.id])}</b></span></td>`).join('');
+  document.getElementById('outcome').innerHTML=`<table><thead><tr><th class="n">Rank</th><th>Location</th><th>Status</th>${unit}</tr></thead><tbody>${rows}
+    <tr><td></td><td colspan="2" class="loc"><b>Left at depot</b><small>Undeliverable with current fleet, or not requested</small></td>${left}</tr></tbody></table>`;
+  document.getElementById('outSub').textContent='Sent / requested, with the shortfall and its cause';
+}
+
+function renderChanges(){
+  const el=document.getElementById('changes'),sub=document.getElementById('chgSub');
+  if(!S.log.length){sub.textContent='Baseline plan';el.innerHTML=`<p class="hint">No changes yet. Use <b>Simulate a change</b> to block a route, add a newly affected area or cut stock. The new plan will be compared line by line with this one.</p>`;return;}
+  const rows=compare(BASE_PLAN,CUR);
+  const b=BASE_PLAN.tot,c=CUR.tot;
+  sub.textContent=`${S.log.length} change${S.log.length>1?'s':''} applied`;
+  const pct=t=>t.reqKg?Math.round(t.gotKg/t.reqKg*100):0;
+  let h=`<div class="callout" style="margin-bottom:12px">Coverage <b class="mono">${pct(b)}% → ${pct(c)}%</b> · people reached <b class="mono">${fmt(b.reached)} → ${fmt(c.reached)}</b> · fully served <b class="mono">${fmt(b.served)} → ${fmt(c.served)}</b></div>`;
+  h+=`<ul class="chg">`;
+  if(!rows.length)h+=`<li class="hint">The allocation is the same as the baseline.</li>`;
+  for(const r of rows){
+    if(r.kind==='new'){h+=`<li><div class="head"><b>${esc(r.o.name)}</b><span class="pill ${r.o.status}">${STATUS[r.o.status]}</span><span class="hint">new location, ranked #${r.o.rank}</span></div><ul class="deltas">${RES.filter(x=>r.o.req[x.id]).map(x=>`<li>${x.short}: <span class="mono">${fmt(r.o.alloc[x.id])} / ${fmt(r.o.req[x.id])} ${x.unit}</span></li>`).join('')}</ul></li>`;continue;}
+    if(r.kind==='removed'){h+=`<li><div class="head"><b>${esc(r.o.name)}</b><span class="hint">removed from the plan</span></div></li>`;continue;}
+    const {o,b:bb}=r;
+    let head=`<b>${esc(o.name)}</b>`;
+    if(bb.status!==o.status)head+=`<span class="pill ${bb.status}">${STATUS[bb.status]}</span><span class="arrow">→</span><span class="pill ${o.status}">${STATUS[o.status]}</span>`;
+    else head+=`<span class="pill ${o.status}">${STATUS[o.status]}</span>`;
+    if(bb.rank!==o.rank)head+=`<span class="hint">rank #${bb.rank} → #${o.rank}</span>`;
+    if(bb.routeName!==o.routeName)head+=`<span class="hint">route: ${esc(bb.routeName||'none')} → ${esc(o.routeName||'none')}</span>`;
+    const ds=r.d.map(x=>{const dv=x.to-x.from;const req=x.reqFrom!==x.reqTo?` <span class="hint">(request ${fmt(x.reqFrom)} → ${fmt(x.reqTo)})</span>`:'';
+      return`<li>${x.r.short}: <span class="mono">${fmt(x.from)} → ${fmt(x.to)} ${x.r.unit}</span> ${dv?`<b class="mono ${dv>0?'up':'down'}">${dv>0?'+':'−'}${fmt(Math.abs(dv))}</b>`:''}${req}</li>`;}).join('');
+    h+=`<li><div class="head">${head}</div>${ds?`<ul class="deltas">${ds}</ul>`:''}</li>`;
+  }
+  h+=`</ul>`;
+  el.innerHTML=h;
+}
+
+function renderRank(){
+  const keys=`<div class="keys">${CRIT.map(c=>`<span><i style="background:${c.color}"></i>${c.name} (${S.weights[c.id]})</span>`).join('')}</div>`;
+  const items=CUR.ranked.map((r,i)=>{
+    const l=r.loc;
+    const bits=[`urgency ${l.urgency}/5`,`${fmt(l.people)} people`,`${Math.round(r.vulnShare*100)}% vulnerable (${l.infants} infants)`,`${l.days} day${l.days==1?'':'s'} without aid`];
+    if(!r.route)bits.push('no open route');else if(r.route!==l.routes[0])bits.push('main route blocked, on detour');
+    return`<li><span class="pos">${i+1}</span><span class="nm">${esc(l.name)}</span><span class="sc">${Math.round(r.score)}</span>
+      <div class="bar" role="img" aria-label="Score breakdown">${CRIT.map(c=>`<span style="width:${r.parts[c.id]}%;background:${c.color}" title="${c.name}: ${r.parts[c.id].toFixed(1)}"></span>`).join('')}</div>
+      <div class="why">${bits.join(' · ')}</div></li>`;
+  }).join('');
+  const sliders=CRIT.map(c=>`<div class="slider"><label class="lbl" for="w-${c.id}">${c.name}</label><input type="range" id="w-${c.id}" min="0" max="50" step="5" value="${S.weights[c.id]}" data-w="${c.id}"><output id="wo-${c.id}">${S.weights[c.id]}</output></div>`).join('');
+  const open=document.querySelector('#rank details')?.open;
+  document.getElementById('rank').innerHTML=keys+`<ol class="rank">${items}</ol>
+    <details style="margin-top:12px" ${open?'open':''}><summary>Adjust criteria weights</summary><div class="grid2">${sliders}</div><p class="hint">Weights are relative; the score is rescaled to 100 whatever they add up to.</p></details>`;
+}
+
+function renderTrips(){
+  const el=document.getElementById('trips');
+  let h='<div class="hrs">';
+  for(const v of CUR.veh){
+    const segs=CUR.trips.filter(t=>t.vid===v.id);
+    h+=`<div><div class="meta"><b>${esc(v.name)}</b><span class="mono">${hrs(v.used)} of ${v.hours} h · ${v.cap} kg per trip</span></div>
+      <div class="track" role="img" aria-label="${esc(v.name)} time used">${segs.map((t,i)=>`<span style="width:${(t.back-t.start)/v.hours*100}%;background:${i%2?'var(--c-people)':'var(--accent)'};opacity:${i%2?.65:1}" title="${esc(t.loc)} ${clock(t.start)}–${clock(t.back)}"></span>`).join('')}</div></div>`;
+  }
+  h+='</div>';
+  if(!CUR.trips.length){el.innerHTML=h+'<p class="hint">No trips can be made with the current fleet and routes.</p>';return;}
+  h+=`<div class="tw"><table><thead><tr><th>Vehicle</th><th>Destination</th><th class="n">Leaves</th><th class="n">Arrives</th><th class="n">Back</th><th>Load</th></tr></thead><tbody>`;
+  for(const t of CUR.trips){
+    const load=RES.filter(r=>t.load[r.id]).map(r=>`${fmt(t.load[r.id])} ${r.unit} ${r.short.toLowerCase()}`).join(', ');
+    h+=`<tr><td>${esc(t.veh)}</td><td><b>${esc(t.loc)}</b><span class="was" style="font-family:var(--f-body)">${esc(t.route)}</span></td><td class="n">${clock(t.dep)}</td><td class="n">${clock(t.arr)}</td><td class="n">${clock(t.back)}</td><td>${load}<span class="was">${fmt(t.kg)} kg</span></td></tr>`;
+  }
+  el.innerHTML=h+'</tbody></table></div>';
+}
+
+function noteText(){
+  const P=CUR,st=S,d=new Date();
+  const L=[];
+  L.push(`RELIEF ALLOCATION — ${st.depot.name}`);
+  L.push(`Prepared ${d.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'})} ${stamp()}`);
+  L.push(`Stock: ${RES.map(r=>`${fmt(st.stock[r.id])} ${r.unit} ${r.short.toLowerCase()}`).join(', ')}`);
+  L.push(`Fleet: ${st.vehicles.map(v=>`${v.name} (${v.cap} kg/trip, ${v.hours} h)`).join('; ')}`);
+  L.push(`Method: priority score (${CRIT.map(c=>`${c.name.toLowerCase()} ${st.weights[c.id]}`).join(', ')}). Every reachable location first gets up to ${st.floor}% of its request; remaining stock goes in priority order. Water, then infant kits, then food.`);
+  L.push('');
+  for(const o of P.out){
+    const r=o.r,l=r.loc;
+    L.push(`${o.rank}. ${o.name} — score ${Math.round(o.score)} — ${STATUS[o.status].toUpperCase()}`);
+    L.push(`   ${fmt(l.people)} people, ${l.infants} infants, urgency ${l.urgency}/5, ${l.days} days without aid${!r.route?', NO OPEN ROUTE':r.route!==l.routes[0]?`, via ${r.route.name}`:''}`);
+    const sent=RES.filter(x=>o.req[x.id]).map(x=>`${fmt(o.alloc[x.id])}/${fmt(o.req[x.id])} ${x.unit} ${x.short.toLowerCase()}`).join(', ');
+    L.push(`   Sent: ${sent||'nothing requested'}`);
+    const sh=RES.filter(x=>o.short[x.id]>0).map(x=>`${fmt(o.short[x.id])} ${x.unit} ${x.short.toLowerCase()} (${REASON[o.limit[x.id]]})`);
+    if(sh.length)L.push(`   Short: ${sh.join(', ')}`);
+  }
+  const unreach=P.out.filter(o=>!o.r.route);
+  if(unreach.length)L.push('',`ESCALATE: ${unreach.map(o=>o.name).join(', ')} cannot be reached by road. Request boat or air drop.`);
+  if(st.log.length){L.push('','Changes since baseline:');st.log.forEach(e=>L.push(` - ${e.t} ${e.text}`));
+    for(const r of compare(BASE_PLAN,P)){if(r.kind==='changed'&&r.d.length)L.push(`   ${r.o.name}: ${r.d.map(x=>`${x.r.short.toLowerCase()} ${fmt(x.from)}→${fmt(x.to)}`).join(', ')}`);}}
+  return L.join('\n');
+}
+function renderNote(){document.getElementById('note').textContent=noteText();}
+
+function renderSupplies(){
+  const req=Object.fromEntries(RES.map(r=>[r.id,S.locations.reduce((s,l)=>s+(l.req[r.id]||0),0)]));
+  let h=`<div class="subhead">Stock at depot</div>`;
+  for(const r of RES){
+    const pct=req[r.id]?Math.min(100,S.stock[r.id]/req[r.id]*100):100;
+    h+=`<div class="stockrow"><label for="s-${r.id}">${r.name} <span class="hint">(${r.unit}, ${r.kg} kg each)</span></label><input type="number" min="0" id="s-${r.id}" data-stock="${r.id}" value="${S.stock[r.id]}">
+      <div class="meter"><span style="width:${pct}%"></span></div><small>${fmt(S.stock[r.id])} in stock against ${fmt(req[r.id])} requested (${Math.round(pct)}%)</small></div>`;
+  }
+  h+=`<div class="subhead">Vehicles</div>`;
+  for(const v of S.vehicles){
+    h+=`<div class="grid2" style="margin-bottom:10px"><div class="field"><label for="vn-${v.id}">Name</label><input type="text" id="vn-${v.id}" data-veh="${v.id}" data-k="name" value="${esc(v.name)}"></div>
+      <div class="field"><label for="vc-${v.id}">Capacity per trip (kg)</label><input type="number" min="0" step="10" id="vc-${v.id}" data-veh="${v.id}" data-k="cap" value="${v.cap}"></div>
+      <div class="field"><label for="vh-${v.id}">Hours available today</label><input type="number" min="0" step="0.5" id="vh-${v.id}" data-veh="${v.id}" data-k="hours" value="${v.hours}"></div></div>`;
+  }
+  h+=`<div class="subhead">Allocation rules</div>
+    <div class="slider"><label class="lbl" for="floor">Equity floor: every reachable location first gets this share of its request</label><input type="range" id="floor" min="0" max="100" step="5" value="${S.floor}"><output id="floorOut">${S.floor}%</output></div>
+    <div class="grid2"><div class="field"><label for="loadt">Loading time per trip (h)</label><input type="number" id="loadt" min="0" step="0.25" value="${S.loadTime}"></div></div>`;
+  document.getElementById('supplies').innerHTML=h;
+}
+
+const NEW_AREA={name:'Thariyode',people:160,infants:9,vulnerable:22,days:2,urgency:5,hours:2.0,water:240,infant:9,food:160};
+function renderTwist(){
+  const hasNag=S.locations.some(l=>l.id==='nagarahalli');
+  const hill=S.locations.find(l=>l.id==='kodipur')?.routes.find(r=>r.id==='kodipur-hill');
+  const truckDown=S.log.some(e=>e.key==='breakdown');
+  const hasPickup=S.vehicles.some(v=>v.id==='v2');
+  const routeOpts=S.locations.flatMap(l=>l.routes.map(r=>`<option value="${l.id}|${r.id}">${esc(l.name)} · ${esc(r.name)} (${r.open?'open':'blocked'})</option>`)).join('');
+  const resOpts=RES.map(r=>`<option value="${r.id}">${r.name}</option>`).join('');
+  const logH=S.log.length?`<ul class="log">${S.log.map(e=>`<li><time>${e.t}</time><span>${esc(e.text)}</span></li>`).join('')}</ul>`:'<p class="hint">Baseline plan. Nothing simulated yet.</p>';
+  document.getElementById('twist').innerHTML=`
+    <div class="subhead">Quick scenarios</div>
+    <div class="presets">
+      <button type="button" class="preset" data-preset="landslide" ${!hill||!hill.open?'disabled':''}><b>Landslide on the hill detour</b><span>Mundakkai loses its only open road</span></button>
+      <button type="button" class="preset" data-preset="newarea" ${hasNag?'disabled':''}><b>New area reported</b><span>Thariyode: 160 people, urgency 5, 2 h away</span></button>
+      <button type="button" class="preset" data-preset="water"><b>200 L water contaminated</b><span>Remove 200 L from depot stock</span></button>
+      <button type="button" class="preset" data-preset="breakdown" ${truckDown?'disabled':''}><b>Truck breakdown</b><span>Truck 1 loses 4 hours of its day</span></button>
+      <button type="button" class="preset" data-preset="pickup" ${hasPickup?'disabled':''}><b>Second vehicle arrives</b><span>Pickup on loan: 300 kg per trip, 10 h</span></button>
+    </div>
+    <details style="margin-top:14px"><summary>Custom change</summary>
+      <div class="subhead">Block or reopen a route</div>
+      <div class="grid2"><div class="field"><label for="tw-route">Route</label><select id="tw-route">${routeOpts}</select></div>
+      <div class="field" style="justify-content:flex-end"><button type="button" class="btn" data-act="toggleRoute">Block / reopen</button></div></div>
+      <div class="subhead">Change stock</div>
+      <div class="grid2"><div class="field"><label for="tw-res">Item</label><select id="tw-res">${resOpts}</select></div>
+      <div class="field"><label for="tw-amt">Change by (− removes)</label><input type="number" id="tw-amt" value="-100"></div>
+      <div class="field" style="justify-content:flex-end"><button type="button" class="btn" data-act="stock">Apply</button></div></div>
+      <div class="subhead">Add an affected area</div>
+      <div class="grid2">
+        <div class="field"><label for="na-name">Name</label><input type="text" id="na-name" value="Kunnampatta"></div>
+        <div class="field"><label for="na-people">People</label><input type="number" min="1" id="na-people" value="120"></div>
+        <div class="field"><label for="na-inf">Infants</label><input type="number" min="0" id="na-inf" value="4"></div>
+        <div class="field"><label for="na-urg">Urgency (1–5)</label><input type="number" min="1" max="5" id="na-urg" value="4"></div>
+        <div class="field"><label for="na-hours">Hours from depot</label><input type="number" min="0.1" step="0.1" id="na-hours" value="1.2"></div>
+        <div class="field"><label for="na-water">Water request (L)</label><input type="number" min="0" id="na-water" value="180"></div>
+        <div class="field"><label for="na-food">Food request (pkts)</label><input type="number" min="0" id="na-food" value="120"></div>
+        <div class="field"><label for="na-kits">Infant kits request</label><input type="number" min="0" id="na-kits" value="4"></div>
+      </div>
+      <div class="btns" style="margin-top:10px"><button type="button" class="btn" data-act="addArea">Add area</button></div>
+    </details>
+    <div class="subhead" style="margin-top:18px">Change log</div>
+    ${logH}
+    <div class="btns" style="margin-top:12px">
+      <button type="button" class="btn primary" data-act="rebase" ${S.log.length?'':'disabled'}>Accept as new baseline</button>
+      <button type="button" class="btn" data-act="undo" ${S.log.length?'':'disabled'}>Undo changes</button>
+      <button type="button" class="btn" data-act="reset">Reset sample scenario</button>
+    </div>`;
+}
+
+function renderData(){
+  const rows=S.locations.map(l=>`<tr>
+    <td><input type="text" aria-label="Name" data-loc="${l.id}" data-k="name" value="${esc(l.name)}" style="min-width:140px"></td>
+    ${['people','infants','vulnerable','days'].map(k=>`<td><input type="number" min="0" aria-label="${k}" data-loc="${l.id}" data-k="${k}" value="${l[k]}"></td>`).join('')}
+    <td><select aria-label="Urgency" data-loc="${l.id}" data-k="urgency">${[1,2,3,4,5].map(u=>`<option ${u==l.urgency?'selected':''}>${u}</option>`).join('')}</select></td>
+    ${RES.map(r=>`<td><input type="number" min="0" aria-label="${r.name} requested" data-loc="${l.id}" data-req="${r.id}" value="${l.req[r.id]||0}"></td>`).join('')}
+    <td><div class="rts">${l.routes.map(r=>`<label><input type="checkbox" data-loc="${l.id}" data-route="${r.id}" ${r.open?'checked':''}> ${esc(r.name)} <input type="number" min="0.1" step="0.1" aria-label="hours" data-loc="${l.id}" data-rh="${r.id}" value="${r.hours}" style="width:62px"> h</label>`).join('')}</div></td>
+    <td><button type="button" class="btn small" data-remove="${l.id}">Remove</button></td></tr>`).join('');
+  document.getElementById('data').innerHTML=`<table class="data"><thead><tr><th>Location</th><th>People</th><th>Infants</th><th>Other vulnerable</th><th>Days w/o aid</th><th>Urgency</th>${RES.map(r=>`<th>${r.short} req. (${r.unit})</th>`).join('')}<th>Routes (open, one-way hours)</th><th></th></tr></thead><tbody>${rows}</tbody></table>
+  <p class="hint" style="padding:10px 16px 14px">Other vulnerable = elderly, pregnant women, people with disabilities. Edits here are logged as changes against the baseline.</p>`;
+}
+
+function renderHow(){
+  document.getElementById('howBody').innerHTML=`
+  <div><h3>1. Priority score</h3>
+    <p>Each location gets a score from 0 to 100. Every criterion is first scaled to 0–1, then weighted:</p>
+    <div class="formula">urgency     = (level − 1) / 4
+people      = people / largest location
+vulnerable  = min(1, (infants + other) / people ÷ 0.35)
+days        = min(1, days without aid / 4)
+cut off     = 1 if main route is blocked, else 0
+
+score = Σ weight × criterion / Σ weights × 100</div>
+    <p>A location where a third of the people are infants, elderly or otherwise vulnerable gets the full vulnerable score. The coordinator can change the weights in the ranking panel.</p></div>
+  <div><h3>2. Allocation in two passes</h3>
+    <ol><li><b>Equity floor.</b> In priority order, each reachable location receives up to ${S.floor}% of what it asked for. This stops the top-ranked village from taking everything.</li>
+    <li><b>Top-up.</b> Whatever remains goes down the priority list again, filling each request completely before moving on.</li></ol>
+    <p>Within a location, water is loaded first, then infant kits, then food, because people survive longer without food than without water.</p></div>
+  <div><h3>3. Delivery constraints</h3>
+    <p>Each vehicle has a capacity per trip (kg) and hours available. A trip goes to one location on its fastest open route and costs <span class="mono">2 × one-way hours + loading time</span>. Weights: 1 kg per litre of water or food packet, 2 kg per infant kit.</p>
+    <p>An item is only allocated if a truck can actually carry it. Space left on a trip already planned is used before a new trip is started. Blocked routes are skipped; if a location has no open route it is marked unmet and flagged for boat or air drop.</p></div>
+  <div><h3>4. Outcome and the twist</h3>
+    <p><b>Fulfilled</b> means every item arrived in full, <b>partly fulfilled</b> means something arrived, <b>unmet</b> means nothing could be sent. Each shortfall names its cause: stock ran out, no truck time left, or no open route.</p>
+    <p>A simulated change (blocked route, new area, lost stock, breakdown) reruns the same rules. The new plan is compared with the saved baseline per location and per item, so the coordinator can see who gained, who lost and why.</p></div>`;
+}
+
+/* ===================== Events ===================== */
+function locById(id){return S.locations.find(l=>l.id===id);}
+function afterChange(full){if(full){renderAll();}else{renderResults();renderSupplies();}}
+
+document.addEventListener('input',e=>{
+  const t=e.target;
+  if(t.dataset.w){S.weights[t.dataset.w]=+t.value;document.getElementById('wo-'+t.dataset.w).textContent=t.value;renderResults();}
+  else if(t.id==='floor'){S.floor=+t.value;document.getElementById('floorOut').textContent=t.value+'%';renderResults();renderHow();}
+});
+document.addEventListener('change',e=>{
+  const t=e.target,v=t.type==='number'?Math.max(0,+t.value||0):t.value;
+  if(t.dataset.stock){const old=S.stock[t.dataset.stock];S.stock[t.dataset.stock]=Math.round(v);if(old!==S.stock[t.dataset.stock])logEvent(`${RBY[t.dataset.stock].name} stock set to ${fmt(S.stock[t.dataset.stock])} (was ${fmt(old)})`);renderTwist();afterChange();}
+  else if(t.dataset.veh){const veh=S.vehicles.find(x=>x.id===t.dataset.veh);const k=t.dataset.k;const old=veh[k];veh[k]=k==='name'?String(v).trim()||old:v;if(k!=='name'&&old!==veh[k])logEvent(`${veh.name} ${k==='cap'?'capacity':'hours'} set to ${veh[k]} (was ${old})`);renderTwist();renderResults();}
+  else if(t.id==='loadt'){S.loadTime=v;renderResults();}
+  else if(t.dataset.loc){
+    const l=locById(t.dataset.loc);if(!l)return;
+    if(t.dataset.route){const r=l.routes.find(x=>x.id===t.dataset.route);r.open=t.checked;logEvent(`${l.name}: ${r.name} ${r.open?'reopened':'blocked'}`);}
+    else if(t.dataset.rh){const r=l.routes.find(x=>x.id===t.dataset.rh);r.hours=Math.max(0.1,v);logEvent(`${l.name}: ${r.name} travel time set to ${r.hours} h`);}
+    else if(t.dataset.req){const old=l.req[t.dataset.req];l.req[t.dataset.req]=Math.round(v);logEvent(`${l.name}: ${RBY[t.dataset.req].short.toLowerCase()} request ${fmt(old)} → ${fmt(l.req[t.dataset.req])}`);}
+    else{const k=t.dataset.k;const old=l[k];l[k]=k==='name'?String(v).trim()||old:(k==='urgency'?+v:Math.round(v));if(old!==l[k])logEvent(`${l.name}: ${k==='vulnerable'?'other vulnerable':k} ${old} → ${l[k]}`);}
+    renderTwist();renderSupplies();renderResults();
+  }
+});
+document.addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;
+  const p=b.dataset.preset,a=b.dataset.act;
+  if(p==='landslide'){const r=locById('kodipur')?.routes.find(x=>x.id==='kodipur-hill');if(r){r.open=false;logEvent('Landslide: Mundakkai hill detour blocked');}}
+  else if(p==='newarea'){const n=NEW_AREA;S.locations.push({id:'nagarahalli',name:n.name,x:612,y:300,people:n.people,infants:n.infants,vulnerable:n.vulnerable,days:n.days,urgency:n.urgency,req:{water:n.water,infant:n.infant,food:n.food},routes:[{id:'nag-road',name:'Canal road',hours:n.hours,open:true}]});logEvent('New area reported: Thariyode, 160 people, urgency 5');}
+  else if(p==='water'){S.stock.water=Math.max(0,S.stock.water-200);logEvent('200 L of drinking water contaminated and removed');}
+  else if(p==='breakdown'){const v=S.vehicles[0];if(v){v.hours=Math.max(0,v.hours-4);S.log.push({t:stamp(),text:`${v.name} breakdown: ${v.hours} h left today`,key:'breakdown'});}}
+  else if(p==='pickup'){S.vehicles.push({id:'v2',name:'Pickup 2',cap:300,hours:10});logEvent('Second vehicle arrives: Pickup 2, 300 kg per trip, 10 h');}
+  else if(a==='toggleRoute'){const [lid,rid]=document.getElementById('tw-route').value.split('|');const l=locById(lid),r=l?.routes.find(x=>x.id===rid);if(r){r.open=!r.open;logEvent(`${l.name}: ${r.name} ${r.open?'reopened':'blocked'}`);}}
+  else if(a==='stock'){const res=document.getElementById('tw-res').value,amt=Math.round(+document.getElementById('tw-amt').value||0);if(amt){const old=S.stock[res];S.stock[res]=Math.max(0,old+amt);logEvent(`${RBY[res].name} ${amt<0?'reduced':'increased'} by ${fmt(Math.abs(amt))} ${RBY[res].unit} (${fmt(old)} → ${fmt(S.stock[res])})`);}}
+  else if(a==='addArea'){
+    const g=id=>document.getElementById(id);const name=g('na-name').value.trim()||'New area';
+    const id='area-'+Date.now().toString(36);const ang=(S.locations.length*67)%360*Math.PI/180;
+    const x=Math.round(Math.min(640,Math.max(40,S.depot.x+Math.cos(ang)*230))),y=Math.round(Math.min(380,Math.max(40,S.depot.y-Math.abs(Math.sin(ang))*200)));
+    const hours=Math.max(0.1,+g('na-hours').value||1);
+    S.locations.push({id,name,x,y,people:Math.max(1,+g('na-people').value||1),infants:+g('na-inf').value||0,vulnerable:0,days:0,urgency:Math.min(5,Math.max(1,+g('na-urg').value||3)),
+      req:{water:+g('na-water').value||0,infant:+g('na-kits').value||0,food:+g('na-food').value||0},routes:[{id:id+'-road',name:'Road',hours,open:true}]});
+    logEvent(`New area added: ${name}, ${g('na-people').value} people, urgency ${g('na-urg').value}`);
+  }
+  else if(a==='rebase'){S.log=[];BASE=clone(S);BASE_PLAN=plan(BASE);}
+  else if(a==='undo'){S=clone(BASE);}
+  else if(a==='reset'){S=initialState();BASE=clone(S);BASE_PLAN=plan(BASE);}
+  else if(b.dataset.remove){const l=locById(b.dataset.remove);S.locations=S.locations.filter(x=>x!==l);logEvent(`${l.name} removed from the plan`);}
+  else if(b.id==='copyNote'){
+    const txt=noteText();
+    const done=()=>{b.textContent='Copied';setTimeout(()=>b.textContent='Copy note',1600);};
+    const fallback=()=>{const r=document.createRange();r.selectNodeContents(document.getElementById('note'));const s=getSelection();s.removeAllRanges();s.addRange(r);b.textContent='Selected, press Ctrl+C';setTimeout(()=>b.textContent='Copy note',2400);};
+    try{navigator.clipboard.writeText(txt).then(done,fallback);}catch(err){fallback();}
+    return;
+  }
+  else return;
+  renderAll();
+});
+
+/* ===================== Boot ===================== */
+if(typeof document!=='undefined'&&document.getElementById('map')){
+  const saved=loadSaved();
+  S=saved?saved.state:initialState();
+  BASE=saved?saved.base:clone(S);
+  BASE_PLAN=plan(BASE);
+  renderAll();
+}
+</script>
+
+</body>
+</html>

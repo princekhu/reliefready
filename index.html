@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="icon.svg">
+<title>ReliefReady</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="assets/common.css">
+<style>
+.hero{padding-block:36px 10px;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:28px;align-items:end}
+@media (max-width:860px){.hero{grid-template-columns:minmax(0,1fr)}}
+.hero h1{font-size:clamp(36px,6vw,60px);font-weight:800;line-height:.95;font-stretch:78%}
+.hero p{font-size:17px;max-width:58ch;margin:14px 0 0;color:var(--muted)}
+.hero .stat{font:500 13px/1.6 var(--f-mono);color:var(--muted);border-left:3px solid var(--accent);padding-left:12px}
+.apps{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:12px;padding-block:22px}
+.app{display:flex;flex-direction:column;gap:8px;padding:18px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);text-decoration:none;color:var(--ink);min-height:170px}
+.app:hover{border-color:var(--accent)}
+.app .who{font:600 11.5px/1 var(--f-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.app h2{font-size:24px}
+.app p{margin:0;font-size:14px;color:var(--muted)}
+.app .go{margin-top:auto;font-weight:700;color:var(--accent)}
+.app.sos{background:var(--sos);border-color:var(--sos);color:var(--sos-ink)}
+.app.sos .who,.app.sos p,.app.sos .go{color:var(--sos-ink)}
+.app.sos p{opacity:.92}
+section.blk{padding-block:26px;border-top:1px solid var(--line)}
+section.blk>h2{font-size:30px;margin-bottom:6px}
+section.blk>.lead{color:var(--muted);max-width:68ch;margin:0 0 18px}
+.flow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr) minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:stretch}
+@media (max-width:900px){.flow{grid-template-columns:minmax(0,1fr)}}
+.col{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:8px}
+.col h3{font-size:18px}
+.col .k{font:600 11px/1 var(--f-mono);color:var(--accent);letter-spacing:.08em;text-transform:uppercase}
+.ch{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 10px;padding:8px 0;border-top:1px dashed var(--line);font-size:13.5px}
+.ch:first-of-type{border-top:0}
+.ch b{grid-column:2}
+.ch span{grid-column:2;color:var(--muted)}
+.ch i{grid-row:span 2;font:600 11px/1 var(--f-mono);font-style:normal;padding:4px 6px;border-radius:3px;background:var(--accent-soft);color:var(--accent);height:max-content;margin-top:2px}
+.cmp td,.cmp th{text-align:center}
+.cmp td:first-child,.cmp th:first-child{text-align:left;min-width:170px}
+.cmp tr.us td{background:var(--accent-soft);font-weight:600}
+.y,.p,.n{display:inline-block;min-width:58px;padding:2px 6px;border-radius:999px;font-size:12px;font-weight:600}
+.y{background:var(--ok-bg);color:var(--ok)} .p{background:var(--warn-bg);color:var(--warn)} .n{background:var(--sunk);color:var(--muted)}
+.better{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:18px 28px;margin-top:20px}
+.better h3{font-size:18px;margin-bottom:4px}
+.better p{margin:0;font-size:14.5px;max-width:60ch}
+.limits{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:14px}
+.limits .col p{margin:0;font-size:14px}
+.src{font-size:12.5px;color:var(--muted)}
+.src a{color:var(--muted)}
+</style>
+<style>[hidden]{display:none!important}img{max-width:100%}</style>
+</head>
+<body>
+
+
+<header class="bar"><div class="wrap">
+  <a class="logo" href="index.html" id="logo"><b>ReliefReady</b><span>Wayanad demo district</span></a>
+  <span class="grow"></span><span class="net" id="net">Online</span>
+</div></header>
+
+<main class="wrap">
+  <div class="hero">
+    <div>
+      <h1>Get relief to the right places, even when the network is gone.</h1>
+      <p>One system from the person trapped on a roof to the truck on the road: an SOS that works without internet, a control room that ranks and allocates, drivers who see which roads are safe, and a tracked line to state and national agencies.</p>
+    </div>
+    <div class="stat">Anvathon 2026 · Domain 5 · PS 3<br>Demo data: Wayanad, Kerala. Real places, illustrative needs.<br>Open two apps in separate tabs to watch them sync.</div>
+  </div>
+
+  <div class="apps">
+    <a class="app sos" href="sos.html"><span class="who">People in the affected area</span><h2>I need help</h2><p>Send an SOS by internet, SMS, Bluetooth or QR. No sign-in, no install, works offline.</p><span class="go">Open SOS →</span></a>
+    <a class="app" href="driver.html"><span class="who">Aid vehicle drivers · sign in</span><h2>Driver app</h2><p>Next stops, safe route options on the real road map, road reports, carrying SOS out of dead zones.</p><span class="go">Open driver app →</span></a>
+    <a class="app" href="admin.html"><span class="who">District control room · sign in</span><h2>Control room</h2><p>Live SOS feed and map, assign drivers, road conditions, request help from higher authorities.</p><span class="go">Open control room →</span></a>
+    <a class="app" href="planner.html"><span class="who">Relief officers</span><h2>Allocation planner</h2><p>Rank requests, split limited stock under vehicle limits, simulate a blocked route and compare plans.</p><span class="go">Open planner →</span></a>
+  </div>
+
+  <section class="blk">
+    <h2>How an SOS gets out with no network</h2>
+    <p class="lead">A browser cannot form a Bluetooth mesh or make calls without a network. So ReliefReady uses the paths that do work on every ordinary phone, and turns aid drivers into couriers for messages from dead zones.</p>
+    <div class="flow">
+      <div class="col"><span class="k">Trapped person</span><h3>SOS app on any phone</h3><p class="hint">Needs, head-count, infants, injured and GPS (GPS works without data). Saved on the phone first, so nothing is lost. Hindi and English.</p></div>
+      <div class="col"><span class="k">Four ways out, tried in order</span>
+        <div class="ch"><i>1</i><b>Internet</b><span>Sent at once. If there is no data it is queued and sends itself when any signal returns.</span></div>
+        <div class="ch"><i>2</i><b>SMS, 1 bar of 2G</b><span>A 160-character code holds the whole request. The control room reads it automatically.</span></div>
+        <div class="ch"><i>3</i><b>Bluetooth / Quick Share</b><span>Passes the SOS to a nearby phone with no network. Whoever reaches signal first forwards it.</span></div>
+        <div class="ch"><i>4</i><b>QR to a rescuer</b><span>Drivers scan it offline and carry it out (store-and-forward).</span></div>
+        <div class="ch"><i>+</i><b>Call 112, light and whistle</b><span>Emergency calls use any operator's tower in range. The screen flashes SOS for helicopters.</span></div></div>
+      <div class="col"><span class="k">Control room</span><h3>Rank, assign, escalate</h3><p class="hint">Each request gets a priority score. One click turns it into a driver's stop with suggested quantities, or a tracked request to NDRF, the state EOC or air support.</p></div>
+      <div class="col"><span class="k">Driver</span><h3>Deliver on a safe road</h3><p class="hint">Real OpenStreetMap routes, checked against live road reports. Marking a stop delivered updates the person's SOS status to “Aid delivered”.</p></div>
+    </div>
+  </section>
+
+  <section class="blk">
+    <h2>Where ReliefReady fits among existing tools</h2>
+    <p class="lead">Each tool below does one part well. None of them joins a victim's SOS, the allocation decision, the driver's road and the escalation into one loop. Based on each product's public description; check before quoting in a pitch.</p>
+    <div class="tw"><table class="cmp">
+      <thead><tr><th>Capability</th><th>ReliefReady</th><th>112 India (ERSS)</th><th>NDMA Sachet</th><th>Sahana Eden</th><th>Ushahidi</th><th>Bridgefy</th><th>Meshtastic</th></tr></thead>
+      <tbody>
+        <tr><td>SOS from victims to responders</td><td><span class="y">Yes</span></td><td><span class="y">Yes</span></td><td><span class="n">Alerts only</span></td><td><span class="p">Requests</span></td><td><span class="y">Reports</span></td><td><span class="p">Chat</span></td><td><span class="p">Chat</span></td></tr>
+        <tr><td>Works with no data connection</td><td><span class="y">4 paths</span></td><td><span class="p">Call / SMS</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td><td><span class="p">SMS</span></td><td><span class="y">Bluetooth</span></td><td><span class="y">LoRa radio</span></td></tr>
+        <tr><td>No app install needed</td><td><span class="y">Web / PWA</span></td><td><span class="n">App</span></td><td><span class="n">App</span></td><td><span class="y">Web</span></td><td><span class="y">Web</span></td><td><span class="n">App on every phone</span></td><td><span class="n">Radio + app</span></td></tr>
+        <tr><td>Allocates stock under truck limits</td><td><span class="y">Yes</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td><td><span class="p">Inventory</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td></tr>
+        <tr><td>Explains priority and shortfalls</td><td><span class="y">Yes</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td></tr>
+        <tr><td>What-if recalculation</td><td><span class="y">Yes</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td></tr>
+        <tr><td>Safe routes from field reports</td><td><span class="y">Yes</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td><td><span class="p">Map layers</span></td><td><span class="p">Map of reports</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td></tr>
+        <tr><td>Tracked escalation to agencies</td><td><span class="y">Yes</span></td><td><span class="p">Internal</span></td><td><span class="n">No</span></td><td><span class="p">Partial</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td></tr>
+      </tbody></table></div>
+
+    <div class="better">
+      <div><h3>One loop, not five tools</h3><p>A trapped family's SOS becomes a ranked request, then a driver's stop with quantities, then a delivery, and the family's phone shows “Aid delivered”. The control room never re-types anything between systems.</p></div>
+      <div><h3>Offline without special hardware</h3><p>SMS, 112, Bluetooth hand-off and QR work on any phone people already own. Bridgefy needs the app on every phone in the chain, and Meshtastic needs radio hardware.</p></div>
+      <div><h3>Drivers carry messages out</h3><p>Trucks move between dead zones and coverage every day. The driver app scans SOS codes offline and uploads them on reaching signal, so messages get out on vehicles that are already making the trip.</p></div>
+      <div><h3>Decisions a coordinator can defend</h3><p>Every allocation shows its score breakdown, the quantity short and why (stock, truck time, or no road). A blocked route or a new village reruns the plan and shows who gained and who lost.</p></div>
+      <div><h3>Roads judged by the people on them</h3><p>Real road routes from OpenStreetMap are checked against drivers' live reports of bridges down, flooding and landslides. The safest option is picked first, and unsafe-only routes trigger a boat or airlift request.</p></div>
+      <div><h3>A paper trail upward</h3><p>Requests to the state EOC, NDRF or air support carry a timeline (sent, acknowledged, dispatched, resolved), a “forward higher” step when nobody answers, and a one-click situation report for the official channel.</p></div>
+    </div>
+  </section>
+
+  <section class="blk">
+    <h2>Limits and next steps</h2>
+    <p class="lead">What the prototype does not do yet, and how we would extend it.</p>
+    <div class="limits">
+      <div class="col"><h3>Bluetooth mesh and offline calling</h3><p>Browsers cannot advertise Bluetooth or relay between phones, so a true mesh or walkie-talkie voice needs a small Android companion app (Nearby Connections over Bluetooth and Wi-Fi Direct). It would reuse the same RR1 code.</p></div>
+      <div class="col"><h3>Zero-network valleys</h3><p>For places with no tower at all, LoRa mesh radios (Meshtastic) reach several kilometres per hop. A gateway node at the control room would read RR1 codes straight into this inbox.</p></div>
+      <div class="col"><h3>Real back end</h3><p>The demo syncs between tabs in one browser, or between viewers of the hosted preview. Production needs a database such as Firebase or Supabase, phone OTP sign-in and an SMS gateway number.</p></div>
+    </div>
+    <p class="src" style="margin-top:16px">References: <a href="https://apps.apple.com/app/id1441951304" target="_blank" rel="noopener">112 India app</a> · <a href="https://nicobartimes.com/?p=5925" target="_blank" rel="noopener">NDMA Sachet</a> · <a href="https://archive.flossmanuals.net/sahana-eden/what-is-sahana-eden" target="_blank" rel="noopener">Sahana Eden</a> · <a href="https://techxlab.org/solutions/bridgefy/" target="_blank" rel="noopener">Bridgefy</a> · <a href="https://circuitdigest.com/news/meshtastic-an-opensource-off-grid-communication-platform" target="_blank" rel="noopener">Meshtastic</a></p>
+  </section>
+  <footer class="foot">ReliefReady prototype · Anvathon 2026. Map data © OpenStreetMap contributors, routing by OSRM.</footer>
+</main>
+<script src="assets/common.js"></script>
+<script>document.getElementById('logo').insertAdjacentHTML('afterbegin', RR.logo); RR.netBadge(document.getElementById('net'));</script>
+
+</body>
+</html>

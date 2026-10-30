@@ -1,0 +1,93 @@
+{
+  "name": "ReliefReady daily demand estimator",
+  "type": "linear_regression",
+  "trained_on": "3000 synthetic villages (seed 42)",
+  "data_is_synthetic": true,
+  "features": [
+    "people",
+    "infants",
+    "elderly",
+    "pregnant",
+    "injured",
+    "water_source",
+    "days_since_aid",
+    "people_x_water_source",
+    "people_x_days"
+  ],
+  "assumptions": {
+    "water_L_per_person": 3.0,
+    "water_extra_L_per_infant": 1.5,
+    "water_extra_L_per_elderly": 1.0,
+    "water_extra_L_per_injured": 1.0,
+    "water_factor_if_safe_source": 0.55,
+    "food_packets_per_person": 1.0,
+    "food_backlog_per_day_without_aid": 0.04,
+    "meds_kits_per_30_people": 1.0,
+    "meds_kits_per_2_injured": 1.0,
+    "meds_kits_per_4_pregnant": 1.0,
+    "meds_kits_per_10_infants": 1.0,
+    "noise_pct": 0.08
+  },
+  "targets": {
+    "food": {
+      "intercept": -0.90419,
+      "coef": {
+        "people": 1.0078,
+        "infants": 0.07645,
+        "elderly": 0.01151,
+        "pregnant": -0.74478,
+        "injured": 0.13081,
+        "water_source": -1.06935,
+        "days_since_aid": 0.83633,
+        "people_x_water_source": 0.00569,
+        "people_x_days": 0.04011
+      },
+      "metrics": {
+        "r2": 0.9712,
+        "mae": 45.37,
+        "mape_pct": 6.77,
+        "test_rows": 600
+      }
+    },
+    "water": {
+      "intercept": 14.77638,
+      "coef": {
+        "people": 3.03467,
+        "infants": 0.98496,
+        "elderly": 0.86653,
+        "pregnant": 0.63089,
+        "injured": 0.40827,
+        "water_source": -6.7847,
+        "days_since_aid": -3.49242,
+        "people_x_water_source": -1.44827,
+        "people_x_days": 0.00265
+      },
+      "metrics": {
+        "r2": 0.9773,
+        "mae": 102.29,
+        "mape_pct": 6.73,
+        "test_rows": 600
+      }
+    },
+    "meds": {
+      "intercept": 0.00464,
+      "coef": {
+        "people": 0.03341,
+        "infants": 0.10383,
+        "elderly": 0.00202,
+        "pregnant": 0.23615,
+        "injured": 0.49926,
+        "water_source": -0.15693,
+        "days_since_aid": -0.03436,
+        "people_x_water_source": 0.00021,
+        "people_x_days": 5e-05
+      },
+      "metrics": {
+        "r2": 0.9736,
+        "mae": 2.15,
+        "mape_pct": 6.65,
+        "test_rows": 600
+      }
+    }
+  }
+}

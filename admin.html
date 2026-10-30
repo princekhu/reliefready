@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="icon.svg">
+<title>ReliefReady Control Room</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="assets/leaflet.css">
+<link rel="stylesheet" href="assets/common.css">
+<style>
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-top:16px}
+.kpi{background:var(--surface);padding:12px 14px;display:flex;flex-direction:column;gap:2px}
+.kpi b{font:600 24px/1.1 var(--f-mono);font-variant-numeric:tabular-nums}
+.kpi span{font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.kpi.alert b{color:var(--bad)}
+.top{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,4fr);gap:16px;margin-top:16px}
+.top .mapbox{height:460px;border-radius:var(--r);overflow:hidden;border:1px solid var(--line)}
+@media (max-width:960px){.top{grid-template-columns:minmax(0,1fr)}.top .mapbox{height:360px}}
+.feed{max-height:460px;overflow:auto}
+.prio{font:700 18px/1 var(--f-mono);min-width:34px;text-align:center;padding:5px 0;border-radius:4px;background:var(--sunk)}
+.prio.hi{background:var(--bad-bg);color:var(--bad)} .prio.mid{background:var(--warn-bg);color:var(--warn)}
+.feed li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;align-items:start}
+.tabpanel{padding:16px}
+.section{margin-top:16px}
+.drv{border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:8px;background:var(--surface)}
+.drvgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+.inline{display:flex;flex-wrap:wrap;gap:8px;align-items:end}
+.inline .field{min-width:120px;flex:1}
+.esc{border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.esc.crit{border-left:4px solid var(--bad)}
+.sitrep{white-space:pre-wrap;font:12.5px/1.55 var(--f-mono);background:var(--sunk);border:1px solid var(--line);border-radius:4px;padding:10px;margin:0;max-height:260px;overflow:auto}
+.rt-line{stroke:var(--accent)}
+</style>
+<style>[hidden]{display:none!important}img{max-width:100%}</style>
+</head>
+<body>
+
+
+<div id="root"></div>
+<script src="assets/leaflet.js"></script>
+<script src="assets/common.js"></script>
+<script>
+(function(){
+const root = document.getElementById('root');
+let S = RR.session();
+if(!S || S.role!=='admin'){ RR.renderSignIn(root, 'admin', s => { S = s; boot(); }); } else boot();
+
+function boot(){
+const $ = id => document.getElementById(id);
+root.innerHTML = `
+<header class="bar"><div class="wrap">
+  <a class="logo" href="index.html">${RR.logo}<b>ReliefReady</b><span>Control room · ${RR.esc(RR.CONFIG.district)}</span></a>
+  <span class="net" id="net">Online</span><span class="pill info" id="mode"></span>
+  <span class="grow"></span>
+  <a class="btn small" href="planner.html">Allocation planner</a>
+  <div class="who"><b>${RR.esc(S.name)}</b><button class="btn small" id="out">Sign out</button></div>
+</div></header>
+<main class="wrap">
+  <div class="kpis" id="kpis"></div>
+  <div class="top">
+    <div><div class="mapbox" id="map"></div><div class="vlegend" style="margin-top:8px"><span>${RR.vehSvg('truck')}Truck</span><span>${RR.vehSvg('jeep')}4x4 jeep</span><span class="b">${RR.vehSvg('boat')}Rescue boat</span><span><span class="pin sos" style="display:inline-block;width:12px;height:12px;vertical-align:-1px;margin-right:4px"></span>SOS</span><span><span class="pin stop" style="display:inline-block;width:12px;height:12px;vertical-align:-1px;margin-right:4px"></span>Planned stop</span></div></div>
+    <section class="panel"><div class="ph"><h2>Incoming SOS</h2><span class="sub">Highest priority first</span></div><div class="pb feed" id="feed"></div></section>
+  </div>
+  <section class="panel section">
+    <div class="tabs" role="tablist" id="tabs">
+      <button role="tab" data-tab="sos" aria-selected="true">SOS requests <span class="count" id="c-sos"></span></button>
+      <button role="tab" data-tab="fleet" aria-selected="false">Drivers and stops</button>
+      <button role="tab" data-tab="roads" aria-selected="false">Road conditions <span class="count" id="c-roads"></span></button>
+      <button role="tab" data-tab="esc" aria-selected="false">Help from authorities <span class="count" id="c-esc"></span></button>
+      <button role="tab" data-tab="sms" aria-selected="false">SMS inbox</button>
+      <button role="tab" data-tab="settings" aria-selected="false">Settings</button>
+    </div>
+    <div class="tabpanel" id="panel"></div>
+  </section>
+  <footer class="foot">ReliefReady prototype · Anvathon 2026. Requests from the SOS app, SMS line and driver relays arrive here. Help requests to agencies are tracked here and exported as a situation report for the official channel.</footer>
+</main>`;
+$('out').onclick = RR.signOut;
+RR.netBadge($('net'));
+
+let tab = 'sos'; try{ tab = sessionStorage.getItem('rr.tab') || 'sos'; }catch(e){}
+$('tabs').onclick = e => { const b = e.target.closest('[data-tab]'); if(!b) return; tab = b.dataset.tab; try{ sessionStorage.setItem('rr.tab', tab); }catch(e){} renderTab(); };
+
+const drivers = () => { const d = RR.store.all('drivers'); RR.ACCOUNTS.filter(a=>a.role==='driver').forEach(a => { if(!d.find(x=>x.id===a.id)) d.push({id:a.id,name:a.name,vehicle:a.vehicle,type:a.type,lat:RR.DEPOT.lat,lon:RR.DEPOT.lon,status:'not signed in',lastSeen:0}); }); return d; };
+const openSOS = () => RR.store.all('sos').filter(s=>s.status!=='served').sort((a,b)=>RR.sosPriority(b)-RR.sosPriority(a));
+const needTxt = s => (s.needs||[]).map(k=>RR.NEEDS.find(n=>n.k===k)?.en||k).join(', ');
+const chan = {app:'App',sms:'SMS',relay:'Relayed by driver'};
+const pcls = p => p>=70?'hi':p>=45?'mid':'';
+const ST = {new:['New','warn'],verified:['Verified','info'],assigned:['Assigned','info'],served:['Served','ok'],escalated:['Escalated','bad']};
+
+/* map */
+const map = RR.makeMap($('map'), {center:[11.62,76.09], zoom:11});
+const lay = L.layerGroup().addTo(map);
+function drawMap(){
+  lay.clearLayers();
+  L.marker([RR.DEPOT.lat,RR.DEPOT.lon],{icon:RR.icon('pin depot')}).bindPopup(`<b>${RR.DEPOT.name}</b>`).addTo(lay);
+  RR.store.all('reports').forEach(h => L.marker([h.lat,h.lon],{icon:RR.hzIcon(h)}).bindPopup(`<b>${RR.HAZ[h.type]?.label}</b><br>${RR.esc(h.note)}<br><span class="hint">${RR.esc(h.by)} · ${RR.ago(h.createdAt)}</span>`).addTo(lay));
+  RR.store.all('stops').filter(s=>s.status!=='delivered').forEach(s => L.marker([s.lat,s.lon],{icon:RR.icon('pin stop')}).bindPopup(`<b>${RR.esc(s.name)}</b><br>Driver ${RR.esc(s.driverId)} · ${s.status}`).addTo(lay));
+  openSOS().filter(s=>s.lat).forEach(s => L.marker([s.lat,s.lon],{icon:RR.icon('pin sos'+(RR.sosPriority(s)>=70?' pulse':''))}).bindPopup(`<b>SOS · ${RR.esc(s.place||'')}</b><br>Priority ${RR.sosPriority(s)} · ${s.people} people<br>${needTxt(s)}<br>${RR.esc(s.note||'')}`).addTo(lay));
+  drivers().forEach(d => { if(!d.lastSeen) return; L.marker([d.lat,d.lon],{icon:RR.vehIcon(d.type, d.name.split(' ')[0]), zIndexOffset:500}).bindPopup(`<b>${RR.esc(d.name)}</b><br>${RR.esc(d.vehicle)}<br>${RR.esc(d.status)} · ${RR.ago(d.lastSeen)}`).addTo(lay);
+    const next = RR.store.all('stops').filter(s=>s.driverId===d.id && (s.status==='pending'||s.status==='enroute')).sort((a,b)=>a.order-b.order)[0];
+    if(next) L.polyline([[d.lat,d.lon],[next.lat,next.lon]],{weight:2, dashArray:'4 6', className:'rt-line'}).addTo(lay); });
+}
+
+function renderKpis(){
+  const o = openSOS(), crit = o.filter(s=>RR.sosPriority(s)>=70).length, ppl = o.reduce((t,s)=>t+(+s.people||0),0);
+  const active = drivers().filter(d=>d.lastSeen && Date.now()-d.lastSeen<3600e3).length;
+  const escOpen = RR.store.all('escalations').filter(e=>e.status!=='resolved').length;
+  const unsafe = RR.store.all('reports').filter(r=>r.type!=='safe').length;
+  $('kpis').innerHTML = [[o.length,'Open SOS'],[crit,'Critical',crit>0],[ppl,'People waiting'],[active+' / '+drivers().length,'Drivers active'],[escOpen,'Open agency requests'],[unsafe,'Road hazards']]
+    .map(([b,s,a])=>`<div class="kpi ${a?'alert':''}"><b>${b}</b><span>${s}</span></div>`).join('');
+  $('c-sos').textContent = o.filter(s=>s.status==='new').length || ''; $('c-roads').textContent = unsafe||''; $('c-esc').textContent = RR.store.all('escalations').filter(e=>e.status==='sent').length || '';
+  $('mode').textContent = RR.store.mode==='shared' ? 'Shared live data' : 'This device';
+}
+function renderFeed(){
+  const o = openSOS();
+  $('feed').innerHTML = o.length ? '<ul class="rows">'+o.slice(0,12).map(s=>{ const p = RR.sosPriority(s); return `<li><span class="prio ${pcls(p)}">${p}</span><div><div class="rowhead"><b>${RR.esc(s.place||'GPS location')}</b><span class="pill ${ST[s.status]?.[1]}">${ST[s.status]?.[0]}</span></div><span class="meta">${s.people} people${s.infants?' · '+s.infants+' infants':''}${s.injured?' · '+s.injured+' injured':''} · ${needTxt(s)} · ${chan[s.channel]||s.channel} · ${RR.ago(s.createdAt)}</span></div></li>`; }).join('')+'</ul>' : '<p class="hint">No open requests.</p>';
+}
+
+/* tabs */
+function renderTab(){
+  document.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', b.dataset.tab===tab));
+  if(document.activeElement && $('panel').contains(document.activeElement) && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
+  ({sos:tabSOS, fleet:tabFleet, roads:tabRoads, esc:tabEsc, sms:tabSMS, settings:tabSettings})[tab]();
+}
+const drvOpts = sel => drivers().map(d=>`<option value="${d.id}" ${d.id===sel?'selected':''}>${RR.esc(d.name)} · ${RR.esc(d.vehicle)}</option>`).join('');
+
+function tabSOS(){
+  const all = RR.store.all('sos').sort((a,b)=>(a.status==='served')-(b.status==='served') || RR.sosPriority(b)-RR.sosPriority(a));
+  $('panel').innerHTML = `<p class="hint" style="margin-bottom:10px">Priority (0–100) weighs need type (rescue and medical first), people, share of infants, elderly and injured, and waiting time. Assigning creates a stop in that driver's app with suggested quantities (3 L water and 1 food packet per person, 1 kit per infant).</p>
+  <div class="tw"><table><thead><tr><th>Priority</th><th>Location</th><th>Need</th><th>Source</th><th>Status</th><th>Action</th></tr></thead><tbody>${all.map(s=>{const p=RR.sosPriority(s); return `<tr>
+    <td><span class="prio ${pcls(p)}">${p}</span></td>
+    <td><b>${RR.esc(s.place||'GPS location')}</b><div class="meta mono">${s.lat?(+s.lat).toFixed(4)+', '+(+s.lon).toFixed(4):'no GPS'}</div>${s.note?`<div class="meta">${RR.esc(s.note)}</div>`:''}</td>
+    <td>${s.people} people · ${s.infants||0} inf · ${s.elderly||0} eld · ${s.injured||0} inj<div class="meta">${needTxt(s)}</div></td>
+    <td>${chan[s.channel]||s.channel}<div class="meta">${RR.ago(s.createdAt)}${s.relayedBy?' · via '+RR.esc(s.relayedBy):''}</div></td>
+    <td><span class="pill ${ST[s.status]?.[1]}">${ST[s.status]?.[0]}</span>${s.assignedTo?`<div class="meta">${RR.esc(s.assignedTo)}</div>`:''}</td>
+    <td>${s.status==='served'?'':`<div class="inline">${s.status==='new'?`<button class="btn small" data-verify="${s.id}">Verify</button>`:''}
+      <select aria-label="Driver" id="as-${s.id}" style="width:auto">${drvOpts(s.assignedTo)}</select><button class="btn small primary" data-assign="${s.id}">Assign</button>
+      <button class="btn small" data-escsos="${s.id}">Escalate</button><button class="btn small" data-served="${s.id}">Served</button></div>`}</td></tr>`;}).join('')}</tbody></table></div>`;
+}
+function tabFleet(){
+  $('panel').innerHTML = `<div class="drvgrid">${drivers().map(d=>{ const st = RR.store.all('stops').filter(s=>s.driverId===d.id).sort((a,b)=>(a.status==='delivered')-(b.status==='delivered')||a.order-b.order);
+    return `<div class="drv"><div class="rowhead"><span class="veh ${d.type||'truck'}" style="width:28px;height:28px;box-shadow:none">${RR.vehSvg(d.type)}</span><b>${RR.esc(d.name)}</b><span class="hint">${RR.esc(d.vehicle)}</span><span class="pill ${d.lastSeen&&Date.now()-d.lastSeen<3600e3?'ok':''}" style="margin-left:auto">${RR.esc(d.status)}</span></div>
+    <span class="meta">${d.lastSeen?'Last update '+RR.ago(d.lastSeen):'Has not signed in'}</span>
+    <ul class="rows">${st.map((s,i)=>`<li><div class="rowhead"><span class="mono">${i+1}.</span><b>${RR.esc(s.name)}</b><span class="pill ${s.status==='delivered'?'ok':s.status==='unreachable'?'bad':s.status==='enroute'?'info':''}">${s.status}</span>${s.source==='driver'?'<span class="pill">Added by driver</span>':''}<button class="btn small" style="margin-left:auto" data-delstop="${s.id}">Remove</button></div>
+      <span class="meta">${s.items.water||0} L · ${s.items.food||0} food · ${s.items.infant||0} kits${s.given?` · given ${s.given.water}/${s.given.food}/${s.given.infant}`:''}${s.remark?' · '+RR.esc(s.remark):''}${s.note?' · '+RR.esc(s.note):''}</span></li>`).join('')||'<li class="hint">No stops.</li>'}</ul></div>`; }).join('')}</div>
+  <div class="section"><div class="lbl" style="margin-bottom:8px">Add a stop</div><div class="inline">
+    <div class="field"><label for="ns-d">Driver</label><select id="ns-d">${drvOpts()}</select></div>
+    <div class="field"><label for="ns-n">Place</label><input type="text" id="ns-n" placeholder="Muttil relief camp"></div>
+    <div class="field"><label for="ns-lat">Latitude</label><input type="number" step="0.0001" id="ns-lat" value="11.6745"></div>
+    <div class="field"><label for="ns-lon">Longitude</label><input type="number" step="0.0001" id="ns-lon" value="76.1310"></div>
+    <div class="field"><label for="ns-w">Water L</label><input type="number" id="ns-w" value="200"></div>
+    <div class="field"><label for="ns-f">Food</label><input type="number" id="ns-f" value="120"></div>
+    <div class="field"><label for="ns-i">Infant kits</label><input type="number" id="ns-i" value="2"></div>
+    <button class="btn primary" id="ns-add">Add stop</button></div><p class="hint" style="margin-top:6px">Tip: click the map to fill latitude and longitude.</p></div>`;
+  $('ns-add').onclick = () => { const d = $('ns-d').value, n = $('ns-n').value.trim(); if(!n){ RR.toast('Enter a place name.'); return; }
+    const max = Math.max(0,...RR.store.all('stops').filter(s=>s.driverId===d).map(s=>s.order));
+    RR.store.put('stops',{driverId:d,name:n,lat:+$('ns-lat').value,lon:+$('ns-lon').value,items:{water:+$('ns-w').value||0,food:+$('ns-f').value||0,infant:+$('ns-i').value||0},order:max+1,status:'pending',note:'',source:'admin',createdAt:Date.now()});
+    RR.toast('Stop sent to the driver'); };
+}
+map.on('click', e => { if(tab==='fleet' && $('ns-lat')){ $('ns-lat').value = e.latlng.lat.toFixed(4); $('ns-lon').value = e.latlng.lng.toFixed(4); } });
+
+function tabRoads(){
+  const r = RR.store.all('reports').sort((a,b)=>b.createdAt-a.createdAt);
+  $('panel').innerHTML = `<p class="hint" style="margin-bottom:10px">Reports from drivers. Every driver's route options are checked against these within ${RR.CONFIG.hazardRadiusM} m. Mark a hazard cleared once the road is open again.</p>
+  <ul class="rows">${r.map(h=>`<li><div class="rowhead"><span class="pill ${h.type==='safe'?'ok':RR.HAZ[h.type]?.sev>=3?'bad':'warn'}">${RR.HAZ[h.type]?.label}</span><b>${RR.esc(h.note||'')}</b><button class="btn small" style="margin-left:auto" data-clear="${h.id}">${h.type==='safe'?'Remove':'Mark cleared'}</button></div><span class="meta">${RR.esc(h.by)} · ${RR.ago(h.createdAt)} · <span class="mono">${(+h.lat).toFixed(4)}, ${(+h.lon).toFixed(4)}</span></span></li>`).join('')||'<li class="hint">No reports.</li>'}</ul>`;
+}
+
+const AGENCIES = ['State EOC (KSDMA)','NDRF','Fire & Rescue','Health / 108 ambulance','Air support (IAF / Navy)','Army engineers (bridge)','District control room'];
+const TYPES = ['Boat evacuation','Airlift / air drop','Medical evacuation','Rescue team','Bridge / road clearing','More supplies','Fuel / vehicle breakdown'];
+let escDraft = null;
+function tabEsc(){
+  const list = RR.store.all('escalations').sort((a,b)=>(a.status==='resolved')-(b.status==='resolved')||b.createdAt-a.createdAt);
+  const d = escDraft || {};
+  $('panel').innerHTML = `<div class="grid2" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:20px">
+  <div class="stack"><div class="lbl">New request to a higher authority</div>
+    <div class="grid2"><div class="field"><label for="e-to">Send to</label><select id="e-to">${AGENCIES.map(a=>`<option ${a===d.to?'selected':''}>${a}</option>`).join('')}</select></div>
+      <div class="field"><label for="e-type">Help needed</label><select id="e-type">${TYPES.map(a=>`<option ${a===d.type?'selected':''}>${a}</option>`).join('')}</select></div>
+      <div class="field"><label for="e-urg">Urgency</label><select id="e-urg">${['Critical','High','Medium'].map(a=>`<option ${a===(d.urgency||'High')?'selected':''}>${a}</option>`).join('')}</select></div></div>
+    <div class="grid2"><div class="field"><label for="e-place">Location</label><input type="text" id="e-place" value="${RR.esc(d.place||'')}"></div><div class="field"><label for="e-people">People affected</label><input type="number" id="e-people" value="${d.people||0}"></div></div>
+    <div class="field"><label for="e-note">Situation and justification</label><textarea id="e-note" rows="4">${RR.esc(d.note||'')}</textarea></div>
+    <div class="btns"><button class="btn danger" id="e-send">Send request</button></div>
+    <p class="hint">The request is logged with a timeline. Use “Copy situation report” to send the same text through the official channel (email, NDMA portal or WhatsApp group) until direct integration exists.</p></div>
+  <div class="stack"><div class="lbl">Requests and responses</div>${list.map(e=>`<div class="esc ${e.urgency==='Critical'?'crit':''}">
+    <div class="rowhead"><b>${RR.esc(e.type)}</b><span class="hint">→ ${RR.esc(e.to)}</span>${escPill(e.status)}<span class="pill ${e.urgency==='Critical'?'bad':e.urgency==='High'?'warn':''}">${e.urgency}</span></div>
+    <span class="meta">${RR.esc(e.place)} · ${e.people} people · raised by ${e.from==='driver'?'driver '+RR.esc(e.by):'control room'} · ${RR.ago(e.createdAt)}</span>
+    ${e.note?`<div style="font-size:13.5px">${RR.esc(e.note)}</div>`:''}
+    <ul class="timeline">${(e.timeline||[]).map(t=>`<li><time>${RR.clock(t.t)}</time><b>${t.s}</b> ${RR.esc(t.n||'')}</li>`).join('')}</ul>
+    <div class="btns">${e.status!=='resolved'?`${e.status==='sent'?`<button class="btn small" data-adv="${e.id}" data-to="acknowledged">Mark acknowledged</button>`:''}${e.status!=='dispatched'?`<button class="btn small" data-adv="${e.id}" data-to="dispatched">Help dispatched</button>`:''}<button class="btn small" data-adv="${e.id}" data-to="resolved">Resolved</button><button class="btn small" data-fwd="${e.id}">Forward higher</button>`:''}<button class="btn small" data-sitrep="${e.id}">Copy situation report</button></div>
+  </div>`).join('')||'<p class="hint">No requests yet.</p>'}</div></div>`;
+  $('e-send').onclick = () => {
+    const place = $('e-place').value.trim(); if(!place){ RR.toast('Add the location.'); return; }
+    RR.store.put('escalations',{from:'admin',by:S.id,to:$('e-to').value,type:$('e-type').value,place,lat:d.lat||null,lon:d.lon||null,people:+$('e-people').value||0,urgency:$('e-urg').value,note:$('e-note').value,status:'sent',createdAt:Date.now(),timeline:[{t:Date.now(),s:'sent',n:'Sent to '+$('e-to').value+' by '+S.name}]});
+    if(d.sosId && RR.store.get('sos',d.sosId)) RR.store.patch('sos', d.sosId, {status:'escalated'});
+    escDraft = null; RR.toast('Request sent and logged'); tabEsc();
+  };
+}
+function sitrep(e){
+  const o = openSOS();
+  return `SITUATION REPORT — ${RR.CONFIG.district}\n${new Date().toLocaleString('en-IN')}\nFrom: ${S.name} (${S.id})\nTo: ${e.to}\n\nREQUEST: ${e.type} — ${e.urgency.toUpperCase()}\nLocation: ${e.place}${e.lat?` (${(+e.lat).toFixed(5)}, ${(+e.lon).toFixed(5)})`:''}\nPeople affected: ${e.people}\n${e.note?'Details: '+e.note+'\n':''}\nDISTRICT PICTURE\nOpen SOS: ${o.length} (${o.filter(s=>RR.sosPriority(s)>=70).length} critical), ${o.reduce((t,s)=>t+(+s.people||0),0)} people waiting\nRoad hazards: ${RR.store.all('reports').filter(r=>r.type!=='safe').map(r=>RR.HAZ[r.type].label+' — '+(r.note||'')).join('; ')||'none'}\n\nReference: ${e.id}`;
+}
+
+function tabSMS(){
+  $('panel').innerHTML = `<div class="grid2" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:20px"><div class="stack">
+    <p class="hint">SOS messages sent by SMS arrive at the gateway number <b class="mono">${RR.esc(RR.CONFIG.smsGateway)}</b>. With an SMS gateway (e.g. an Android phone running an SMS-forwarding app, or a bulk-SMS provider's inbound webhook) they are added automatically. For the demo, paste received SMS text here.</p>
+    <div class="field"><label for="smsIn">Received SMS text (one or many)</label><textarea id="smsIn" rows="6" placeholder="RR1 11.47720,76.14800 P12 I2 E3 J1 NRMW T2610301830 | Mundakkai school terrace"></textarea></div>
+    <div class="btns"><button class="btn primary" id="smsAdd">Add to SOS requests</button><button class="btn" id="smsSample">Insert a sample SMS</button></div></div>
+    <div class="stack"><div class="lbl">Code format (fits one SMS)</div><pre class="sitrep">RR1 lat,lon P# I# E# J# N(needs) T(yymmddhhmm UTC) [C phone] | landmark. note
+P people · I infants · E elderly · J injured
+Needs: R rescue · M medical · W water · F food · B baby/infant · S shelter</pre></div></div>`;
+  $('smsSample').onclick = () => { $('smsIn').value = RR.encodeSOS({lat:11.6742,lon:76.1302,people:27,infants:2,elderly:6,injured:0,needs:['water','food','shelter'],createdAt:Date.now()-40*60e3,place:'Muttil, Kuttamangalam school',note:'Roof leaking, 6 elderly'}); };
+  $('smsAdd').onclick = () => { const found = $('smsIn').value.split(/(?=RR1\s)/).map(RR.decodeSOS).filter(Boolean);
+    if(!found.length){ RR.toast('No ReliefReady code found. Codes start with RR1.'); return; }
+    found.forEach(s => RR.store.put('sos', {...s, channel:'sms', status:'new'})); $('smsIn').value=''; RR.toast(found.length+' SOS added from SMS'); };
+}
+function tabSettings(){
+  $('panel').innerHTML = `<div class="stack" style="max-width:560px">
+    <div class="field"><label for="cfg-sms">SMS gateway number shown in the SOS app</label><input type="tel" id="cfg-sms" value="${RR.esc(RR.CONFIG.smsGateway)}"></div>
+    <div class="btns"><button class="btn primary" id="cfg-save">Save</button></div>
+    <p class="hint">Data mode: <b>${RR.store.mode==='shared'?'shared live database (all viewers of this page see the same data)':'this device (pages in this browser stay in sync)'}</b>.</p>
+    ${RR.store.mode==='local'?'<div class="btns"><button class="btn" id="cfg-reset">Reset demo data</button></div>':''}</div>`;
+  $('cfg-save').onclick = () => { RR.saveConfig({smsGateway:$('cfg-sms').value.trim()||RR.CONFIG.smsGateway}); RR.toast('Saved for this browser'); };
+  const r = $('cfg-reset'); if(r) r.onclick = () => { RR.store.reset(); RR.toast('Demo data restored'); };
+}
+window.escPill = s => ({sent:'<span class="pill warn">Awaiting response</span>',acknowledged:'<span class="pill info">Acknowledged</span>',dispatched:'<span class="pill info">Help dispatched</span>',resolved:'<span class="pill ok">Resolved</span>'}[s]||'');
+
+document.addEventListener('click', e => {
+  const b = e.target.closest('button'); if(!b) return; const D = b.dataset;
+  if(D.verify) RR.store.patch('sos', D.verify, {status:'verified'});
+  else if(D.served) RR.store.patch('sos', D.served, {status:'served'});
+  else if(D.assign){ const s = RR.store.get('sos', D.assign), drv = $('as-'+s.id).value; if(!s.lat){ RR.toast('This request has no GPS position. Add a stop manually in Drivers and stops.'); return; }
+    const max = Math.max(0,...RR.store.all('stops').filter(x=>x.driverId===drv).map(x=>x.order));
+    RR.store.put('stops',{driverId:drv,name:s.place||'SOS location',lat:s.lat,lon:s.lon,items:{water:(s.people||0)*3,food:s.people||0,infant:s.infants||0},order:max+1,status:'pending',note:`SOS: ${needTxt(s)}. ${s.note||''}`.trim(),source:'sos',sosId:s.id,createdAt:Date.now()});
+    RR.store.patch('sos', s.id, {status:'assigned', assignedTo:drv}); RR.toast('Assigned. It is now in the driver\'s stop list.'); }
+  else if(D.escsos){ const s = RR.store.get('sos', D.escsos); escDraft = {to:(s.needs||[]).includes('rescue')?'NDRF':(s.needs||[]).includes('medical')?'Health / 108 ambulance':'State EOC (KSDMA)', type:(s.needs||[]).includes('rescue')?'Rescue team':(s.needs||[]).includes('medical')?'Medical evacuation':'More supplies', urgency:RR.sosPriority(s)>=70?'Critical':'High', place:s.place||'GPS location', people:s.people, note:`${s.people} people (${s.infants||0} infants, ${s.elderly||0} elderly, ${s.injured||0} injured). Needs: ${needTxt(s)}. ${s.note||''}`, lat:s.lat, lon:s.lon, sosId:s.id};
+    tab='esc'; renderTab(); $('e-note').focus(); }
+  else if(D.delstop) RR.store.del('stops', D.delstop);
+  else if(D.clear) RR.store.del('reports', D.clear);
+  else if(D.adv){ const e = RR.store.get('escalations', D.adv); const lbl = {acknowledged:'Acknowledged by '+e.to, dispatched:'Help dispatched by '+e.to, resolved:'Closed by control room'}[D.to];
+    RR.store.put('escalations', {...e, status:D.to, timeline:[...(e.timeline||[]), {t:Date.now(), s:D.to, n:lbl}]}); }
+  else if(D.fwd){ const e = RR.store.get('escalations', D.fwd); const order = ['District control room','State EOC (KSDMA)','NDRF','Air support (IAF / Navy)']; const i = order.indexOf(e.to); const nx = i<0 ? 'State EOC (KSDMA)' : order[Math.min(order.length-1, i+1)];
+    RR.store.put('escalations', {...e, to:nx, status:'sent', timeline:[...(e.timeline||[]), {t:Date.now(), s:'forwarded', n:'Forwarded to '+nx+' — no adequate response from '+e.to}]}); }
+  else if(D.sitrep){ RR.copy(sitrep(RR.store.get('escalations', D.sitrep)), b); }
+});
+
+function render(){ renderKpis(); drawMap(); renderFeed(); renderTab(); }
+RR.store.on(render); render();
+}
+})();
+</script>
+
+</body>
+</html>

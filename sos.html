@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="icon.svg">
+<title>ReliefReady SOS</title>
+<meta name="theme-color" content="#C42E12">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="assets/common.css">
+<style>
+body{font-size:16px}
+body:lang(hi){font-family:"Noto Sans Devanagari",var(--f-body)}
+.sosmain{max-width:680px;margin:0 auto;padding-block:18px 40px;display:flex;flex-direction:column;gap:16px}
+.hero{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.big{text-align:left;border-radius:8px;border:0;padding:18px 14px;font:800 22px/1.1 var(--f-display);font-stretch:85%;cursor:pointer;text-decoration:none;display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-height:104px;justify-content:space-between}
+.big small{font:500 13px/1.35 var(--f-body);opacity:.92}
+.big.call{background:var(--ink);color:var(--bg)}
+.big.send{background:var(--sos);color:var(--sos-ink)}
+@media (max-width:420px){.hero{grid-template-columns:1fr}}
+.callrow{display:flex;flex-wrap:wrap;gap:8px;font-size:13.5px}
+.needs{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.need{display:flex;align-items:center;gap:10px;padding:12px;border:1.5px solid var(--line);border-radius:6px;background:var(--sunk);cursor:pointer;font-weight:600;text-align:left}
+.need[aria-pressed=true]{border-color:var(--sos);background:var(--sos-soft);color:var(--ink)}
+.need .box{width:20px;height:20px;border:2px solid var(--muted);border-radius:4px;flex:none;display:grid;place-items:center}
+.need[aria-pressed=true] .box{background:var(--sos);border-color:var(--sos)}
+.need[aria-pressed=true] .box::after{content:"";width:9px;height:5px;border:2.5px solid var(--sos-ink);border-top:0;border-right:0;transform:rotate(-45deg) translate(1px,-1px)}
+.counts{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.stepper{display:flex;flex-direction:column;gap:4px}
+.stepper div{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--sunk)}
+.stepper button{border:0;background:var(--surface);font:700 22px var(--f-mono);cursor:pointer}
+.stepper input{border:0;text-align:center;font:600 20px var(--f-mono);background:transparent;padding:8px 0}
+.loc{display:flex;flex-direction:column;gap:8px}
+.locstate{font-family:var(--f-mono);font-size:14px;padding:10px 12px;background:var(--sunk);border:1px dashed var(--line);border-radius:5px}
+.sendbar{position:sticky;bottom:0;padding-block:10px calc(10px + env(safe-area-inset-bottom,0px));background:linear-gradient(to top,var(--bg) 70%,transparent)}
+.sendbar .btn{width:100%;padding:15px;font-size:18px}
+.channels{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.channels>li{display:grid;grid-template-columns:34px minmax(0,1fr);gap:4px 12px;padding:14px 0;border-bottom:1px solid var(--line)}
+.channels>li:last-child{border-bottom:0}
+.channels .n{font:700 20px/1 var(--f-display);color:var(--muted);padding-top:3px}
+.channels h3{font-size:17px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.channels .body{display:flex;flex-direction:column;gap:8px;min-width:0}
+.code{font:500 13.5px/1.5 var(--f-mono);background:var(--sunk);border:1px solid var(--line);border-radius:5px;padding:10px 12px;word-break:break-all;user-select:all}
+.qr{background:#fff;padding:10px;border-radius:6px;width:max-content;max-width:100%}
+.qr svg{display:block;width:200px;height:200px;max-width:100%}
+.strobe{position:fixed;inset:0;z-index:3000;background:#000;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:24px 16px calc(32px + env(safe-area-inset-bottom,0px))}
+.strobe.on{background:#fff;color:#000}
+.strobe button{font:700 18px var(--f-body);padding:14px 28px;border-radius:8px;border:2px solid currentColor;background:transparent;color:inherit}
+.lang{display:inline-flex}
+.mine .rows>li{gap:3px}
+.tips li{margin-bottom:6px}
+</style>
+<style>[hidden]{display:none!important}img{max-width:100%}</style>
+</head>
+<body>
+
+
+<header class="bar"><div class="wrap">
+  <a class="logo" href="index.html">${logo}<b>ReliefReady</b><span data-t="tag">Emergency help</span></a>
+  <span class="grow"></span>
+  <span class="net" id="net">Online</span>
+  <div class="seg lang" role="group" aria-label="Language"><button type="button" data-lang="en" aria-pressed="true">EN</button><button type="button" data-lang="hi" aria-pressed="false">हिं</button></div>
+</div></header>
+
+<main class="wrap sosmain">
+  <div class="hero">
+    <a class="big call" href="tel:112" id="call112"><span data-t="call">Call 112</span><small data-t="callsub">Emergency calls connect through any operator's tower in range, even if your own network shows no signal.</small></a>
+    <button class="big send" type="button" id="jump"><span data-t="sos">Send SOS</span><small data-t="sossub">Works with no internet. Goes by SMS, to a nearby phone, or to a rescuer's scanner.</small></button>
+  </div>
+  <div class="callrow"><a class="btn small" href="tel:1077" data-t="call1077">District control room 1077</a><button class="btn small" type="button" id="strobeBtn" data-t="signal">Flash light + whistle for rescuers</button></div>
+
+  <section class="panel" id="form" aria-labelledby="h-need">
+    <div class="ph"><h2 id="h-need" data-t="what">What do you need?</h2><span class="sub" data-t="pick">Tap all that apply</span></div>
+    <div class="pb stack">
+      <div class="needs" id="needs"></div>
+      <div>
+        <div class="lbl" style="margin-bottom:8px" data-t="who">How many people are with you?</div>
+        <div class="counts" id="counts"></div>
+      </div>
+      <div class="loc">
+        <div class="lbl" data-t="where">Where are you?</div>
+        <div class="locstate" id="locState">Location not added yet</div>
+        <div class="btns"><button type="button" class="btn primary" id="gps" data-t="gps">Use my GPS location</button></div>
+        <p class="hint" data-t="gpsnote">GPS works without mobile data. Indoors it can take a minute.</p>
+        <div class="field"><label for="place" data-t="landmark">Landmark or village</label><input type="text" id="place" placeholder="e.g. Mundakkai, behind the estate school"></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label for="phone" data-t="phone">Phone number (optional)</label><input type="tel" id="phone" inputmode="tel" placeholder="98xxxxxxxx"></div>
+      </div>
+      <div class="field"><label for="note" data-t="note">Anything rescuers should know</label><textarea id="note" maxlength="300" placeholder="e.g. 2 elderly cannot walk, water rising, roof access only"></textarea></div>
+    </div>
+  </section>
+
+  <section class="panel" id="delivery" hidden aria-labelledby="h-del">
+    <div class="ph"><h2 id="h-del" data-t="sent">Your SOS is ready</h2><span class="sub" id="delSub"></span></div>
+    <div class="pb"><ol class="channels" id="channels"></ol></div>
+  </section>
+
+  <section class="panel mine" aria-labelledby="h-mine">
+    <div class="ph"><h2 id="h-mine" data-t="mine">My requests</h2><span class="sub" data-t="minesub">Status updates when the control room acts</span></div>
+    <div class="pb" id="mine"></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-tips">
+    <div class="ph"><h2 id="h-tips" data-t="tips">Before the network goes</h2></div>
+    <div class="pb"><ul class="tips" style="margin:0;padding-left:18px">
+      <li>Open this page once while you have signal, then add it to your home screen. It keeps working offline afterwards.</li>
+      <li>Turn on battery saver and keep Bluetooth and location on. Bluetooth and Nearby Share do not need a network.</li>
+      <li>If one phone in your group has signal, send everyone's SOS from it: each person taps <b>Share to a nearby phone</b>.</li>
+      <li>At night or when you hear a helicopter, use <b>Flash light + whistle</b>. It flashes the SOS pattern (··· — — — ···).</li>
+    </ul></div>
+  </section>
+  <div class="sendbar" id="sendbar"><button class="btn danger" type="button" id="send" data-t="sendbtn">Send SOS now</button></div>
+</main>
+<div class="strobe" id="strobe" hidden><button type="button" id="stopStrobe">Stop signal</button></div>
+
+<script src="assets/qrcode.js"></script>
+<script src="assets/common.js"></script>
+<script>
+(function(){
+const $ = id => document.getElementById(id);
+document.querySelector('.logo').innerHTML = document.querySelector('.logo').innerHTML.replace('${logo}', RR.logo);
+RR.netBadge($('net'));
+
+/* i18n */
+const T = {
+ hi:{tag:'आपातकालीन सहायता',call:'112 पर कॉल करें',callsub:'आपातकालीन कॉल किसी भी कंपनी के नज़दीकी टावर से जुड़ जाती है, भले ही आपके नेटवर्क में सिग्नल न हो।',sos:'SOS भेजें',sossub:'इंटरनेट के बिना भी काम करता है। SMS, पास के फ़ोन या बचावकर्मी के स्कैनर से जाता है।',call1077:'ज़िला नियंत्रण कक्ष 1077',signal:'बचावकर्मियों के लिए रोशनी + सीटी',what:'आपको क्या चाहिए?',pick:'जो भी लागू हो, चुनें',who:'आपके साथ कितने लोग हैं?',where:'आप कहाँ हैं?',gps:'मेरी GPS लोकेशन लें',gpsnote:'GPS बिना मोबाइल डेटा के काम करता है। घर के अंदर एक मिनट लग सकता है।',landmark:'पहचान का स्थान या गाँव',phone:'फ़ोन नंबर (वैकल्पिक)',note:'बचावकर्मियों को और क्या जानना चाहिए',sent:'आपका SOS तैयार है',mine:'मेरे अनुरोध',minesub:'नियंत्रण कक्ष के कार्रवाई करने पर स्थिति बदलेगी',tips:'नेटवर्क जाने से पहले',sendbtn:'अभी SOS भेजें',people:'कुल लोग',infants:'शिशु (2 वर्ष से कम)',elderly:'बुज़ुर्ग / चल नहीं सकते',injured:'घायल'},
+ en:{people:'People in total',infants:'Infants (under 2)',elderly:'Elderly / cannot walk',injured:'Injured'}
+};
+const EN = {}; document.querySelectorAll('[data-t]').forEach(el => EN[el.dataset.t] = el.textContent);
+let lang = 'en'; try{ lang = localStorage.getItem('rr.lang') || 'en'; }catch(e){}
+const t = k => (T[lang]&&T[lang][k]) || T.en[k] || EN[k] || k;
+function applyLang(){
+  document.documentElement.lang = lang;
+  document.querySelectorAll('[data-t]').forEach(el => el.textContent = t(el.dataset.t));
+  document.querySelectorAll('[data-lang]').forEach(b => b.setAttribute('aria-pressed', b.dataset.lang===lang));
+  renderNeeds(); renderCounts();
+}
+document.querySelectorAll('[data-lang]').forEach(b => b.onclick = () => { lang = b.dataset.lang; try{ localStorage.setItem('rr.lang', lang); }catch(e){} applyLang(); });
+
+/* form state */
+const F = {needs:new Set(['water']), people:4, infants:0, elderly:0, injured:0, lat:null, lon:null, acc:null};
+function renderNeeds(){
+  $('needs').innerHTML = RR.NEEDS.map(n => `<button type="button" class="need" data-need="${n.k}" aria-pressed="${F.needs.has(n.k)}"><span class="box"></span>${lang==='hi'?n.hi:n.en}</button>`).join('');
+}
+function renderCounts(){
+  $('counts').innerHTML = ['people','infants','elderly','injured'].map(k => `<div class="stepper"><label class="lbl" for="c-${k}" style="text-transform:none;letter-spacing:0;font-size:13px">${t(k)}</label><div><button type="button" data-step="${k}" data-d="-1" aria-label="Fewer">−</button><input type="number" id="c-${k}" min="0" max="999" value="${F[k]}" data-count="${k}"><button type="button" data-step="${k}" data-d="1" aria-label="More">+</button></div></div>`).join('');
+}
+document.addEventListener('click', e => {
+  const n = e.target.closest('[data-need]'); if(n){ const k = n.dataset.need; F.needs.has(k)?F.needs.delete(k):F.needs.add(k); n.setAttribute('aria-pressed', F.needs.has(k)); return; }
+  const s = e.target.closest('[data-step]'); if(s){ const k = s.dataset.step; F[k] = Math.max(k==='people'?1:0, (F[k]|0) + +s.dataset.d); $('c-'+k).value = F[k]; }
+});
+document.addEventListener('change', e => { if(e.target.dataset.count){ const k=e.target.dataset.count; F[k]=Math.max(k==='people'?1:0, Math.round(+e.target.value||0)); e.target.value=F[k]; } });
+$('jump').onclick = () => $('form').scrollIntoView({behavior:'smooth'});
+
+/* GPS */
+function locText(){ $('locState').textContent = F.lat!=null ? `${F.lat.toFixed(5)}, ${F.lon.toFixed(5)}  ·  ±${Math.round(F.acc)} m` : 'Location not added yet'; }
+$('gps').onclick = () => {
+  if(!navigator.geolocation){ $('locState').textContent = 'This phone cannot share its location here. Type a landmark below.'; return; }
+  $('locState').textContent = 'Finding your position…';
+  navigator.geolocation.getCurrentPosition(p => { F.lat = p.coords.latitude; F.lon = p.coords.longitude; F.acc = p.coords.accuracy; locText(); },
+    err => { $('locState').textContent = err.code===1 ? 'Location permission was refused. Type a landmark below so rescuers can find you.' : 'Could not get a GPS fix. Move near a window or type a landmark below.'; },
+    {enableHighAccuracy:true, timeout:60000, maximumAge:120000});
+};
+
+/* send */
+let current = null;
+$('send').onclick = () => {
+  if(F.lat==null && !$('place').value.trim()){ RR.toast('Add your GPS location or a landmark first.'); $('gps').focus(); return; }
+  const s = {id:'sos-'+Date.now().toString(36), createdAt:Date.now(), lat:F.lat, lon:F.lon, place:$('place').value.trim(), people:F.people, infants:F.infants, elderly:F.elderly, injured:F.injured,
+    needs:[...F.needs], note:$('note').value.trim(), phone:$('phone').value.trim(), channel:'app', status:'new'};
+  s.code = RR.encodeSOS(s);
+  current = s;
+  try{ const m = JSON.parse(localStorage.getItem('rr.mine')||'[]'); m.unshift(s.id); localStorage.setItem('rr.mine', JSON.stringify(m.slice(0,20))); localStorage.setItem('rr.mine.'+s.id, JSON.stringify(s)); }catch(e){}
+  let net;
+  if(RR.online()){ RR.store.put('sos', s); net = 'sent'; } else { RR.outbox.add({col:'sos', doc:s}); net = 'queued'; }
+  renderDelivery(net);
+  $('delivery').hidden = false; $('delivery').scrollIntoView({behavior:'smooth'});
+  renderMine();
+};
+window.addEventListener('online', () => { if(current) renderDelivery('sent'); });
+
+function renderDelivery(net){
+  const s = current, code = s.code;
+  $('delSub').textContent = 'Reference '+s.id.slice(4).toUpperCase();
+  const sms = `sms:${RR.CONFIG.smsGateway}?body=${encodeURIComponent(code)}`;
+  let qr = ''; try{ const q = qrcode(0,'M'); q.addData(code); q.make(); qr = q.createSvgTag({cellSize:4, margin:2, scalable:true}); }catch(e){ qr=''; }
+  $('channels').innerHTML = `
+  <li><span class="n">1</span><div class="body"><h3>Internet ${net==='sent'?'<span class="pill ok">Delivered to control room</span>':'<span class="pill warn">No signal, queued</span>'}</h3>
+    <p class="hint">${net==='sent'?'The district control room can see your request and location now.':'Saved on this phone. It sends by itself the moment any data signal returns. Use the options below meanwhile.'}</p></div></li>
+  <li><span class="n">2</span><div class="body"><h3>SMS <span class="pill info">Needs only 1 bar of 2G</span></h3>
+    <p class="hint">Sends this short code to the ReliefReady SMS line (${RR.esc(RR.CONFIG.smsGateway)}). The control room reads it automatically.</p>
+    <div class="code" id="code">${RR.esc(code)}</div>
+    <div class="btns"><a class="btn primary" href="${sms}">Send as SMS</a><button type="button" class="btn" id="copyCode">Copy code</button></div></div></li>
+  <li><span class="n">3</span><div class="body"><h3>Share to a nearby phone <span class="pill info">Bluetooth · Nearby/Quick Share · WhatsApp</span></h3>
+    <p class="hint">No network at all? Pass your SOS to anyone nearby, over Bluetooth or Quick Share. Whoever reaches signal first forwards it. Aid drivers carry these out automatically.</p>
+    <div class="btns"><button type="button" class="btn primary" id="share">Share to a nearby phone</button></div></div></li>
+  <li><span class="n">4</span><div class="body"><h3>Show to a rescuer or aid driver</h3>
+    <p class="hint">Rescue teams and ReliefReady drivers scan this code. It holds your full request, so it works with no signal on either phone.</p>
+    ${qr?`<div class="qr" role="img" aria-label="QR code of your SOS">${qr}</div>`:''}</div></li>`;
+  $('copyCode').onclick = e => RR.copy(code, e.target);
+  $('share').onclick = async () => {
+    const text = `SOS from ReliefReady. Please forward to ${RR.CONFIG.smsGateway} by SMS or to the district control room (1077):\n${code}`;
+    try{
+      if(navigator.share){
+        let files; try{ files = [new File([text], 'SOS-'+s.id.slice(4)+'.txt', {type:'text/plain'})]; }catch(e){}
+        if(files && navigator.canShare && navigator.canShare({files})) await navigator.share({title:'SOS', text, files});
+        else await navigator.share({title:'SOS', text});
+      } else { RR.copy(text); RR.toast('Sharing is not available here. The SOS text is copied; paste it into Bluetooth or a message.'); }
+    }catch(e){ if(e && e.name!=='AbortError') { RR.copy(text); RR.toast('Sharing was blocked here. The SOS text is copied instead.'); } }
+  };
+}
+
+/* my requests */
+const STATUS = {new:['Received, waiting for review','warn'], verified:['Verified by control room','info'], assigned:['Help assigned, vehicle on the way','info'], served:['Aid delivered','ok'], escalated:['Sent to rescue agencies','bad']};
+function renderMine(){
+  let ids = []; try{ ids = JSON.parse(localStorage.getItem('rr.mine')||'[]'); }catch(e){}
+  const out = RR.outbox.all().map(x=>x.doc.id);
+  if(!ids.length){ $('mine').innerHTML = '<p class="hint">No requests sent from this phone yet.</p>'; return; }
+  $('mine').innerHTML = '<ul class="rows">'+ids.map(id => {
+    let s = RR.store.get('sos', id); let local = null; try{ local = JSON.parse(localStorage.getItem('rr.mine.'+id)||'null'); }catch(e){}
+    s = s || local; if(!s) return '';
+    const st = out.includes(id) ? ['Queued on this phone, no signal yet','warn'] : (STATUS[s.status]||STATUS.new);
+    return `<li><div class="rowhead"><b>${RR.esc(s.place||'GPS '+(s.lat||0).toFixed(3)+', '+(s.lon||0).toFixed(3))}</b><span class="pill ${st[1]}">${st[0]}</span></div>
+      <span class="meta">${s.people} people · ${(s.needs||[]).map(k=>RR.NEEDS.find(n=>n.k===k)?.en).join(', ')} · ${RR.ago(s.createdAt)}</span></li>`;
+  }).join('')+'</ul>';
+}
+RR.store.on(renderMine);
+
+/* strobe + whistle in SOS pattern */
+let strobeTimer = null, ac = null;
+const PATTERN = [1,1,1,1,1,3, 3,1,3,1,3,3, 1,1,1,1,1,7]; // on/off units: S O S gap
+$('strobeBtn').onclick = () => {
+  $('strobe').hidden = false;
+  try{ document.documentElement.requestFullscreen && document.documentElement.requestFullscreen().catch(()=>{}); }catch(e){}
+  try{ ac = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ ac = null; }
+  let i = 0; const unit = 220;
+  const tick = () => {
+    const on = i%2===0, d = PATTERN[i%PATTERN.length]*unit;
+    $('strobe').classList.toggle('on', on);
+    if(on && ac){ const o = ac.createOscillator(), g = ac.createGain(); o.frequency.value = 3150; g.gain.value = .5; o.connect(g).connect(ac.destination); o.start(); o.stop(ac.currentTime + d/1000); }
+    i++; strobeTimer = setTimeout(tick, d);
+  };
+  tick();
+};
+$('stopStrobe').onclick = () => { clearTimeout(strobeTimer); $('strobe').hidden = true; try{ ac && ac.close(); }catch(e){} try{ document.fullscreenElement && document.exitFullscreen(); }catch(e){} };
+
+applyLang(); renderMine(); RR.outbox.flush();
+})();
+</script>
+
+</body>
+</html>
