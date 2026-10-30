@@ -60,7 +60,7 @@ root.innerHTML = `
 <main class="wrap">
   <div class="kpis" id="kpis"></div>
   <div class="top">
-    <div><div class="mapbox" id="map"></div><div class="vlegend" style="margin-top:8px"><span>${RR.vehSvg('truck')}Truck</span><span>${RR.vehSvg('jeep')}4x4 jeep</span><span class="b">${RR.vehSvg('boat')}Rescue boat</span><span><span class="pin sos" style="display:inline-block;width:12px;height:12px;vertical-align:-1px;margin-right:4px"></span>SOS</span><span><span class="pin stop" style="display:inline-block;width:12px;height:12px;vertical-align:-1px;margin-right:4px"></span>Planned stop</span></div></div>
+    <div><div class="mapbox" id="map"></div><div class="vlegend" style="margin-top:8px"><span>${RR.vehSvg('truck')}Truck</span><span>${RR.vehSvg('jeep')}4x4 jeep</span><span class="b">${RR.vehSvg('boat')}Rescue boat</span><span><span class="pin sos" style="display:inline-block;width:12px;height:12px;vertical-align:-1px;margin-right:4px"></span>SOS</span><span><span class="pin stop" style="display:inline-block;width:12px;height:12px;vertical-align:-1px;margin-right:4px"></span>Planned stop</span></div><div class="vlegend" style="margin-top:4px">${RR.zoneLegend()}</div></div>
     <section class="panel"><div class="ph"><h2>Incoming SOS</h2><span class="sub">Highest priority first</span></div><div class="pb feed" id="feed"></div></section>
   </div>
   <section class="panel section">
@@ -68,6 +68,7 @@ root.innerHTML = `
       <button role="tab" data-tab="sos" aria-selected="true">SOS requests <span class="count" id="c-sos"></span></button>
       <button role="tab" data-tab="fleet" aria-selected="false">Drivers and stops</button>
       <button role="tab" data-tab="roads" aria-selected="false">Road conditions <span class="count" id="c-roads"></span></button>
+      <button role="tab" data-tab="zones" aria-selected="false">Impact zones</button>
       <button role="tab" data-tab="esc" aria-selected="false">Help from authorities <span class="count" id="c-esc"></span></button>
       <button role="tab" data-tab="sms" aria-selected="false">SMS inbox</button>
       <button role="tab" data-tab="settings" aria-selected="false">Settings</button>
@@ -93,6 +94,7 @@ const ST = {new:['New','warn'],verified:['Verified','info'],assigned:['Assigned'
 const map = RR.makeMap($('map'), {center:[11.62,76.09], zoom:11});
 const lay = L.layerGroup().addTo(map);
 function drawMap(){
+  RR.drawZones(map);
   lay.clearLayers();
   L.marker([RR.DEPOT.lat,RR.DEPOT.lon],{icon:RR.icon('pin depot')}).bindPopup(`<b>${RR.DEPOT.name}</b>`).addTo(lay);
   RR.store.all('reports').forEach(h => L.marker([h.lat,h.lon],{icon:RR.hzIcon(h)}).bindPopup(`<b>${RR.HAZ[h.type]?.label}</b><br>${RR.esc(h.note)}<br><span class="hint">${RR.esc(h.by)} · ${RR.ago(h.createdAt)}</span>`).addTo(lay));
@@ -108,21 +110,22 @@ function renderKpis(){
   const active = drivers().filter(d=>d.lastSeen && Date.now()-d.lastSeen<3600e3).length;
   const escOpen = RR.store.all('escalations').filter(e=>e.status!=='resolved').length;
   const unsafe = RR.store.all('reports').filter(r=>r.type!=='safe').length;
-  $('kpis').innerHTML = [[o.length,'Open SOS'],[crit,'Critical',crit>0],[ppl,'People waiting'],[active+' / '+drivers().length,'Drivers active'],[escOpen,'Open agency requests'],[unsafe,'Road hazards']]
+  const inZone = o.filter(s=>RR.impactZoneAt(s)).reduce((t,s)=>t+(+s.people||0),0);
+  $('kpis').innerHTML = [[o.length,'Open SOS'],[crit,'Critical',crit>0],[ppl,'People waiting'],[inZone,'People in impact zones',inZone>0],[active+' / '+drivers().length,'Drivers active'],[escOpen,'Open agency requests'],[unsafe,'Road hazards']]
     .map(([b,s,a])=>`<div class="kpi ${a?'alert':''}"><b>${b}</b><span>${s}</span></div>`).join('');
   $('c-sos').textContent = o.filter(s=>s.status==='new').length || ''; $('c-roads').textContent = unsafe||''; $('c-esc').textContent = RR.store.all('escalations').filter(e=>e.status==='sent').length || '';
   $('mode').textContent = RR.store.mode==='shared' ? 'Shared live data' : 'This device';
 }
 function renderFeed(){
   const o = openSOS();
-  $('feed').innerHTML = o.length ? '<ul class="rows">'+o.slice(0,12).map(s=>{ const p = RR.sosPriority(s); return `<li><span class="prio ${pcls(p)}">${p}</span><div><div class="rowhead"><b>${RR.esc(s.place||'GPS location')}</b><span class="pill ${ST[s.status]?.[1]}">${ST[s.status]?.[0]}</span></div><span class="meta">${s.people} people${s.infants?' · '+s.infants+' infants':''}${s.injured?' · '+s.injured+' injured':''} · ${needTxt(s)} · ${chan[s.channel]||s.channel} · ${RR.ago(s.createdAt)}</span></div></li>`; }).join('')+'</ul>' : '<p class="hint">No open requests.</p>';
+  $('feed').innerHTML = o.length ? '<ul class="rows">'+o.slice(0,12).map(s=>{ const p = RR.sosPriority(s); return `<li><span class="prio ${pcls(p)}">${p}</span><div><div class="rowhead"><b>${RR.esc(s.place||'GPS location')}</b><span class="pill ${ST[s.status]?.[1]}">${ST[s.status]?.[0]}</span>${RR.zonePill(s)}</div><span class="meta">${s.people} people${s.infants?' · '+s.infants+' infants':''}${s.injured?' · '+s.injured+' injured':''} · ${needTxt(s)} · ${chan[s.channel]||s.channel} · ${RR.ago(s.createdAt)}</span></div></li>`; }).join('')+'</ul>' : '<p class="hint">No open requests.</p>';
 }
 
 /* tabs */
 function renderTab(){
   document.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', b.dataset.tab===tab));
   if(document.activeElement && $('panel').contains(document.activeElement) && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
-  ({sos:tabSOS, fleet:tabFleet, roads:tabRoads, esc:tabEsc, sms:tabSMS, settings:tabSettings})[tab]();
+  ({sos:tabSOS, fleet:tabFleet, roads:tabRoads, zones:tabZones, esc:tabEsc, sms:tabSMS, settings:tabSettings})[tab]();
 }
 const drvOpts = sel => drivers().map(d=>`<option value="${d.id}" ${d.id===sel?'selected':''}>${RR.esc(d.name)} · ${RR.esc(d.vehicle)}</option>`).join('');
 
@@ -134,7 +137,7 @@ function tabSOS(){
     <td><b>${RR.esc(s.place||'GPS location')}</b><div class="meta mono">${s.lat?(+s.lat).toFixed(4)+', '+(+s.lon).toFixed(4):'no GPS'}</div>${s.note?`<div class="meta">${RR.esc(s.note)}</div>`:''}</td>
     <td>${s.people} people · ${s.infants||0} inf · ${s.elderly||0} eld · ${s.injured||0} inj<div class="meta">${needTxt(s)}</div></td>
     <td>${chan[s.channel]||s.channel}<div class="meta">${RR.ago(s.createdAt)}${s.relayedBy?' · via '+RR.esc(s.relayedBy):''}</div></td>
-    <td><span class="pill ${ST[s.status]?.[1]}">${ST[s.status]?.[0]}</span>${s.assignedTo?`<div class="meta">${RR.esc(s.assignedTo)}</div>`:''}</td>
+    <td><span class="pill ${ST[s.status]?.[1]}">${ST[s.status]?.[0]}</span>${RR.zonePill(s)}${s.assignedTo?`<div class="meta">${RR.esc(s.assignedTo)}</div>`:''}</td>
     <td>${s.status==='served'?'':`<div class="inline">${s.status==='new'?`<button class="btn small" data-verify="${s.id}">Verify</button>`:''}
       <select aria-label="Driver" id="as-${s.id}" style="width:auto">${drvOpts(s.assignedTo)}</select><button class="btn small primary" data-assign="${s.id}">Assign</button>
       <button class="btn small" data-escsos="${s.id}">Escalate</button><button class="btn small" data-served="${s.id}">Served</button></div>`}</td></tr>`;}).join('')}</tbody></table></div>`;
@@ -159,7 +162,7 @@ function tabFleet(){
     RR.store.put('stops',{driverId:d,name:n,lat:+$('ns-lat').value,lon:+$('ns-lon').value,items:{water:+$('ns-w').value||0,food:+$('ns-f').value||0,infant:+$('ns-i').value||0},order:max+1,status:'pending',note:'',source:'admin',createdAt:Date.now()});
     RR.toast('Stop sent to the driver'); };
 }
-map.on('click', e => { if(tab==='fleet' && $('ns-lat')){ $('ns-lat').value = e.latlng.lat.toFixed(4); $('ns-lon').value = e.latlng.lng.toFixed(4); } });
+map.on('click', e => { if(draw){ draw.pts.push([+e.latlng.lat.toFixed(5), +e.latlng.lng.toFixed(5)]); drawTemp(); return; } if(tab==='fleet' && $('ns-lat')){ $('ns-lat').value = e.latlng.lat.toFixed(4); $('ns-lon').value = e.latlng.lng.toFixed(4); } });
 
 function tabRoads(){
   const r = RR.store.all('reports').sort((a,b)=>b.createdAt-a.createdAt);
@@ -214,12 +217,68 @@ Needs: R rescue · M medical · W water · F food · B baby/infant · S shelter<
     if(!found.length){ RR.toast('No ReliefReady code found. Codes start with RR1.'); return; }
     found.forEach(s => RR.store.put('sos', {...s, channel:'sms', status:'new'})); $('smsIn').value=''; RR.toast(found.length+' SOS added from SMS'); };
 }
+
+/* impact zones */
+let draw = null;
+const drawLay = L.layerGroup().addTo(map);
+map.on('popupopen', () => { if(draw) map.closePopup(); });
+function drawTemp(){
+  drawLay.clearLayers(); if(!draw) return;
+  if(draw.pts.length>1) L.polyline(draw.pts.concat(draw.pts.length>2?[draw.pts[0]]:[]), {className:'zn zn-'+draw.type, weight:2, dashArray:'5 4'}).addTo(drawLay);
+  draw.pts.forEach(p => L.circleMarker(p, {radius:4, className:'zn zn-'+draw.type, fillOpacity:1}).addTo(drawLay));
+  const n = draw.bar.querySelector('[data-n]'); if(n) n.textContent = draw.pts.length;
+}
+function startDraw(){
+  const name = $('z-name').value.trim(); if(!name){ RR.toast('Name the zone first.'); $('z-name').focus(); return; }
+  if(draw) endDraw();
+  const bar = document.createElement('div'); bar.className = 'drawbar';
+  bar.innerHTML = `Click the map to add corners (<span data-n>0</span>) <button type="button" data-d="finish">Finish</button><button type="button" data-d="undo">Undo</button><button type="button" data-d="cancel">Cancel</button>`;
+  draw = {name, type:$('z-type').value, source:$('z-src').value.trim(), pts:[], bar};
+  bar.onclick = e => { const d = e.target.dataset.d; if(!d) return;
+    if(d==='undo'){ draw.pts.pop(); drawTemp(); }
+    else if(d==='cancel') endDraw();
+    else if(d==='finish'){ if(draw.pts.length<3){ RR.toast('Add at least 3 corners.'); return; }
+      RR.store.put('zones', {name:draw.name, type:draw.type, coords:draw.pts, official:false, source:draw.source||('Marked by '+S.name+' on '+new Date().toLocaleString('en-IN')), createdAt:Date.now(), by:S.id});
+      RR.toast('Zone saved. Routes and SOS priority now account for it.'); endDraw(); } };
+  $('map').appendChild(bar); $('map').classList.add('picking'); $('map').scrollIntoView({behavior:'smooth', block:'center'});
+}
+function endDraw(){ if(draw && draw.bar) draw.bar.remove(); draw = null; drawLay.clearLayers(); $('map').classList.remove('picking'); }
+function tabZones(){
+  const list = RR.store.all('zones').sort((a,b)=>(RR.ZONES[b.type]?.sev||0)-(RR.ZONES[a.type]?.sev||0) || (b.createdAt||0)-(a.createdAt||0));
+  $('panel').innerHTML = `<div class="grid2" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:20px">
+  <div class="stack"><div class="lbl">Mark a new zone</div>
+    <div class="grid2"><div class="field"><label for="z-name">Zone name</label><input type="text" id="z-name" placeholder="e.g. Kunnampatta slope, no entry"></div>
+    <div class="field"><label for="z-type">Type</label><select id="z-type">${Object.entries(RR.ZONES).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('')}</select></div></div>
+    <div class="field"><label for="z-src">Source</label><input type="text" id="z-src" placeholder="e.g. KSDMA order, NRSC flood map, field report"></div>
+    <div class="btns"><button class="btn primary" id="z-draw">Draw on map</button></div>
+    <p class="hint">Red, landslide and flooded zones mark every road route that crosses them as unsafe, raise the priority of SOS requests inside them, and suggest the boat crew for flooded stops. Boats may cross flooded zones.</p>
+    <p class="hint">Government layers: use the layers button on the map for satellite, terrain and NASA daily imagery. Add Bhuvan (ISRO) or other WMS layers in Settings.</p></div>
+  <div class="stack"><div class="lbl">Zones and what they affect</div><ul class="rows">${list.map(z=>{ const im = RR.zoneImpact(z), zt = RR.ZONES[z.type]||{};
+    return `<li><div class="rowhead"><i class="zl zn-${z.type}"></i><b>${RR.esc(z.name)}</b><span class="pill ${zt.sev>=3?'bad':zt.sev?'warn':z.type==='relief'?'ok':'info'}">${zt.label}</span>${z.official?'<span class="pill info">Official source</span>':''}
+      <span class="btns" style="margin-left:auto"><button class="btn small" data-zzoom="${z.id}">Show</button><button class="btn small" data-zdel="${z.id}">Remove</button></span></div>
+      ${zt.sev?`<span class="meta"><b>${im.sos}</b> open SOS · <b>${im.people}</b> people${im.infants?' ('+im.infants+' infants)':''} · ${im.stops} pending stops · ${im.hazards} road hazards${im.vehicles.length?' · vehicles inside: '+RR.esc(im.vehicles.join(', ')):''}</span>`:''}
+      <span class="meta">${RR.esc(z.source||'')}${z.sourceUrl?` · <a href="${RR.esc(z.sourceUrl)}" target="_blank" rel="noopener">source</a>`:''}</span></li>`; }).join('')||'<li class="hint">No zones yet.</li>'}</ul></div></div>`;
+  $('z-draw').onclick = startDraw;
+}
 function tabSettings(){
   $('panel').innerHTML = `<div class="stack" style="max-width:560px">
     <div class="field"><label for="cfg-sms">SMS gateway number shown in the SOS app</label><input type="tel" id="cfg-sms" value="${RR.esc(RR.CONFIG.smsGateway)}"></div>
     <div class="btns"><button class="btn primary" id="cfg-save">Save</button></div>
     <p class="hint">Data mode: <b>${RR.store.mode==='shared'?'shared live database (all viewers of this page see the same data)':'this device (pages in this browser stay in sync)'}</b>.</p>
-    ${RR.store.mode==='local'?'<div class="btns"><button class="btn" id="cfg-reset">Reset demo data</button></div>':''}</div>`;
+    ${RR.store.mode==='local'?'<div class="btns"><button class="btn" id="cfg-reset">Reset demo data</button></div>':''}
+    <div class="lbl" style="margin-top:12px">Government map layers (WMS)</div>
+    <p class="hint">Add any public WMS service, for example a Bhuvan (ISRO) flood hazard or flood inundation layer. Copy the service URL and layer name from the Bhuvan Thematic Services portal. Added layers appear in the map's layers button on the control room and driver maps.</p>
+    <ul class="rows">${(RR.CONFIG.wms||[]).map((w,i)=>`<li><div class="rowhead"><b>${RR.esc(w.name)}</b><span class="hint mono">${RR.esc(w.layers)}</span><button class="btn small" style="margin-left:auto" data-wdel="${i}">Remove</button></div><span class="meta mono" style="word-break:break-all">${RR.esc(w.url)}</span></li>`).join('')||'<li class="hint">None added.</li>'}</ul>
+    <div class="grid2"><div class="field"><label for="w-name">Layer name</label><input type="text" id="w-name" placeholder="Bhuvan flood hazard"></div><div class="field"><label for="w-layers">WMS layer id</label><input type="text" id="w-layers" placeholder="e.g. flood:..."></div></div>
+    <div class="field"><label for="w-url">WMS service URL</label><input type="text" id="w-url" placeholder="https://bhuvan-vec2.nrsc.gov.in/bhuvan/wms"></div>
+    <div class="field"><label for="w-attr">Credit</label><input type="text" id="w-attr" value="© NRSC/ISRO Bhuvan"></div>
+    <div class="btns"><button class="btn" id="w-add">Add layer</button></div>
+    <div class="field" style="margin-top:8px"><label for="g-date">NASA daily satellite image date</label><input type="text" id="g-date" placeholder="YYYY-MM-DD (empty = yesterday)" value="${RR.esc(RR.CONFIG.gibsDate||'')}"></div>
+    <div class="btns"><button class="btn" id="g-save">Set date</button></div></div>`;
+  $('w-add').onclick = () => { const w = {name:$('w-name').value.trim(), url:$('w-url').value.trim(), layers:$('w-layers').value.trim(), attribution:$('w-attr').value.trim()};
+    if(!w.name||!/^https:\/\//.test(w.url)||!w.layers){ RR.toast('Enter a name, an https:// WMS URL and the layer id.'); return; }
+    RR.saveConfig({wms:[...(RR.CONFIG.wms||[]), w]}); RR.toast('Layer added. Reloading the map.'); setTimeout(()=>location.reload(), 700); };
+  $('g-save').onclick = () => { const d = $('g-date').value.trim(); if(d && !/^\d{4}-\d{2}-\d{2}$/.test(d)){ RR.toast('Use the format YYYY-MM-DD.'); return; } RR.saveConfig({gibsDate:d}); RR.toast('Date saved. Reloading the map.'); setTimeout(()=>location.reload(), 700); };
   $('cfg-save').onclick = () => { RR.saveConfig({smsGateway:$('cfg-sms').value.trim()||RR.CONFIG.smsGateway}); RR.toast('Saved for this browser'); };
   const r = $('cfg-reset'); if(r) r.onclick = () => { RR.store.reset(); RR.toast('Demo data restored'); };
 }
@@ -236,6 +295,9 @@ document.addEventListener('click', e => {
   else if(D.escsos){ const s = RR.store.get('sos', D.escsos); escDraft = {to:(s.needs||[]).includes('rescue')?'NDRF':(s.needs||[]).includes('medical')?'Health / 108 ambulance':'State EOC (KSDMA)', type:(s.needs||[]).includes('rescue')?'Rescue team':(s.needs||[]).includes('medical')?'Medical evacuation':'More supplies', urgency:RR.sosPriority(s)>=70?'Critical':'High', place:s.place||'GPS location', people:s.people, note:`${s.people} people (${s.infants||0} infants, ${s.elderly||0} elderly, ${s.injured||0} injured). Needs: ${needTxt(s)}. ${s.note||''}`, lat:s.lat, lon:s.lon, sosId:s.id};
     tab='esc'; renderTab(); $('e-note').focus(); }
   else if(D.delstop) RR.store.del('stops', D.delstop);
+  else if(D.zzoom){ const z = RR.store.get('zones', D.zzoom); if(z){ map.fitBounds(L.polygon(z.coords).getBounds(), {padding:[30,30]}); $('map').scrollIntoView({behavior:'smooth', block:'center'}); } }
+  else if(D.zdel) RR.store.del('zones', D.zdel);
+  else if(D.wdel!=null){ const w = [...(RR.CONFIG.wms||[])]; w.splice(+D.wdel,1); RR.saveConfig({wms:w}); location.reload(); }
   else if(D.clear) RR.store.del('reports', D.clear);
   else if(D.adv){ const e = RR.store.get('escalations', D.adv); const lbl = {acknowledged:'Acknowledged by '+e.to, dispatched:'Help dispatched by '+e.to, resolved:'Closed by control room'}[D.to];
     RR.store.put('escalations', {...e, status:D.to, timeline:[...(e.timeline||[]), {t:Date.now(), s:D.to, n:lbl}]}); }

@@ -90,7 +90,7 @@ root.innerHTML = `
       <div class="btns"><button class="btn" id="relayAdd">Add SOS</button></div><div id="relayed" class="hint"></div></div></details></section>
     <section class="panel fold"><details id="help"><summary>Request help from authorities <span class="sub">Boat, airlift, medical, rescue team</span></summary><div class="inner" id="helpBody"></div></details></section>
   </div>
-  <div class="mapcol"><div class="mapbox" id="map"></div><div class="vlegend" style="margin-top:8px"><span>${RR.vehSvg('truck')}Truck</span><span>${RR.vehSvg('jeep')}4x4 jeep</span><span class="b">${RR.vehSvg('boat')}Rescue boat</span><span>Filled marker = you</span></div><p class="hint" style="margin-top:6px">Route options come from OpenStreetMap road data and are checked against road reports within ${RR.CONFIG.hazardRadiusM} m. Tap a marker for details.</p></div>
+  <div class="mapcol"><div class="mapbox" id="map"></div><div class="vlegend" style="margin-top:8px"><span>${RR.vehSvg('truck')}Truck</span><span>${RR.vehSvg('jeep')}4x4 jeep</span><span class="b">${RR.vehSvg('boat')}Rescue boat</span><span>Filled marker = you</span></div><div class="vlegend" style="margin-top:4px">${RR.zoneLegend()}</div><p class="hint" style="margin-top:6px">Route options come from OpenStreetMap road data and are checked against road reports within ${RR.CONFIG.hazardRadiusM} m and against impact zones. Use the layers button (top right of the map) for satellite, terrain and government layers. Tap a marker for details.</p></div>
 </main>`;
 $('out').onclick = RR.signOut;
 RR.netBadge($('net'));
@@ -116,6 +116,7 @@ function endPick(){ pick=null; $('map').classList.remove('picking'); pickBar && 
 map.on('click', e => { if(!pick) return; const p = {lat:e.latlng.lat, lon:e.latlng.lng}; if(pick==='stop') addStop(p); else addReport(p); endPick(); });
 
 function drawBase(){
+  RR.drawZones(map);
   layers.base.clearLayers();
   L.marker([RR.DEPOT.lat,RR.DEPOT.lon],{icon:RR.icon('pin depot')}).bindPopup(`<b>${RR.DEPOT.name}</b><br>Depot`).addTo(layers.base);
   hazards().forEach(h => L.marker([h.lat,h.lon],{icon:RR.hzIcon(h)}).bindPopup(`<b>${RR.HAZ[h.type]?.label||h.type}</b><br>${RR.esc(h.note||'')}<br><span class="hint">${RR.esc(h.by||'')} · ${RR.ago(h.createdAt)}</span>`).addTo(layers.base));
@@ -129,11 +130,11 @@ function drawBase(){
 let alts = [], altIdx = 0, routedFor = '';
 async function routeNext(force){
   const n = nextStop(); const m = me();
-  const key = n ? [n.id,n.lat,n.lon,m.lat.toFixed(4),m.lon.toFixed(4),hazards().length].join('|') : '';
+  const key = n ? [n.id,n.lat,n.lon,m.lat.toFixed(4),m.lon.toFixed(4),hazards().length,RR.store.all('zones').map(z=>z.id+z.type+z.coords.length).join()].join('|') : '';
   if(!force && key===routedFor) return; routedFor = key;
   alts = []; altIdx = 0; drawRoute(); renderNext();
   if(!n) return;
-  alts = isBoat ? [{coords:[[m.lat,m.lon],[n.lat,n.lon]], distance:RR.dist(m,n), duration:RR.dist(m,n)/3.5, estimate:true, boat:true, hits:[], sev:0, confirmed:0, verdict:'safe'}] : await RR.route(m, n, hazards()); altIdx = 0; drawRoute(); renderNext();
+  alts = isBoat ? [(c => ({coords:c, distance:RR.dist(m,n), duration:RR.dist(m,n)/3.5, estimate:true, boat:true, ...RR.assessRoute(c, hazards(), {boat:true})}))([[m.lat,m.lon],[n.lat,n.lon]])] : await RR.route(m, n, hazards()); altIdx = 0; drawRoute(); renderNext();
 }
 function drawRoute(){
   layers.route.clearLayers();
@@ -153,9 +154,9 @@ function renderNext(){
     ${n.note?`<p class="hint" style="margin:0">${RR.esc(n.note)}</p>`:''}
     <div class="items"><div><b>${n.items.water||0}</b><span>Water L</span></div><div><b>${n.items.food||0}</b><span>Food pkts</span></div><div><b>${n.items.infant||0}</b><span>Infant kits</span></div>
       ${a?`<div><b>${RR.km(a.distance)}</b><span>Distance</span></div><div><b>${Math.round(a.duration/60)} min</b><span>${a.estimate?'Rough estimate':'Drive time'}</span></div>`:''}</div>
-    <div class="rowhead">${verdict}${a&&a.confirmed?`<span class="pill ok">${a.confirmed} stretch${a.confirmed>1?'es':''} confirmed safe</span>`:''}${a&&a.boat?'<span class="pill info">Boat: direct water route. Check depth, current and power lines.</span>':a&&a.estimate?'<span class="pill">Offline: straight-line estimate</span>':''}</div>
-    ${hz.length?`<ul class="hazlist">${hz.map(h=>`<li><b>${RR.HAZ[h.type]?.label}</b>: ${RR.esc(h.note||'')} <span class="hint">(${RR.ago(h.createdAt)})</span></li>`).join('')}</ul>`:''}
-    ${alts.length>1?`<div><div class="lbl" style="margin-bottom:6px">Route options</div><ul class="alts">${alts.map((x,i)=>`<li><button type="button" data-alt="${i}" aria-pressed="${i===altIdx}"><span class="t">Option ${i+1} · ${Math.round(x.duration/60)} min · ${RR.km(x.distance)}</span>${RR.verdictPill(x.verdict)}<span class="m">${x.hits.length?x.hits.map(h=>RR.HAZ[h.type]?.label).join(', '):'No reported hazards on this road'}</span></button></li>`).join('')}</ul></div>`:''}
+    <div class="rowhead">${verdict}${RR.zonePill(n)}${isBoat?'':(RR.zonesAt(n).some(z=>z.type==='flooded')?'<span class="pill info">Boat recommended</span>':'')}${a&&a.confirmed?`<span class="pill ok">${a.confirmed} stretch${a.confirmed>1?'es':''} confirmed safe</span>`:''}${a&&a.boat?'<span class="pill info">Boat: direct water route. Check depth, current and power lines.</span>':a&&a.estimate?'<span class="pill">Offline: straight-line estimate</span>':''}</div>
+    ${hz.length?`<ul class="hazlist">${hz.map(h=>`<li><b>${RR.hitLabel(h)}</b>: ${RR.esc(h.note||'')} <span class="hint">(${RR.ago(h.createdAt)})</span></li>`).join('')}</ul>`:''}
+    ${alts.length>1?`<div><div class="lbl" style="margin-bottom:6px">Route options</div><ul class="alts">${alts.map((x,i)=>`<li><button type="button" data-alt="${i}" aria-pressed="${i===altIdx}"><span class="t">Option ${i+1} · ${Math.round(x.duration/60)} min · ${RR.km(x.distance)}</span>${RR.verdictPill(x.verdict)}<span class="m">${x.hits.length?x.hits.map(RR.hitLabel).join(', '):'No reported hazards on this road'}</span></button></li>`).join('')}</ul></div>`:''}
     ${a&&a.verdict==='unsafe'&&alts.every(x=>x.verdict==='unsafe')?`<div class="pill bad" style="white-space:normal;padding:8px 10px;border-radius:5px">No safe road route. Request a boat, airlift or bridge team below.</div>`:''}
     <div class="btns">
       ${n.status!=='enroute'?'<button class="btn primary" id="go">Start trip</button>':''}
