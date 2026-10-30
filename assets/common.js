@@ -12,9 +12,11 @@ RR.CONFIG = {
   osrm: 'https://router.project-osrm.org',
   tiles: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
   hazardRadiusM: 350,
+  wms: [],          // government WMS overlays added in Settings, e.g. Bhuvan flood hazard
+  gibsDate: '',     // NASA daily satellite date (YYYY-MM-DD); empty = yesterday
 };
 try{ const c = JSON.parse(localStorage.getItem('rr.config')||'null'); if(c) Object.assign(RR.CONFIG, c); }catch(e){}
-RR.saveConfig = patch => { Object.assign(RR.CONFIG, patch); try{ localStorage.setItem('rr.config', JSON.stringify({smsGateway:RR.CONFIG.smsGateway})); }catch(e){} };
+RR.saveConfig = patch => { Object.assign(RR.CONFIG, patch); try{ localStorage.setItem('rr.config', JSON.stringify({smsGateway:RR.CONFIG.smsGateway, wms:RR.CONFIG.wms, gibsDate:RR.CONFIG.gibsDate})); }catch(e){} };
 
 /* ---------- Demo accounts (replace with phone OTP / SSO in production) ---------- */
 RR.ACCOUNTS = [
@@ -37,29 +39,64 @@ RR.signOut = () => { try{ localStorage.removeItem('rr.session'); }catch(e){} loc
 
 /* ---------- Seed: Wayanad, Kerala (real places, illustrative needs) ---------- */
 const now = Date.now(), H = 3600e3;
+/* Impact zones. Sources are stated on every zone so nobody mistakes a demo zone for official data. */
+function bufferLine(pts, widths){ // pts [[lat,lon]], widths in metres per point -> polygon
+  const L = [], R = [];
+  for(let i=0;i<pts.length;i++){
+    const a = pts[Math.max(0,i-1)], b = pts[Math.min(pts.length-1,i+1)];
+    const kx = 111320*Math.cos(pts[i][0]*Math.PI/180), ky = 110540;
+    let dx = (b[1]-a[1])*kx, dy = (b[0]-a[0])*ky; const n = Math.hypot(dx,dy)||1; dx/=n; dy/=n;
+    const w = widths[i];
+    L.push([pts[i][0] + dx*w/ky, pts[i][1] - dy*w/kx]); R.push([pts[i][0] - dx*w/ky, pts[i][1] + dy*w/kx]);
+  }
+  return L.concat(R.reverse()).map(p=>[+p[0].toFixed(5), +p[1].toFixed(5)]);
+}
+RR.seedZones = () => {
+  const t = Date.now();
+  return {
+    'zn-1':{id:'zn-1',name:'Debris-flow corridor, 30 Jul 2024',type:'landslide',official:false,createdAt:t,by:'ADM-01',
+      coords:bufferLine([[11.46544,76.13576],[11.4720,76.1420],[11.4790,76.1480],[11.4855,76.1525],[11.4910,76.1560],[11.4960,76.1595]],[140,170,200,230,260,260]),
+      source:'Approximate corridor drawn from ISRO-reported headscarp (11.46544, 76.13576), 8 km runout, and the NRSC/ISRO Charter 1029 map. Not an official boundary.',
+      sourceUrl:'https://bhuvan-app1.nrsc.gov.in/disaster/usrtasks/landslide/doc/Charter_1029_VAP_7_6Aug2024.pdf'},
+    'zn-2':{id:'zn-2',name:'NRSC/ISRO mapped area (Charter 1029)',type:'info',official:true,createdAt:t,by:'ADM-01',
+      coords:[[11.48333,76.15],[11.5,76.15],[11.5,76.1625],[11.48333,76.1625]],
+      source:'Map frame of the NRSC/ISRO rapid-mapping product “Landslide occurred in Chooralmala town, Wayanad” (6 Aug 2024): 11°29′–11°30′N, 76°9′–76°9′45″E.',
+      sourceUrl:'https://bhuvan-app1.nrsc.gov.in/disaster/usrtasks/landslide/doc/Charter_1029_VAP_7_6Aug2024.pdf'},
+    'zn-3':{id:'zn-3',name:'Mundakkai–Punchirimattom no-entry',type:'red',official:false,createdAt:t,by:'ADM-01',
+      coords:[[11.4610,76.1300],[11.4700,76.1290],[11.4800,76.1440],[11.4880,76.1500],[11.4870,76.1560],[11.4780,76.1530],[11.4660,76.1420]],
+      source:'Demo zone drawn by the control room (illustrative).'},
+    'zn-4':{id:'zn-4',name:'Panamaram river-side flooding',type:'flooded',official:false,createdAt:t,by:'ADM-01',
+      coords:[[11.7250,76.0700],[11.7330,76.0680],[11.7420,76.0720],[11.7470,76.0820],[11.7400,76.0860],[11.7300,76.0830]],
+      source:'Demo zone drawn from driver reports (illustrative).'},
+    'zn-5':{id:'zn-5',name:'Meppadi relief camp area',type:'relief',official:false,createdAt:t,by:'ADM-01',
+      coords:[[11.5520,76.1310],[11.5575,76.1310],[11.5575,76.1365],[11.5520,76.1365]],
+      source:'Demo zone (illustrative).'},
+  };
+};
 RR.DEPOT = {name:'Kalpetta collection centre', lat:11.6085, lon:76.0830};
 RR.seed = () => ({
   sos: {
-    'sos-1':{id:'sos-1',code:'',createdAt:now-5.2*H,lat:11.4772,lon:76.1480,place:'Mundakkai, near the estate school',people:42,infants:5,elderly:9,injured:3,needs:['rescue','medical','water'],note:'Bridge to Chooralmala gone. Families on the school terrace.',phone:'',channel:'sms',status:'new'},
+    'sos-1':{id:'sos-1',code:'',createdAt:now-5.2*H,lat:11.4855,lon:76.1525,place:'Mundakkai, near the estate school',people:42,infants:5,elderly:9,injured:3,needs:['rescue','medical','water'],note:'Bridge to Chooralmala gone. Families on the school terrace.',phone:'',channel:'sms',status:'new'},
     'sos-2':{id:'sos-2',code:'',createdAt:now-3.1*H,lat:11.7392,lon:76.0751,place:'Panamaram, river-side colony',people:60,infants:4,elderly:11,injured:0,needs:['water','food','infant'],note:'Ground floors flooded. Drinking water finished.',phone:'',channel:'app',status:'assigned',assignedTo:'D-102'},
     'sos-3':{id:'sos-3',code:'',createdAt:now-1.4*H,lat:11.5501,lon:76.0412,place:'Vythiri, Lakkidi road',people:18,infants:1,elderly:4,injured:1,needs:['food','medical'],note:'Elderly woman needs insulin.',phone:'',channel:'relay',status:'new'},
   },
   stops: {
     'st-1':{id:'st-1',driverId:'D-101',name:'Meppadi relief camp (GHSS)',lat:11.5548,lon:76.1337,items:{water:300,food:200,infant:6},order:1,status:'pending',note:'Camp register at the school office.',source:'admin'},
-    'st-2':{id:'st-2',driverId:'D-101',name:'Chooralmala',lat:11.4880,lon:76.1395,items:{water:150,food:100,infant:4},order:2,status:'pending',note:'Check bridge status before leaving Meppadi.',source:'admin'},
+    'st-2':{id:'st-2',driverId:'D-101',name:'Chooralmala north (relief point)',lat:11.5010,lon:76.1585,items:{water:150,food:100,infant:4},order:2,status:'pending',note:'Check bridge status before leaving Meppadi.',source:'admin'},
     'st-3':{id:'st-3',driverId:'D-102',name:'Panamaram river-side colony',lat:11.7392,lon:76.0751,items:{water:270,food:180,infant:4},order:1,status:'enroute',note:'From SOS sos-2.',source:'sos',sosId:'sos-2'},
     'st-5':{id:'st-5',driverId:'D-104',name:'Panamaram flooded houses (ward 6)',lat:11.7440,lon:76.0805,items:{water:200,food:120,infant:3},order:1,status:'pending',note:'Road under water. Boat only.',source:'admin'},
     'st-4':{id:'st-4',driverId:'D-103',name:'Vythiri PHC',lat:11.5496,lon:76.0418,items:{water:80,food:60,infant:0},order:1,status:'pending',note:'',source:'admin'},
   },
   reports: {
-    'hz-1':{id:'hz-1',lat:11.4905,lon:76.1410,type:'bridge',note:'Chooralmala–Mundakkai bridge washed away. No vehicle crossing.',by:'D-101',createdAt:now-6*H},
+    'hz-1':{id:'hz-1',lat:11.4905,lon:76.1555,type:'bridge',note:'Chooralmala–Mundakkai bridge washed away. No vehicle crossing.',by:'D-101',createdAt:now-6*H},
     'hz-2':{id:'hz-2',lat:11.7290,lon:76.0790,type:'flooded',note:'Panamaram puzha over the road, ~60 cm water.',by:'D-102',createdAt:now-2*H},
     'hz-3':{id:'hz-3',lat:11.5895,lon:76.1010,type:'landslide',note:'Small slip, one lane open. Slow.',by:'D-103',createdAt:now-4*H},
     'hz-4':{id:'hz-4',lat:11.5800,lon:76.0640,type:'safe',note:'NH 766 Kalpetta–Vythiri clear, police checkpoint.',by:'D-103',createdAt:now-1*H},
   },
   escalations: {
-    'esc-1':{id:'esc-1',from:'admin',by:'ADM-01',to:'NDRF',type:'Rescue team',place:'Mundakkai',lat:11.4772,lon:76.1480,people:42,urgency:'Critical',note:'42 people cut off by bridge collapse, 3 injured. Need rope-bridge crossing team.',status:'acknowledged',createdAt:now-4.5*H,timeline:[{t:now-4.5*H,s:'sent',n:'Sent to NDRF 4th Bn control'},{t:now-4*H,s:'acknowledged',n:'Team being mobilised from Kalpetta'}]},
+    'esc-1':{id:'esc-1',from:'admin',by:'ADM-01',to:'NDRF',type:'Rescue team',place:'Mundakkai',lat:11.4855,lon:76.1525,people:42,urgency:'Critical',note:'42 people cut off by bridge collapse, 3 injured. Need rope-bridge crossing team.',status:'acknowledged',createdAt:now-4.5*H,timeline:[{t:now-4.5*H,s:'sent',n:'Sent to NDRF 4th Bn control'},{t:now-4*H,s:'acknowledged',n:'Team being mobilised from Kalpetta'}]},
   },
+  zones: RR.seedZones(),
   drivers: {
     'D-101':{id:'D-101',name:'Ravi Kumar',vehicle:'Truck KL-12 4471',type:'truck',lat:11.6085,lon:76.0830,lastSeen:now-20*60e3,status:'loading'},
     'D-102':{id:'D-102',name:'Anjali Menon',vehicle:'Pickup KL-12 8810',type:'truck',lat:11.7010,lon:76.0790,lastSeen:now-6*60e3,status:'on the road'},
@@ -67,13 +104,13 @@ RR.seed = () => ({
     'D-104':{id:'D-104',name:'Shibu Thomas',vehicle:'Rescue boat KL-BT 07',type:'boat',lat:11.7330,lon:76.0700,lastSeen:now-9*60e3,status:'on the water'},
   },
 });
-RR.COLS = ['sos','stops','reports','escalations','drivers'];
+RR.COLS = ['sos','stops','reports','escalations','drivers','zones'];
 
 /* ---------- Store: browser storage, synced across tabs ---------- */
-const KEY = 'rr.data.v2';
+const KEY = 'rr.data.v3';
 const store = RR.store = {data:null, mode:'local', db:null, fns:new Set()};
 function loadLocal(){
-  try{ const d = JSON.parse(localStorage.getItem(KEY)||'null'); if(d && d.sos) return d; }catch(e){}
+  try{ const d = JSON.parse(localStorage.getItem(KEY)||'null'); if(d && d.sos){ if(!d.zones) d.zones = RR.seedZones(); return d; } }catch(e){}
   return RR.seed();
 }
 function saveLocal(){ try{ localStorage.setItem(KEY, JSON.stringify(store.data)); }catch(e){} }
@@ -148,13 +185,32 @@ RR.decodeSOS = str => {
     needs: m[7].split('').map(c => (NEEDS.find(n=>n.c===c)||{}).k).filter(Boolean),
     createdAt: isNaN(d)?Date.now():d, phone: m[9]||'', place:(m[10]||'').trim(), note:'', code: m[0].trim()};
 };
+RR.ZONES = {
+  red:{label:'Red zone · no entry', sev:3}, landslide:{label:'Landslide / debris flow', sev:3},
+  flooded:{label:'Flooded area', sev:3, boatOk:true}, caution:{label:'Caution zone', sev:1},
+  relief:{label:'Relief / safe area', sev:0}, info:{label:'Mapped area (reference)', sev:0},
+};
+RR.inPoly = (p, poly) => { let c = false; for(let i=0,j=poly.length-1;i<poly.length;j=i++){ const a=poly[i], b=poly[j];
+  if(((a[0]>p.lat)!==(b[0]>p.lat)) && (p.lon < (b[1]-a[1])*(p.lat-a[0])/(b[0]-a[0])+a[1])) c=!c; } return c; };
+RR.zonesAt = p => (p && p.lat!=null) ? RR.store.all('zones').filter(z => z.coords && RR.inPoly(p, z.coords)) : [];
+RR.impactZoneAt = p => RR.zonesAt(p).filter(z => (RR.ZONES[z.type]?.sev||0) >= 3)[0] || null;
+RR.zonePill = p => { const z = RR.impactZoneAt(p); return z ? `<span class="pill bad" title="${RR.esc(z.name)}">In ${RR.esc(RR.ZONES[z.type].label.split(' ·')[0].toLowerCase())}</span>` : ''; };
+RR.zoneImpact = z => {
+  const inside = o => o.lat!=null && RR.inPoly(o, z.coords);
+  const sos = RR.store.all('sos').filter(s => s.status!=='served' && inside(s));
+  return {sos:sos.length, people:sos.reduce((t,s)=>t+(+s.people||0),0), infants:sos.reduce((t,s)=>t+(+s.infants||0),0),
+    stops:RR.store.all('stops').filter(s => s.status!=='delivered' && inside(s)).length,
+    hazards:RR.store.all('reports').filter(r => r.type!=='safe' && inside(r)).length,
+    vehicles:RR.store.all('drivers').filter(inside).map(d=>d.name)};
+};
 RR.sosPriority = s => { // 0–100, same spirit as the allocation planner
   const n = s.needs||[];
   let u = n.includes('rescue')?1 : n.includes('medical')?.85 : n.includes('water')?.6 : .4;
   if(s.injured>0) u = Math.max(u,.9);
   const people = Math.min(1,(s.people||0)/60), vul = s.people ? Math.min(1,((s.infants||0)+(s.elderly||0)+(s.injured||0))/s.people/.35) : 0;
   const wait = Math.min(1,(Date.now()-(s.createdAt||Date.now()))/(12*H));
-  return Math.round(100*(.4*u+.25*people+.2*vul+.15*wait));
+  const zoneBoost = RR.impactZoneAt(s) ? 12 : 0;
+  return Math.min(100, Math.round(100*(.4*u+.25*people+.2*vul+.15*wait)) + zoneBoost);
 };
 
 /* ---------- Helpers ---------- */
@@ -177,14 +233,40 @@ RR.copy = (text, btn) => {
 /* ---------- Map ---------- */
 RR.makeMap = (el, opts={}) => {
   const map = L.map(el, {zoomControl:true, attributionControl:true}).setView(opts.center||[11.62,76.09], opts.zoom||11);
-  const tiles = L.tileLayer(RR.CONFIG.tiles, {maxZoom:18, attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'}).addTo(map);
+  const street = L.tileLayer(RR.CONFIG.tiles, {maxZoom:19, attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'});
+  const sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {maxZoom:19, attribution:'Imagery © Esri, Maxar, Earthstar Geographics'});
+  const topo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {maxZoom:17, attribution:'© OpenStreetMap contributors, SRTM · © <a href="https://opentopomap.org">OpenTopoMap</a> (CC-BY-SA)'});
+  street.addTo(map);
+  const yday = new Date(Date.now()-864e5).toISOString().slice(0,10);
+  const gibsDate = RR.CONFIG.gibsDate || yday;
+  const nasa = L.tileLayer('https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/{time}/GoogleMapsCompatible_Level9/{z}/{y}/{x}.jpg',
+    {time:gibsDate, maxNativeZoom:9, maxZoom:19, opacity:.85, attribution:'NASA EOSDIS GIBS (MODIS Terra, '+gibsDate+')'});
+  const zones = L.layerGroup().addTo(map);
+  const overlays = {'Impact zones':zones, ['NASA satellite, '+gibsDate]:nasa};
+  (RR.CONFIG.wms||[]).forEach(w => { try{ overlays[w.name] = L.tileLayer.wms(w.url, {layers:w.layers, format:'image/png', transparent:true, version:w.version||'1.1.1', opacity:.7, attribution:w.attribution||w.name}); }catch(e){} });
+  L.control.layers({'Street map':street, 'Satellite':sat, 'Terrain':topo}, overlays, {collapsed:true, position:'topright'}).addTo(map);
   let fails = 0, loaded = 0;
   const note = document.createElement('div'); note.className='mapnote'; note.hidden = true; el.appendChild(note);
-  tiles.on('tileload', () => { loaded++; note.hidden = true; });
-  tiles.on('tileerror', () => { if(++fails>3 && !loaded){ note.hidden=false; note.textContent='Street map tiles could not load here (offline or blocked). Positions are real GPS coordinates; the street map appears when the page is online on the deployed site.'; } });
+  street.on('tileload', () => { loaded++; note.hidden = true; });
+  street.on('tileerror', () => { if(++fails>3 && !loaded){ note.hidden=false; note.textContent='Street map tiles could not load here (offline or blocked). Positions are real GPS coordinates; the street map appears when the page is online on the deployed site.'; } });
+  map.rrZones = zones;
   setTimeout(() => map.invalidateSize(), 50);
   return map;
 };
+RR.drawZones = (map, popup) => {
+  const g = map.rrZones; g.clearLayers();
+  RR.store.all('zones').filter(z => z.coords && z.coords.length>2).sort((a,b)=>(RR.ZONES[a.type]?.sev||0)-(RR.ZONES[b.type]?.sev||0)).forEach(z => {
+    const info = z.type==='info';
+    const poly = L.polygon(z.coords, {className:'zn zn-'+z.type, weight:info?2:1.5, fillOpacity:info?0.03:(z.type==='relief'?0.15:0.22), dashArray:info?'6 5':null, interactive:true});
+    poly.bindPopup(() => popup ? popup(z) : RR.zonePopup(z));
+    poly.addTo(g);
+  });
+};
+RR.zonePopup = z => { const im = RR.zoneImpact(z); const zt = RR.ZONES[z.type]||{};
+  return `<b>${RR.esc(z.name)}</b><br><span class="hint">${zt.label||z.type}${z.official?' · official source':''}</span>
+  ${zt.sev>=1?`<br>${im.sos} open SOS · ${im.people} people${im.infants?' · '+im.infants+' infants':''}<br>${im.stops} pending stops · ${im.hazards} road hazards${im.vehicles.length?'<br>Vehicles inside: '+RR.esc(im.vehicles.join(', ')):''}`:''}
+  <br><span class="hint" style="font-size:11.5px">${RR.esc(z.source||'')}</span>${z.sourceUrl?`<br><a href="${RR.esc(z.sourceUrl)}" target="_blank" rel="noopener">Source document</a>`:''}`; };
+RR.zoneLegend = () => `<span><i class="zl zn-red"></i>Red zone</span><span><i class="zl zn-landslide"></i>Landslide</span><span><i class="zl zn-flooded"></i>Flooded</span><span><i class="zl zn-caution"></i>Caution</span><span><i class="zl zn-relief"></i>Relief area</span><span><i class="zl zn-info"></i>Govt. mapped area</span>`;
 RR.icon = (cls, html='') => L.divIcon({className:'', html:`<div class="${cls}">${html}</div>`, iconSize:[22,22], iconAnchor:[11,11], popupAnchor:[0,-12]});
 /* Vehicle markers: truck, jeep, boat */
 const VEH_SVG = {
@@ -213,9 +295,27 @@ function nearLine(coords, p, radius){
   }
   return best;
 }
-RR.assessRoute = (coords, hazards) => {
-  const hits = hazards.filter(h => h.type!=='safe' && nearLine(coords, h, RR.CONFIG.hazardRadiusM) <= RR.CONFIG.hazardRadiusM);
-  const sev = hits.reduce((s,h)=>Math.max(s, RR.HAZ[h.type]?.sev||2), 0);
+function densify(coords, stepM){
+  const out = [];
+  for(let i=0;i<coords.length;i++){
+    if(i){ const a = coords[i-1], b = coords[i], d = RR.dist({lat:a[0],lon:a[1]},{lat:b[0],lon:b[1]}), n = Math.min(200, Math.floor(d/stepM));
+      for(let k=1;k<n;k++) out.push([a[0]+(b[0]-a[0])*k/n, a[1]+(b[1]-a[1])*k/n]); }
+    out.push(coords[i]);
+  }
+  return out;
+}
+RR.zoneHits = (coords, opts={}) => {
+  const zs = RR.store.all('zones').filter(z => z.coords && (RR.ZONES[z.type]?.sev||0)>0 && !(opts.boat && RR.ZONES[z.type]?.boatOk));
+  if(!zs.length) return [];
+  const pts = densify(coords, 80);
+  return zs.filter(z => { const la = z.coords.map(c=>c[0]), lo = z.coords.map(c=>c[1]); const bb = [Math.min(...la),Math.max(...la),Math.min(...lo),Math.max(...lo)];
+    return pts.some(p => p[0]>=bb[0]&&p[0]<=bb[1]&&p[1]>=bb[2]&&p[1]<=bb[3] && RR.inPoly({lat:p[0],lon:p[1]}, z.coords)); })
+    .map(z => ({zone:true, id:z.id, type:z.type, label:RR.ZONES[z.type].label, note:z.name, sev:RR.ZONES[z.type].sev, createdAt:z.createdAt}));
+};
+RR.hitLabel = h => h.label || RR.HAZ[h.type]?.label || h.type;
+RR.assessRoute = (coords, hazards, opts={}) => {
+  const hits = hazards.filter(h => h.type!=='safe' && !(opts.boat && h.type==='flooded') && nearLine(coords, h, RR.CONFIG.hazardRadiusM) <= RR.CONFIG.hazardRadiusM).concat(RR.zoneHits(coords, opts));
+  const sev = hits.reduce((s,h)=>Math.max(s, h.sev!=null ? h.sev : (RR.HAZ[h.type]?.sev||2)), 0);
   const confirmed = hazards.filter(h => h.type==='safe' && nearLine(coords, h, 400) <= 400).length;
   return {hits, sev, confirmed, verdict: sev>=3?'unsafe':sev>=1?'caution':'safe'};
 };
