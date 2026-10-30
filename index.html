@@ -119,6 +119,16 @@ section.blk>.lead{color:var(--muted);max-width:68ch;margin:0 0 18px}
   </section>
 
   <section class="blk">
+    <h2>Map layers and impact zones</h2>
+    <p class="lead">The control room marks impact zones on the map: red (no entry), landslide, flooded, caution and relief areas. Every road route that crosses a red, landslide or flooded zone is marked unsafe, SOS requests inside them move up the queue, and flooded stops go to the boat crew. Each zone shows how many people, SOS requests, stops and vehicles are inside it.</p>
+    <div class="limits">
+      <div class="col"><h3>Government data</h3><p>The demo includes the area mapped by NRSC/ISRO's rapid-mapping product for the 30 July 2024 Chooralmala landslide (International Charter activation 1029), and a debris-flow corridor drawn from ISRO's reported headscarp location. Bhuvan (ISRO) WMS layers, such as flood hazard maps, can be added from Settings.</p></div>
+      <div class="col"><h3>Satellite and terrain</h3><p>The layers button on every map switches between the OpenStreetMap street map, Esri satellite imagery and OpenTopoMap terrain. You can also add NASA's daily MODIS satellite image for any date to see cloud cover and flood water.</p></div>
+      <div class="col"><h3>Demo zones are labelled</h3><p>Zones that are not from an official source say so in their source line, so a demo zone is never mistaken for government data.</p></div>
+    </div>
+  </section>
+
+  <section class="blk">
     <h2>Limits and next steps</h2>
     <p class="lead">What the prototype does not do yet, and how we would extend it.</p>
     <div class="limits">
@@ -126,9 +136,9 @@ section.blk>.lead{color:var(--muted);max-width:68ch;margin:0 0 18px}
       <div class="col"><h3>Zero-network valleys</h3><p>For places with no tower at all, LoRa mesh radios (Meshtastic) reach several kilometres per hop. A gateway node at the control room would read RR1 codes straight into this inbox.</p></div>
       <div class="col"><h3>Real back end</h3><p>The demo syncs between tabs in one browser, or between viewers of the hosted preview. Production needs a database such as Firebase or Supabase, phone OTP sign-in and an SMS gateway number.</p></div>
     </div>
-    <p class="src" style="margin-top:16px">References: <a href="https://apps.apple.com/app/id1441951304" target="_blank" rel="noopener">112 India app</a> · <a href="https://nicobartimes.com/?p=5925" target="_blank" rel="noopener">NDMA Sachet</a> · <a href="https://archive.flossmanuals.net/sahana-eden/what-is-sahana-eden" target="_blank" rel="noopener">Sahana Eden</a> · <a href="https://techxlab.org/solutions/bridgefy/" target="_blank" rel="noopener">Bridgefy</a> · <a href="https://circuitdigest.com/news/meshtastic-an-opensource-off-grid-communication-platform" target="_blank" rel="noopener">Meshtastic</a></p>
+    <p class="src" style="margin-top:16px">References: <a href="https://apps.apple.com/app/id1441951304" target="_blank" rel="noopener">112 India app</a> · <a href="https://nicobartimes.com/?p=5925" target="_blank" rel="noopener">NDMA Sachet</a> · <a href="https://archive.flossmanuals.net/sahana-eden/what-is-sahana-eden" target="_blank" rel="noopener">Sahana Eden</a> · <a href="https://techxlab.org/solutions/bridgefy/" target="_blank" rel="noopener">Bridgefy</a> · <a href="https://circuitdigest.com/news/meshtastic-an-opensource-off-grid-communication-platform" target="_blank" rel="noopener">Meshtastic</a> · <a href="https://bhuvan-app1.nrsc.gov.in/disaster/usrtasks/landslide/doc/Charter_1029_VAP_7_6Aug2024.pdf" target="_blank" rel="noopener">NRSC/ISRO Chooralmala landslide map</a> · <a href="https://eos.org/thelandslideblog/wayanad-landslides" target="_blank" rel="noopener">ISRO figures via The Landslide Blog</a> · <a href="https://bhuvan.nrsc.gov.in/wiki/index.php/How_to_use_WMS_services" target="_blank" rel="noopener">Bhuvan WMS services</a></p>
   </section>
-  <footer class="foot">ReliefReady prototype · Anvathon 2026. Map data © OpenStreetMap contributors, routing by OSRM.</footer>
+  <footer class="foot">ReliefReady prototype · Anvathon 2026. Map data © OpenStreetMap contributors · routing by OSRM · imagery Esri, NASA GIBS · landslide extent NRSC/ISRO.</footer>
 </main>
 <script src="assets/common.js"></script>
 <script>document.getElementById('logo').insertAdjacentHTML('afterbegin', RR.logo); RR.netBadge(document.getElementById('net'));</script>

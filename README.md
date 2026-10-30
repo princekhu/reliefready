@@ -60,6 +60,19 @@ A service worker (`sw.js`) caches every page so the apps open with no network af
 
 Control room and drivers can raise requests (boat, airlift, medical evacuation, rescue team, bridge clearing, supplies) to the district control room, State EOC, NDRF, Fire & Rescue, Health, air support or army engineers. Each request carries a timeline (sent → acknowledged → dispatched → resolved). **Forward higher** moves it up the chain when nobody answers, and **Copy situation report** gives text for the official channel.
 
+## Map layers and government data
+
+- **Impact zones** (control room → Impact zones): red / no entry, landslide, flooded, caution, relief, reference. Drawn on the map; stored with a source line.
+  - Road routes crossing red, landslide or flooded zones are marked unsafe (boats may cross flooded zones).
+  - SOS requests inside an impact zone get +12 priority; each zone shows people, SOS, stops, hazards and vehicles inside it.
+- **Government data in the demo**
+  - NRSC/ISRO rapid-mapping product for the 30 July 2024 Chooralmala landslide (International Charter 1029): the mapped area 11°29′–11°30′N, 76°9′–76°9′45″E. [Source PDF](https://bhuvan-app1.nrsc.gov.in/disaster/usrtasks/landslide/doc/Charter_1029_VAP_7_6Aug2024.pdf)
+  - Debris-flow corridor drawn from ISRO's reported headscarp (11.46544, 76.13576) and 8 km runout ([reported here](https://eos.org/thelandslideblog/wayanad-landslides)). Approximate, not an official boundary.
+  - Bhuvan (ISRO) WMS layers, e.g. flood hazard, can be added in Settings using the URL and layer id from the Bhuvan Thematic Services portal ([how to use Bhuvan WMS](https://bhuvan.nrsc.gov.in/wiki/index.php/How_to_use_WMS_services)).
+- **Base maps** (layers button): OpenStreetMap, Esri World Imagery satellite, OpenTopoMap terrain, NASA GIBS MODIS daily true-colour image (date set in Settings).
+
+Other demo zones are labelled “illustrative” in their source line.
+
 ## Code map
 
 - `assets/common.js`: config, demo accounts, seed data, store (localStorage + BroadcastChannel, swappable for Firebase/Supabase), offline outbox, SOS code encode/decode, priority score, Leaflet map, OSRM safe routing.
