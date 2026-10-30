@@ -1,0 +1,497 @@
+{
+ "accounts": [
+  {
+   "id": "ADM-01",
+   "role": "admin",
+   "name": "District control room",
+   "pin": "2026",
+   "post": "Kalpetta EOC"
+  },
+  {
+   "id": "D-101",
+   "role": "driver",
+   "name": "Ravi Kumar",
+   "pin": "1234",
+   "vehicle": "Truck KL-12 4471",
+   "type": "truck",
+   "cap": 500
+  },
+  {
+   "id": "D-102",
+   "role": "driver",
+   "name": "Anjali Menon",
+   "pin": "1234",
+   "vehicle": "Pickup KL-12 8810",
+   "type": "truck",
+   "cap": 300
+  },
+  {
+   "id": "D-103",
+   "role": "driver",
+   "name": "Faisal P.",
+   "pin": "1234",
+   "vehicle": "4x4 Jeep KL-73 2205",
+   "type": "jeep",
+   "cap": 250
+  },
+  {
+   "id": "D-104",
+   "role": "driver",
+   "name": "Shibu Thomas",
+   "pin": "1234",
+   "vehicle": "Rescue boat KL-BT 07",
+   "type": "boat",
+   "cap": 400
+  }
+ ],
+ "data": {
+  "sos": [
+   {
+    "id": "sos-1",
+    "code": "",
+    "lat": 11.4855,
+    "lon": 76.1525,
+    "place": "Mundakkai, near the estate school",
+    "people": 42,
+    "infants": 5,
+    "elderly": 9,
+    "injured": 3,
+    "needs": [
+     "rescue",
+     "medical",
+     "water"
+    ],
+    "note": "Bridge to Chooralmala gone. Families on the school terrace.",
+    "phone": "",
+    "channel": "sms",
+    "status": "new",
+    "createdAtOffset": -18720
+   },
+   {
+    "id": "sos-2",
+    "code": "",
+    "lat": 11.7392,
+    "lon": 76.0751,
+    "place": "Panamaram, river-side colony",
+    "people": 60,
+    "infants": 4,
+    "elderly": 11,
+    "injured": 0,
+    "needs": [
+     "water",
+     "food",
+     "infant"
+    ],
+    "note": "Ground floors flooded. Drinking water finished.",
+    "phone": "",
+    "channel": "app",
+    "status": "assigned",
+    "assignedTo": "D-102",
+    "createdAtOffset": -11160
+   },
+   {
+    "id": "sos-3",
+    "code": "",
+    "lat": 11.5501,
+    "lon": 76.0412,
+    "place": "Vythiri, Lakkidi road",
+    "people": 18,
+    "infants": 1,
+    "elderly": 4,
+    "injured": 1,
+    "needs": [
+     "food",
+     "medical"
+    ],
+    "note": "Elderly woman needs insulin.",
+    "phone": "",
+    "channel": "relay",
+    "status": "new",
+    "createdAtOffset": -5040
+   }
+  ],
+  "stops": [
+   {
+    "id": "st-1",
+    "driverId": "D-101",
+    "name": "Meppadi relief camp (GHSS)",
+    "lat": 11.5548,
+    "lon": 76.1337,
+    "items": {
+     "water": 300,
+     "food": 200,
+     "infant": 6
+    },
+    "order": 1,
+    "status": "pending",
+    "note": "Camp register at the school office.",
+    "source": "admin"
+   },
+   {
+    "id": "st-2",
+    "driverId": "D-101",
+    "name": "Chooralmala north (relief point)",
+    "lat": 11.501,
+    "lon": 76.1585,
+    "items": {
+     "water": 150,
+     "food": 100,
+     "infant": 4
+    },
+    "order": 2,
+    "status": "pending",
+    "note": "Check bridge status before leaving Meppadi.",
+    "source": "admin"
+   },
+   {
+    "id": "st-3",
+    "driverId": "D-102",
+    "name": "Panamaram river-side colony",
+    "lat": 11.7392,
+    "lon": 76.0751,
+    "items": {
+     "water": 270,
+     "food": 180,
+     "infant": 4
+    },
+    "order": 1,
+    "status": "enroute",
+    "note": "From SOS sos-2.",
+    "source": "sos",
+    "sosId": "sos-2"
+   },
+   {
+    "id": "st-5",
+    "driverId": "D-104",
+    "name": "Panamaram flooded houses (ward 6)",
+    "lat": 11.744,
+    "lon": 76.0805,
+    "items": {
+     "water": 200,
+     "food": 120,
+     "infant": 3
+    },
+    "order": 1,
+    "status": "pending",
+    "note": "Road under water. Boat only.",
+    "source": "admin"
+   },
+   {
+    "id": "st-4",
+    "driverId": "D-103",
+    "name": "Vythiri PHC",
+    "lat": 11.5496,
+    "lon": 76.0418,
+    "items": {
+     "water": 80,
+     "food": 60,
+     "infant": 0
+    },
+    "order": 1,
+    "status": "pending",
+    "note": "",
+    "source": "admin"
+   }
+  ],
+  "reports": [
+   {
+    "id": "hz-1",
+    "lat": 11.4905,
+    "lon": 76.1555,
+    "type": "bridge",
+    "note": "Chooralmala–Mundakkai bridge washed away. No vehicle crossing.",
+    "by": "D-101",
+    "createdAtOffset": -21600
+   },
+   {
+    "id": "hz-2",
+    "lat": 11.729,
+    "lon": 76.079,
+    "type": "flooded",
+    "note": "Panamaram puzha over the road, ~60 cm water.",
+    "by": "D-102",
+    "createdAtOffset": -7200
+   },
+   {
+    "id": "hz-3",
+    "lat": 11.5895,
+    "lon": 76.101,
+    "type": "landslide",
+    "note": "Small slip, one lane open. Slow.",
+    "by": "D-103",
+    "createdAtOffset": -14400
+   },
+   {
+    "id": "hz-4",
+    "lat": 11.58,
+    "lon": 76.064,
+    "type": "safe",
+    "note": "NH 766 Kalpetta–Vythiri clear, police checkpoint.",
+    "by": "D-103",
+    "createdAtOffset": -3600
+   }
+  ],
+  "escalations": [
+   {
+    "id": "esc-1",
+    "from": "admin",
+    "by": "ADM-01",
+    "to": "NDRF",
+    "type": "Rescue team",
+    "place": "Mundakkai",
+    "lat": 11.4855,
+    "lon": 76.1525,
+    "people": 42,
+    "urgency": "Critical",
+    "note": "42 people cut off by bridge collapse, 3 injured. Need rope-bridge crossing team.",
+    "status": "acknowledged",
+    "timeline": [
+     {
+      "s": "sent",
+      "n": "Sent to NDRF 4th Bn control",
+      "tOffset": -16200
+     },
+     {
+      "s": "acknowledged",
+      "n": "Team being mobilised from Kalpetta",
+      "tOffset": -14400
+     }
+    ],
+    "createdAtOffset": -16200
+   }
+  ],
+  "zones": [
+   {
+    "id": "zn-1",
+    "name": "Debris-flow corridor, 30 Jul 2024",
+    "type": "landslide",
+    "official": false,
+    "by": "ADM-01",
+    "coords": [
+     [
+      11.46631,
+      76.13482
+     ],
+     [
+      11.47302,
+      76.14084
+     ],
+     [
+      11.4801,
+      76.14655
+     ],
+     [
+      11.48664,
+      76.15074
+     ],
+     [
+      11.49229,
+      76.15401
+     ],
+     [
+      11.49734,
+      76.15754
+     ],
+     [
+      11.49466,
+      76.16146
+     ],
+     [
+      11.48971,
+      76.15799
+     ],
+     [
+      11.48436,
+      76.15426
+     ],
+     [
+      11.4779,
+      76.14945
+     ],
+     [
+      11.47098,
+      76.14316
+     ],
+     [
+      11.46457,
+      76.1367
+     ]
+    ],
+    "source": "Approximate corridor drawn from ISRO-reported headscarp (11.46544, 76.13576), 8 km runout, and the NRSC/ISRO Charter 1029 map. Not an official boundary.",
+    "sourceUrl": "https://bhuvan-app1.nrsc.gov.in/disaster/usrtasks/landslide/doc/Charter_1029_VAP_7_6Aug2024.pdf",
+    "createdAtOffset": 0
+   },
+   {
+    "id": "zn-2",
+    "name": "NRSC/ISRO mapped area (Charter 1029)",
+    "type": "info",
+    "official": true,
+    "by": "ADM-01",
+    "coords": [
+     [
+      11.48333,
+      76.15
+     ],
+     [
+      11.5,
+      76.15
+     ],
+     [
+      11.5,
+      76.1625
+     ],
+     [
+      11.48333,
+      76.1625
+     ]
+    ],
+    "source": "Map frame of the NRSC/ISRO rapid-mapping product “Landslide occurred in Chooralmala town, Wayanad” (6 Aug 2024): 11°29′–11°30′N, 76°9′–76°9′45″E.",
+    "sourceUrl": "https://bhuvan-app1.nrsc.gov.in/disaster/usrtasks/landslide/doc/Charter_1029_VAP_7_6Aug2024.pdf",
+    "createdAtOffset": 0
+   },
+   {
+    "id": "zn-3",
+    "name": "Mundakkai–Punchirimattom no-entry",
+    "type": "red",
+    "official": false,
+    "by": "ADM-01",
+    "coords": [
+     [
+      11.461,
+      76.13
+     ],
+     [
+      11.47,
+      76.129
+     ],
+     [
+      11.48,
+      76.144
+     ],
+     [
+      11.488,
+      76.15
+     ],
+     [
+      11.487,
+      76.156
+     ],
+     [
+      11.478,
+      76.153
+     ],
+     [
+      11.466,
+      76.142
+     ]
+    ],
+    "source": "Demo zone drawn by the control room (illustrative).",
+    "createdAtOffset": 0
+   },
+   {
+    "id": "zn-4",
+    "name": "Panamaram river-side flooding",
+    "type": "flooded",
+    "official": false,
+    "by": "ADM-01",
+    "coords": [
+     [
+      11.725,
+      76.07
+     ],
+     [
+      11.733,
+      76.068
+     ],
+     [
+      11.742,
+      76.072
+     ],
+     [
+      11.747,
+      76.082
+     ],
+     [
+      11.74,
+      76.086
+     ],
+     [
+      11.73,
+      76.083
+     ]
+    ],
+    "source": "Demo zone drawn from driver reports (illustrative).",
+    "createdAtOffset": 0
+   },
+   {
+    "id": "zn-5",
+    "name": "Meppadi relief camp area",
+    "type": "relief",
+    "official": false,
+    "by": "ADM-01",
+    "coords": [
+     [
+      11.552,
+      76.131
+     ],
+     [
+      11.5575,
+      76.131
+     ],
+     [
+      11.5575,
+      76.1365
+     ],
+     [
+      11.552,
+      76.1365
+     ]
+    ],
+    "source": "Demo zone (illustrative).",
+    "createdAtOffset": 0
+   }
+  ],
+  "drivers": [
+   {
+    "id": "D-101",
+    "name": "Ravi Kumar",
+    "vehicle": "Truck KL-12 4471",
+    "type": "truck",
+    "lat": 11.6085,
+    "lon": 76.083,
+    "status": "loading",
+    "lastSeenOffset": -1200
+   },
+   {
+    "id": "D-102",
+    "name": "Anjali Menon",
+    "vehicle": "Pickup KL-12 8810",
+    "type": "truck",
+    "lat": 11.701,
+    "lon": 76.079,
+    "status": "on the road",
+    "lastSeenOffset": -360
+   },
+   {
+    "id": "D-103",
+    "name": "Faisal P.",
+    "vehicle": "4x4 Jeep KL-73 2205",
+    "type": "jeep",
+    "lat": 11.58,
+    "lon": 76.064,
+    "status": "on the road",
+    "lastSeenOffset": -720
+   },
+   {
+    "id": "D-104",
+    "name": "Shibu Thomas",
+    "vehicle": "Rescue boat KL-BT 07",
+    "type": "boat",
+    "lat": 11.733,
+    "lon": 76.07,
+    "status": "on the water",
+    "lastSeenOffset": -540
+   }
+  ]
+ }
+}
