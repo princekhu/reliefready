@@ -66,7 +66,7 @@ section.blk>.lead{color:var(--muted);max-width:68ch;margin:0 0 18px}
       <h1>Get relief to the right places, even when the network is gone.</h1>
       <p>One system from the person trapped on a roof to the truck on the road: an SOS that works without internet, a control room that ranks and allocates, drivers who see which roads are safe, and a tracked line to state and national agencies.</p>
     </div>
-    <div class="stat">Anvathon 2026 · Domain 5 · PS 3<br>Demo data: Wayanad, Kerala. Real places, illustrative needs.<br>Open two apps in separate tabs to watch them sync.</div>
+    <div class="stat">Demonstration district: Wayanad, Kerala<br>Place names and locations are real; request figures are illustrative.</div>
   </div>
 
   <div class="apps">
@@ -129,17 +129,18 @@ section.blk>.lead{color:var(--muted);max-width:68ch;margin:0 0 18px}
   </section>
 
   <section class="blk">
-    <h2>Limits and next steps</h2>
-    <p class="lead">What the prototype does not do yet, and how we would extend it.</p>
+    <h2>Architecture and roadmap</h2>
+    <p class="lead">How the system runs today, and what comes next.</p>
     <div class="limits">
       <div class="col"><h3>Bluetooth mesh and offline calling</h3><p>Browsers cannot advertise Bluetooth or relay between phones, so a true mesh or walkie-talkie voice needs a small Android companion app (Nearby Connections over Bluetooth and Wi-Fi Direct). It would reuse the same RR1 code.</p></div>
       <div class="col"><h3>Zero-network valleys</h3><p>For places with no tower at all, LoRa mesh radios (Meshtastic) reach several kilometres per hop. A gateway node at the control room would read RR1 codes straight into this inbox.</p></div>
-      <div class="col"><h3>Real back end</h3><p>The demo syncs between tabs in one browser, or between viewers of the hosted preview. Production needs a database such as Firebase or Supabase, phone OTP sign-in and an SMS gateway number.</p></div>
+      <div class="col"><h3>Server and database</h3><p>A FastAPI server with a PostgreSQL database stores every request, stop, road report, zone and agency request. Sign-in uses hashed PINs and expiring tokens, and the API is documented at <span class="mono">/docs</span>. SMS gateways post messages to <span class="mono">/api/sms/inbound</span>.</p></div>
     </div>
     <p class="src" style="margin-top:16px">References: <a href="https://apps.apple.com/app/id1441951304" target="_blank" rel="noopener">112 India app</a> · <a href="https://nicobartimes.com/?p=5925" target="_blank" rel="noopener">NDMA Sachet</a> · <a href="https://archive.flossmanuals.net/sahana-eden/what-is-sahana-eden" target="_blank" rel="noopener">Sahana Eden</a> · <a href="https://techxlab.org/solutions/bridgefy/" target="_blank" rel="noopener">Bridgefy</a> · <a href="https://circuitdigest.com/news/meshtastic-an-opensource-off-grid-communication-platform" target="_blank" rel="noopener">Meshtastic</a> · <a href="https://bhuvan-app1.nrsc.gov.in/disaster/usrtasks/landslide/doc/Charter_1029_VAP_7_6Aug2024.pdf" target="_blank" rel="noopener">NRSC/ISRO Chooralmala landslide map</a> · <a href="https://eos.org/thelandslideblog/wayanad-landslides" target="_blank" rel="noopener">ISRO figures via The Landslide Blog</a> · <a href="https://bhuvan.nrsc.gov.in/wiki/index.php/How_to_use_WMS_services" target="_blank" rel="noopener">Bhuvan WMS services</a></p>
   </section>
-  <footer class="foot">ReliefReady prototype · Anvathon 2026. Map data © OpenStreetMap contributors · routing by OSRM · imagery Esri, NASA GIBS · landslide extent NRSC/ISRO.</footer>
+  <footer class="foot">ReliefReady · Map data © OpenStreetMap contributors · routing by OSRM · imagery Esri, NASA GIBS · landslide extent NRSC/ISRO.</footer>
 </main>
+<script src="assets/config.js"></script>
 <script src="assets/common.js"></script>
 <script>document.getElementById('logo').insertAdjacentHTML('afterbegin', RR.logo); RR.netBadge(document.getElementById('net'));</script>
 

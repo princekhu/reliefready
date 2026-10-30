@@ -116,6 +116,7 @@ body:lang(hi){font-family:"Noto Sans Devanagari",var(--f-body)}
 <div class="strobe" id="strobe" hidden><button type="button" id="stopStrobe">Stop signal</button></div>
 
 <script src="assets/qrcode.js"></script>
+<script src="assets/config.js"></script>
 <script src="assets/common.js"></script>
 <script>
 (function(){
@@ -219,7 +220,7 @@ function renderMine(){
   const out = RR.outbox.all().map(x=>x.doc.id);
   if(!ids.length){ $('mine').innerHTML = '<p class="hint">No requests sent from this phone yet.</p>'; return; }
   $('mine').innerHTML = '<ul class="rows">'+ids.map(id => {
-    let s = RR.store.get('sos', id); let local = null; try{ local = JSON.parse(localStorage.getItem('rr.mine.'+id)||'null'); }catch(e){}
+    let s = RR.CONFIG.api ? null : RR.store.get('sos', id); let local = null; try{ local = JSON.parse(localStorage.getItem('rr.mine.'+id)||'null'); }catch(e){}
     s = s || local; if(!s) return '';
     const st = out.includes(id) ? ['Queued on this phone, no signal yet','warn'] : (STATUS[s.status]||STATUS.new);
     return `<li><div class="rowhead"><b>${RR.esc(s.place||'GPS '+(s.lat||0).toFixed(3)+', '+(s.lon||0).toFixed(3))}</b><span class="pill ${st[1]}">${st[0]}</span></div>
@@ -227,6 +228,12 @@ function renderMine(){
   }).join('')+'</ul>';
 }
 RR.store.on(renderMine);
+async function refreshStatuses(){
+  if(!RR.CONFIG.api) return; let ids = []; try{ ids = JSON.parse(localStorage.getItem('rr.mine')||'[]'); }catch(e){}
+  for(const id of ids.slice(0,10)){ const r = await RR.publicStatus(id); if(r){ try{ const l = JSON.parse(localStorage.getItem('rr.mine.'+id)||'null'); if(l && l.status!==r.status){ l.status = r.status; localStorage.setItem('rr.mine.'+id, JSON.stringify(l)); } }catch(e){} } }
+  renderMine();
+}
+refreshStatuses(); setInterval(refreshStatuses, 30000);
 
 /* strobe + whistle in SOS pattern */
 let strobeTimer = null, ac = null;
