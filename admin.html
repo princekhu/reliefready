@@ -10,20 +10,41 @@
 <link rel="stylesheet" href="assets/leaflet.css">
 <link rel="stylesheet" href="assets/common.css">
 <style>
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-top:16px}
-.kpi{background:var(--surface);padding:12px 14px;display:flex;flex-direction:column;gap:2px}
-.kpi b{font:600 24px/1.1 var(--f-mono);font-variant-numeric:tabular-nums}
-.kpi span{font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
-.kpi.alert b{color:var(--bad)}
-.top{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,4fr);gap:16px;margin-top:16px}
-.top .mapbox{height:460px;border-radius:var(--r);overflow:hidden;border:1px solid var(--line)}
-@media (max-width:960px){.top{grid-template-columns:minmax(0,1fr)}.top .mapbox{height:360px}}
-.feed{max-height:460px;overflow:auto}
-.prio{font:700 18px/1 var(--f-mono);min-width:34px;text-align:center;padding:5px 0;border-radius:4px;background:var(--sunk)}
+/* Control room: fixed sidebar navigation, one working area per section. */
+body{min-height:100%}
+.shell{display:grid;grid-template-columns:232px minmax(0,1fr);min-height:100vh}
+.side{position:sticky;top:0;height:100vh;background:var(--surface);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:16px 12px calc(16px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
+.side .logo{padding:2px 6px 14px}
+.side .logo b{font-size:20px}
+.nav{display:flex;flex-direction:column;gap:2px;margin-top:6px}
+.nav .grp{font:600 10.5px/1 var(--f-body);letter-spacing:.09em;text-transform:uppercase;color:var(--muted);padding:14px 10px 6px}
+.nav button,.nav a{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border:0;border-radius:5px;background:none;color:var(--ink);font:500 14px var(--f-body);cursor:pointer;text-align:left;text-decoration:none}
+.nav button:hover,.nav a:hover{background:var(--sunk)}
+.nav button[aria-current=page]{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.nav svg{width:17px;height:17px;flex:none;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.nav .count{margin-left:auto}
+.side .foot2{margin-top:auto;border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:8px;font-size:13px}
+.conn{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--muted)}
+.conn::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--ok)}
+.conn.warn::before{background:var(--warn)} .conn.bad::before{background:var(--bad)}
+.main{min-width:0;padding:22px max(16px,env(safe-area-inset-right,0px)) 40px 24px;display:flex;flex-direction:column;gap:16px}
+.mh{display:flex;flex-wrap:wrap;gap:8px 20px;align-items:flex-end;justify-content:space-between}
+.mh h1{font-size:28px;font-weight:700}
+.mh p{margin:4px 0 0;color:var(--muted);font-size:14px}
+.mh .when{font:500 13px var(--f-mono);color:var(--muted)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;display:flex;flex-direction:column;gap:4px}
+.kpi b{font:600 26px/1.1 var(--f-mono);font-variant-numeric:tabular-nums}
+.kpi span{font-size:12px;color:var(--muted)}
+.kpi.alert{border-color:color-mix(in srgb,var(--bad) 45%,var(--line))} .kpi.alert b{color:var(--bad)}
+.top{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:16px}
+.top.solo{grid-template-columns:minmax(0,1fr)}
+.top .mapbox{height:min(62vh,600px);border-radius:var(--r);overflow:hidden;border:1px solid var(--line)}
+.feed{max-height:calc(min(62vh,600px) - 52px);overflow:auto}
+.prio{font:700 17px/1 var(--f-mono);min-width:36px;text-align:center;padding:6px 0;border-radius:4px;background:var(--sunk)}
 .prio.hi{background:var(--bad-bg);color:var(--bad)} .prio.mid{background:var(--warn-bg);color:var(--warn)}
 .feed li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;align-items:start}
-.tabpanel{padding:16px}
-.section{margin-top:16px}
+.tabpanel{padding:18px}
 .drv{border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:8px;background:var(--surface)}
 .drvgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
 .inline{display:flex;flex-wrap:wrap;gap:8px;align-items:end}
@@ -32,6 +53,17 @@
 .esc.crit{border-left:4px solid var(--bad)}
 .sitrep{white-space:pre-wrap;font:12.5px/1.55 var(--f-mono);background:var(--sunk);border:1px solid var(--line);border-radius:4px;padding:10px;margin:0;max-height:260px;overflow:auto}
 .rt-line{stroke:var(--accent)}
+@media (max-width:1100px){.top{grid-template-columns:minmax(0,1fr)}.feed{max-height:420px}}
+@media (max-width:820px){
+  .shell{grid-template-columns:minmax(0,1fr)}
+  .side{position:sticky;top:env(safe-area-inset-top,0px);height:auto;z-index:900;flex-direction:row;align-items:center;gap:8px;padding:8px max(12px,env(safe-area-inset-right,0px)) 8px max(12px,env(safe-area-inset-left,0px));border-right:0;border-bottom:1px solid var(--line);overflow-x:auto}
+  .side .logo{padding:0;flex:none}.side .logo b{display:none}
+  .nav{flex:none}
+  .nav{flex-direction:row;margin:0}.nav .grp{display:none}.nav button,.nav a{white-space:nowrap;padding:7px 9px}
+  .side .foot2{margin:0;border:0;padding:0;flex-direction:row;align-items:center;white-space:nowrap}
+  .main{padding:16px max(16px,env(safe-area-inset-right,0px)) 32px max(16px,env(safe-area-inset-left,0px))}
+  .top .mapbox{height:360px}
+}
 </style>
 <style>[hidden]{display:none!important}img{max-width:100%}</style>
 </head>
@@ -40,47 +72,59 @@
 
 <div id="root"></div>
 <script src="assets/leaflet.js"></script>
+<script src="assets/config.js"></script>
 <script src="assets/common.js"></script>
 <script>
 (function(){
 const root = document.getElementById('root');
 let S = RR.session();
-if(!S || S.role!=='admin'){ RR.renderSignIn(root, 'admin', s => { S = s; boot(); }); } else boot();
+if(!S || S.role!=='admin' || (RR.CONFIG.api && !S.token)){ RR.renderSignIn(root, 'admin', s => { S = s; boot(); }); } else boot();
 
 function boot(){
 const $ = id => document.getElementById(id);
 root.innerHTML = `
-<header class="bar"><div class="wrap">
-  <a class="logo" href="index.html">${RR.logo}<b>ReliefReady</b><span>Control room · ${RR.esc(RR.CONFIG.district)}</span></a>
-  <span class="net" id="net">Online</span><span class="pill info" id="mode"></span>
-  <span class="grow"></span>
-  <a class="btn small" href="planner.html">Allocation planner</a>
-  <div class="who"><b>${RR.esc(S.name)}</b><button class="btn small" id="out">Sign out</button></div>
-</div></header>
-<main class="wrap">
+<div class="shell">
+<aside class="side" aria-label="Control room navigation">
+  <a class="logo" href="index.html">${RR.logo}<b>ReliefReady</b></a>
+  <nav class="nav" id="tabs">
+    <span class="grp">Operations</span>
+    <button type="button" data-tab="overview"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>Overview</button>
+    <button type="button" data-tab="sos"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/></svg>SOS requests<span class="count" id="c-sos"></span></button>
+    <button type="button" data-tab="fleet"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 7h12v9H2zM14 10h4l3 3v3h-7"/><circle cx="6" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg>Fleet and stops</button>
+    <button type="button" data-tab="zones"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6l5-2 6 2 5-2v14l-5 2-6-2-5 2z"/><path d="M9 4v14M15 6v14"/></svg>Impact zones</button>
+    <button type="button" data-tab="roads"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3L4 21M16 3l4 18M12 5v2M12 11v2M12 17v2"/></svg>Road conditions<span class="count" id="c-roads"></span></button>
+    <button type="button" data-tab="esc"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>Agency requests<span class="count" id="c-esc"></span></button>
+    <span class="grp">Tools</span>
+    <a href="planner.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Allocation planner</a>
+    <button type="button" data-tab="sms"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H8l-4 4z"/></svg>SMS inbox</button>
+    <button type="button" data-tab="settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Settings</button>
+  </nav>
+  <div class="foot2"><span class="conn" id="mode">Connecting…</span><span><b>${RR.esc(S.name)}</b></span><button class="btn small" id="out">Sign out</button></div>
+</aside>
+<main class="main">
+  <header class="mh"><div><h1 id="pt">Overview</h1><p id="ps"></p></div><span class="when" id="when"></span></header>
   <div class="kpis" id="kpis"></div>
-  <div class="top">
+  <div class="top" id="mapRow">
     <div><div class="mapbox" id="map"></div><div class="vlegend" style="margin-top:8px"><span>${RR.vehSvg('truck')}Truck</span><span>${RR.vehSvg('jeep')}4x4 jeep</span><span class="b">${RR.vehSvg('boat')}Rescue boat</span><span><span class="pin sos" style="display:inline-block;width:12px;height:12px;vertical-align:-1px;margin-right:4px"></span>SOS</span><span><span class="pin stop" style="display:inline-block;width:12px;height:12px;vertical-align:-1px;margin-right:4px"></span>Planned stop</span></div><div class="vlegend" style="margin-top:4px">${RR.zoneLegend()}</div></div>
-    <section class="panel"><div class="ph"><h2>Incoming SOS</h2><span class="sub">Highest priority first</span></div><div class="pb feed" id="feed"></div></section>
+    <section class="panel" id="feedPanel"><div class="ph"><h2>Incoming SOS</h2><span class="sub">Highest priority first</span></div><div class="pb feed" id="feed"></div></section>
   </div>
-  <section class="panel section">
-    <div class="tabs" role="tablist" id="tabs">
-      <button role="tab" data-tab="sos" aria-selected="true">SOS requests <span class="count" id="c-sos"></span></button>
-      <button role="tab" data-tab="fleet" aria-selected="false">Drivers and stops</button>
-      <button role="tab" data-tab="roads" aria-selected="false">Road conditions <span class="count" id="c-roads"></span></button>
-      <button role="tab" data-tab="zones" aria-selected="false">Impact zones</button>
-      <button role="tab" data-tab="esc" aria-selected="false">Help from authorities <span class="count" id="c-esc"></span></button>
-      <button role="tab" data-tab="sms" aria-selected="false">SMS inbox</button>
-      <button role="tab" data-tab="settings" aria-selected="false">Settings</button>
-    </div>
-    <div class="tabpanel" id="panel"></div>
-  </section>
-  <footer class="foot">ReliefReady prototype · Anvathon 2026. Requests from the SOS app, SMS line and driver relays arrive here. Help requests to agencies are tracked here and exported as a situation report for the official channel.</footer>
-</main>`;
+  <section class="panel" id="panelWrap"><div class="tabpanel" id="panel"></div></section>
+</main>
+</div>`;
 $('out').onclick = RR.signOut;
-RR.netBadge($('net'));
-
-let tab = 'sos'; try{ tab = sessionStorage.getItem('rr.tab') || 'sos'; }catch(e){}
+const tick = () => { $('when').textContent = RR.CONFIG.district + ' · ' + new Date().toLocaleString('en-IN',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}); };
+tick(); setInterval(tick, 30000);
+const SECTIONS = {
+  overview:['Overview','Live picture of requests, vehicles, zones and road conditions.', true, true, true],
+  sos:['SOS requests','Every request from the SOS app, SMS line and driver relays, ranked by priority.', false, false, false],
+  fleet:['Fleet and stops','Vehicles, their delivery stops and progress. Click the map to place a new stop.', true, false, false],
+  zones:['Impact zones','Areas that block routes, raise SOS priority and decide boat or road delivery.', true, false, false],
+  roads:['Road conditions','Hazards reported by drivers. Every route option is checked against these.', true, false, false],
+  esc:['Agency requests','Requests for help to the State EOC, NDRF, health services and air support.', false, false, false],
+  sms:['SMS inbox','SOS messages received by SMS from areas without internet.', false, false, false],
+  settings:['Settings','Server connection, SMS number and government map layers.', false, false, false],
+};
+let tab = 'overview'; try{ tab = sessionStorage.getItem('rr.tab') || 'overview'; }catch(e){}
 $('tabs').onclick = e => { const b = e.target.closest('[data-tab]'); if(!b) return; tab = b.dataset.tab; try{ sessionStorage.setItem('rr.tab', tab); }catch(e){} renderTab(); };
 
 const drivers = () => { const d = RR.store.all('drivers'); RR.ACCOUNTS.filter(a=>a.role==='driver').forEach(a => { if(!d.find(x=>x.id===a.id)) d.push({id:a.id,name:a.name,vehicle:a.vehicle,type:a.type,lat:RR.DEPOT.lat,lon:RR.DEPOT.lon,status:'not signed in',lastSeen:0}); }); return d; };
@@ -114,7 +158,9 @@ function renderKpis(){
   $('kpis').innerHTML = [[o.length,'Open SOS'],[crit,'Critical',crit>0],[ppl,'People waiting'],[inZone,'People in impact zones',inZone>0],[active+' / '+drivers().length,'Drivers active'],[escOpen,'Open agency requests'],[unsafe,'Road hazards']]
     .map(([b,s,a])=>`<div class="kpi ${a?'alert':''}"><b>${b}</b><span>${s}</span></div>`).join('');
   $('c-sos').textContent = o.filter(s=>s.status==='new').length || ''; $('c-roads').textContent = unsafe||''; $('c-esc').textContent = RR.store.all('escalations').filter(e=>e.status==='sent').length || '';
-  $('mode').textContent = RR.store.mode==='shared' ? 'Shared live data' : 'This device';
+  const m = $('mode');
+  if(RR.CONFIG.api){ const ok = RR.store.apiOk; m.textContent = ok===false ? 'Server unreachable, showing last data' : 'Connected to server'; m.className = 'conn'+(ok===false?' bad':''); }
+  else { m.textContent = RR.store.mode==='shared' ? 'Shared demo data' : 'Demo mode, this browser'; m.className = 'conn warn'; }
 }
 function renderFeed(){
   const o = openSOS();
@@ -123,7 +169,14 @@ function renderFeed(){
 
 /* tabs */
 function renderTab(){
-  document.querySelectorAll('[data-tab]').forEach(b => b.setAttribute('aria-selected', b.dataset.tab===tab));
+  if(!SECTIONS[tab]) tab = 'overview';
+  const [t, sub, showMap, showFeed, showKpi] = SECTIONS[tab];
+  document.querySelectorAll('#tabs [data-tab]').forEach(b => b.dataset.tab===tab ? b.setAttribute('aria-current','page') : b.removeAttribute('aria-current'));
+  $('pt').textContent = t; $('ps').textContent = sub;
+  const wasHidden = $('mapRow').hidden;
+  $('mapRow').hidden = !showMap; $('feedPanel').hidden = !showFeed; $('mapRow').classList.toggle('solo', !showFeed); $('kpis').hidden = !showKpi; $('panelWrap').hidden = tab==='overview';
+  if(showMap) setTimeout(() => map.invalidateSize(), 30);
+  if(tab==='overview') return;
   if(document.activeElement && $('panel').contains(document.activeElement) && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
   ({sos:tabSOS, fleet:tabFleet, roads:tabRoads, zones:tabZones, esc:tabEsc, sms:tabSMS, settings:tabSettings})[tab]();
 }
@@ -264,7 +317,10 @@ function tabSettings(){
   $('panel').innerHTML = `<div class="stack" style="max-width:560px">
     <div class="field"><label for="cfg-sms">SMS gateway number shown in the SOS app</label><input type="tel" id="cfg-sms" value="${RR.esc(RR.CONFIG.smsGateway)}"></div>
     <div class="btns"><button class="btn primary" id="cfg-save">Save</button></div>
-    <p class="hint">Data mode: <b>${RR.store.mode==='shared'?'shared live database (all viewers of this page see the same data)':'this device (pages in this browser stay in sync)'}</b>.</p>
+    <div class="lbl" style="margin-top:8px">Server</div>
+    <div class="field"><label for="cfg-api">ReliefReady API address</label><input type="text" id="cfg-api" placeholder="https://reliefready-api.onrender.com" value="${RR.esc(RR.CONFIG.api)}"></div>
+    <div class="btns"><button class="btn" id="cfg-api-save">Connect</button>${RR.CONFIG.api?'<button class="btn" id="cfg-api-off">Use demo mode</button>':''}${RR.CONFIG.api?`<a class="btn" href="${RR.esc(RR.CONFIG.api)}/docs" target="_blank" rel="noopener">API documentation</a>`:''}</div>
+    <p class="hint">${RR.CONFIG.api?'Connected mode: all data is stored in the server database and shared by every signed-in user.':'Demo mode: data is stored in this browser only. Enter the API address to use the shared database.'}</p>
     ${RR.store.mode==='local'?'<div class="btns"><button class="btn" id="cfg-reset">Reset demo data</button></div>':''}
     <div class="lbl" style="margin-top:12px">Government map layers (WMS)</div>
     <p class="hint">Add any public WMS service, for example a Bhuvan (ISRO) flood hazard or flood inundation layer. Copy the service URL and layer name from the Bhuvan Thematic Services portal. Added layers appear in the map's layers button on the control room and driver maps.</p>
@@ -279,6 +335,11 @@ function tabSettings(){
     if(!w.name||!/^https:\/\//.test(w.url)||!w.layers){ RR.toast('Enter a name, an https:// WMS URL and the layer id.'); return; }
     RR.saveConfig({wms:[...(RR.CONFIG.wms||[]), w]}); RR.toast('Layer added. Reloading the map.'); setTimeout(()=>location.reload(), 700); };
   $('g-save').onclick = () => { const d = $('g-date').value.trim(); if(d && !/^\d{4}-\d{2}-\d{2}$/.test(d)){ RR.toast('Use the format YYYY-MM-DD.'); return; } RR.saveConfig({gibsDate:d}); RR.toast('Date saved. Reloading the map.'); setTimeout(()=>location.reload(), 700); };
+  $('cfg-api-save').onclick = async () => { const u = $('cfg-api').value.trim().replace(/\/+$/,'');
+    if(u && !/^https?:\/\//.test(u)){ RR.toast('Enter a full address starting with https://'); return; }
+    if(u){ try{ const r = await fetch(u+'/api/health'); if(!r.ok) throw 0; }catch(e){ RR.toast('No ReliefReady server answered at that address.'); return; } }
+    RR.setApi(u); try{ localStorage.removeItem('rr.session'); }catch(e){} location.reload(); };
+  const off = $('cfg-api-off'); if(off) off.onclick = () => { RR.setApi(''); try{ localStorage.removeItem('rr.session'); }catch(e){} location.reload(); };
   $('cfg-save').onclick = () => { RR.saveConfig({smsGateway:$('cfg-sms').value.trim()||RR.CONFIG.smsGateway}); RR.toast('Saved for this browser'); };
   const r = $('cfg-reset'); if(r) r.onclick = () => { RR.store.reset(); RR.toast('Demo data restored'); };
 }
