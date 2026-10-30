@@ -16,6 +16,8 @@ RR.CONFIG = {
   gibsDate: '',     // NASA daily satellite date (YYYY-MM-DD); empty = yesterday
 };
 try{ const c = JSON.parse(localStorage.getItem('rr.config')||'null'); if(c) Object.assign(RR.CONFIG, c); }catch(e){}
+RR.CONFIG.api = (() => { try{ const v = localStorage.getItem('rr.api'); if(v!==null) return v; }catch(e){} return (window.RR_API_URL||''); })().replace(/\/+$/,'');
+RR.setApi = url => { try{ localStorage.setItem('rr.api', (url||'').trim()); }catch(e){} };
 RR.saveConfig = patch => { Object.assign(RR.CONFIG, patch); try{ localStorage.setItem('rr.config', JSON.stringify({smsGateway:RR.CONFIG.smsGateway, wms:RR.CONFIG.wms, gibsDate:RR.CONFIG.gibsDate})); }catch(e){} };
 
 /* ---------- Demo accounts (replace with phone OTP / SSO in production) ---------- */
@@ -27,12 +29,23 @@ RR.ACCOUNTS = [
   {id:'D-104',  role:'driver', name:'Shibu Thomas',pin:'1234', vehicle:'Rescue boat KL-BT 07', type:'boat', cap:400},
 ];
 RR.session = () => { try{ return JSON.parse(localStorage.getItem('rr.session')||'null'); }catch(e){ return null; } };
-RR.signIn = (id, pin, role) => {
-  const a = RR.ACCOUNTS.find(x => x.id.toLowerCase() === String(id).trim().toLowerCase() && x.pin === String(pin).trim());
-  if(!a) return {error:'That ID and PIN do not match a registered account.'};
-  if(role && a.role !== role) return {error: role==='admin' ? 'This account is a driver account. Use the driver app.' : 'This is a control-room account. Use the admin console.'};
-  const s = {id:a.id, role:a.role, name:a.name, vehicle:a.vehicle||'', type:a.type||'truck', cap:a.cap||0, at:Date.now()};
+RR.signIn = async (id, pin, role) => {
+  let s;
+  if(RR.CONFIG.api){
+    let r;
+    try{ r = await fetch(RR.CONFIG.api+'/api/auth/login', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id, pin})}); }
+    catch(e){ return {error:'Cannot reach the ReliefReady server. Check your connection and try again.'}; }
+    const j = await r.json().catch(()=>({}));
+    if(!r.ok) return {error: j.detail || 'Sign-in failed.'};
+    const u = j.user; s = {id:u.id, role:u.role, name:u.name, vehicle:u.vehicle||'', type:u.type||'truck', token:j.token, at:Date.now()};
+  } else {
+    const a = RR.ACCOUNTS.find(x => x.id.toLowerCase() === String(id).trim().toLowerCase() && x.pin === String(pin).trim());
+    if(!a) return {error:'That ID and PIN do not match a registered account.'};
+    s = {id:a.id, role:a.role, name:a.name, vehicle:a.vehicle||'', type:a.type||'truck', cap:a.cap||0, at:Date.now()};
+  }
+  if(role && s.role !== role) return {error: role==='admin' ? 'This is a driver account. Use the driver app.' : 'This is a control-room account. Use the control room.'};
   try{ localStorage.setItem('rr.session', JSON.stringify(s)); }catch(e){}
+  store.startSync && store.startSync();
   return {session:s};
 };
 RR.signOut = () => { try{ localStorage.removeItem('rr.session'); }catch(e){} location.reload(); };
@@ -106,7 +119,7 @@ RR.seed = () => ({
 });
 RR.COLS = ['sos','stops','reports','escalations','drivers','zones'];
 
-/* ---------- Store: browser storage, synced across tabs ---------- */
+/* ---------- Store: browser storage, synced across tabs; REST API when configured ---------- */
 const KEY = 'rr.data.v3';
 const store = RR.store = {data:null, mode:'local', db:null, fns:new Set()};
 function loadLocal(){
@@ -123,15 +136,47 @@ store.on = fn => { store.fns.add(fn); return () => store.fns.delete(fn); };
 store.all = col => Object.values(store.data[col]||{});
 store.get = (col,id) => (store.data[col]||{})[id];
 const clean = o => JSON.parse(JSON.stringify(o));
+/* REST API mode: the server is the source of truth; this browser keeps a cached copy. */
+const api = RR.api = async (path, opts={}) => {
+  const sess = RR.session(); const headers = {'Content-Type':'application/json'};
+  if(sess && sess.token) headers.Authorization = 'Bearer '+sess.token;
+  const r = await fetch(RR.CONFIG.api+path, {...opts, headers});
+  if(r.status===401 && sess && sess.token){ try{ localStorage.removeItem('rr.session'); }catch(e){} RR.toast('Your session expired. Sign in again.'); setTimeout(()=>location.reload(), 1500); }
+  const j = await r.json().catch(()=>({}));
+  if(!r.ok){ const err = new Error(typeof j.detail==='string' ? j.detail : 'Request failed ('+r.status+')'); err.status = r.status; throw err; }
+  return j;
+};
+let syncTimer = null;
+store.sync = async () => {
+  const sess = RR.session(); if(!RR.CONFIG.api || !sess || !sess.token || !RR.online()) return;
+  try{ const j = await api('/api/sync'); const d = {}; RR.COLS.forEach(c => { d[c] = {}; (j.data[c]||[]).forEach(x => d[c][x.id] = x); });
+    store.data = d; store.lastSync = Date.now(); store.apiOk = true; saveLocal(); emit(false); }
+  catch(e){ store.apiOk = false; emit(false); }
+};
+store.startSync = () => { if(!RR.CONFIG.api) return; store.mode = 'api'; clearInterval(syncTimer); store.sync();
+  syncTimer = setInterval(() => { if(document.visibilityState!=='hidden') store.sync(); }, 5000); };
+async function pushApi(col, doc, method){
+  const sess = RR.session();
+  try{
+    if(method==='DELETE') await api(`/api/${col}/${encodeURIComponent(doc.id)}`, {method:'DELETE'});
+    else if(col==='sos' && !(sess && sess.token)) await api('/api/public/sos', {method:'POST', body:JSON.stringify(doc)});
+    else await api(`/api/${col}/${encodeURIComponent(doc.id)}`, {method:'PUT', body:JSON.stringify(doc)});
+    store.apiOk = true; return true;
+  }catch(e){
+    if(e.status){ RR.toast(e.message); store.sync(); return true; }        // rejected by server: don't retry
+    RR.outbox.add({col, doc}); return false;                                 // network failure: retry later
+  }
+}
 store.put = (col, doc) => {
   if(!doc.id) doc.id = col.slice(0,3)+'-'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
   store.data[col] = store.data[col]||{}; store.data[col][doc.id] = clean(doc);
   saveLocal(); emit(true);
+  if(RR.CONFIG.api){ pushApi(col, clean(doc)); return doc; }
   if(store.db) store.db.collection(col).doc(doc.id).set(clean(doc)).catch(err => RR.toast('Not saved to the shared log: '+(err&&err.code||'error')));
   return doc;
 };
 store.patch = (col, id, patch) => { const d = store.get(col,id); if(!d) return; return store.put(col, Object.assign({}, d, patch)); };
-store.del = (col, id) => { if(store.data[col]) delete store.data[col][id]; saveLocal(); emit(true); if(store.db) store.db.collection(col).doc(id).delete().catch(()=>{}); };
+store.del = (col, id) => { if(store.data[col]) delete store.data[col][id]; saveLocal(); emit(true); if(RR.CONFIG.api){ pushApi(col, {id}, 'DELETE'); return; } if(store.db) store.db.collection(col).doc(id).delete().catch(()=>{}); };
 store.reset = () => { store.data = RR.seed(); saveLocal(); emit(true); };
 
 /* ---------- Connectivity + offline outbox ---------- */
@@ -147,11 +192,13 @@ RR.outbox = {
   flush(){
     if(!RR.online()) return 0;
     const a = this.all(); if(!a.length) return 0;
-    a.forEach(it => store.put(it.col, it.doc));
     try{ localStorage.setItem(OUT,'[]'); }catch(e){}
+    a.forEach(it => store.put(it.col, it.doc));
     return a.length;
   }
 };
+RR.publicStatus = async id => { if(!RR.CONFIG.api) return null; try{ return await api('/api/public/sos/'+encodeURIComponent(id)); }catch(e){ return null; } };
+if(RR.CONFIG.api){ const s0 = RR.session(); if(s0 && s0.token) setTimeout(store.startSync, 0); }
 window.addEventListener('online', () => { const n = RR.outbox.flush(); if(n) RR.toast(n+' queued message'+(n>1?'s':'')+' sent'); });
 
 /* ---------- SOS short code (fits one SMS, survives copy/paste, Bluetooth share or QR) ---------- */
@@ -233,8 +280,12 @@ RR.copy = (text, btn) => {
 /* ---------- Map ---------- */
 RR.makeMap = (el, opts={}) => {
   const map = L.map(el, {zoomControl:true, attributionControl:true}).setView(opts.center||[11.62,76.09], opts.zoom||11);
-  const street = L.tileLayer(RR.CONFIG.tiles, {maxZoom:19, attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'});
-  const sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {maxZoom:19, attribution:'Imagery © Esri, Maxar, Earthstar Geographics'});
+  const ESRI = 'https://server.arcgisonline.com/ArcGIS/rest/services/';
+  const street = L.tileLayer(ESRI+'World_Street_Map/MapServer/tile/{z}/{y}/{x}', {maxZoom:19, attribution:'Tiles © Esri — Esri, HERE, Garmin, USGS, © OpenStreetMap contributors'});
+  const sat = L.layerGroup([
+    L.tileLayer(ESRI+'World_Imagery/MapServer/tile/{z}/{y}/{x}', {maxZoom:19, attribution:'Imagery © Esri, Maxar, Earthstar Geographics'}),
+    L.tileLayer(ESRI+'Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {maxZoom:19})]);
+  const osm = L.tileLayer(RR.CONFIG.tiles, {maxZoom:19, attribution:'© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'});
   const topo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {maxZoom:17, attribution:'© OpenStreetMap contributors, SRTM · © <a href="https://opentopomap.org">OpenTopoMap</a> (CC-BY-SA)'});
   street.addTo(map);
   const yday = new Date(Date.now()-864e5).toISOString().slice(0,10);
@@ -244,11 +295,11 @@ RR.makeMap = (el, opts={}) => {
   const zones = L.layerGroup().addTo(map);
   const overlays = {'Impact zones':zones, ['NASA satellite, '+gibsDate]:nasa};
   (RR.CONFIG.wms||[]).forEach(w => { try{ overlays[w.name] = L.tileLayer.wms(w.url, {layers:w.layers, format:'image/png', transparent:true, version:w.version||'1.1.1', opacity:.7, attribution:w.attribution||w.name}); }catch(e){} });
-  L.control.layers({'Street map':street, 'Satellite':sat, 'Terrain':topo}, overlays, {collapsed:true, position:'topright'}).addTo(map);
+  L.control.layers({'Street map (English)':street, 'Satellite with labels':sat, 'Terrain':topo, 'OpenStreetMap (local names)':osm}, overlays, {collapsed:true, position:'topright'}).addTo(map);
   let fails = 0, loaded = 0;
   const note = document.createElement('div'); note.className='mapnote'; note.hidden = true; el.appendChild(note);
   street.on('tileload', () => { loaded++; note.hidden = true; });
-  street.on('tileerror', () => { if(++fails>3 && !loaded){ note.hidden=false; note.textContent='Street map tiles could not load here (offline or blocked). Positions are real GPS coordinates; the street map appears when the page is online on the deployed site.'; } });
+  street.on('tileerror', () => { if(++fails>3 && !loaded){ note.hidden=false; note.textContent='Map tiles could not load (no internet connection). Positions and zones are still accurate.'; } });
   map.rrZones = zones;
   setTimeout(() => map.invalidateSize(), 50);
   return map;
@@ -351,13 +402,16 @@ RR.renderSignIn = (root, role, onDone) => {
       <p class="err" id="si-err" role="alert"></p>
       <button class="btn primary" type="submit">Sign in</button>
     </form>
-    <div class="demo"><span class="lbl">Demo accounts (prototype)</span>
+    <details class="demo"><summary class="lbl">Demo access</summary>
       ${accts.map(a=>`<button type="button" class="btn" data-demo="${a.id}"><span class="mono">${a.id}</span> · ${RR.esc(a.name)}${a.vehicle?' · '+RR.esc(a.vehicle):''} <span class="hint" style="margin-left:auto">PIN ${a.pin}</span></button>`).join('')}
-    </div>
-    <p class="hint" style="margin-top:14px">Prototype sign-in. In deployment this is replaced by phone OTP and role-based access issued by the district.</p>
+    </details>
+    <p class="hint" style="margin-top:14px">${RR.CONFIG.api?'Accounts are issued by the district control room.':'Demo mode: data is stored in this browser.'}</p>
   </div></div>`;
   const f = root.querySelector('#si');
-  f.addEventListener('submit', e => { e.preventDefault(); const r = RR.signIn(f.querySelector('#si-id').value, f.querySelector('#si-pin').value, role); if(r.error){ root.querySelector('#si-err').textContent = r.error; } else onDone(r.session); });
+  f.addEventListener('submit', async e => { e.preventDefault(); const btn = f.querySelector('button[type=submit]'); btn.disabled = true; btn.textContent = 'Signing in…';
+    const r = await RR.signIn(f.querySelector('#si-id').value, f.querySelector('#si-pin').value, role);
+    btn.disabled = false; btn.textContent = 'Sign in';
+    if(r.error){ root.querySelector('#si-err').textContent = r.error; } else onDone(r.session); });
   root.querySelectorAll('[data-demo]').forEach(b => b.addEventListener('click', () => { const a = RR.ACCOUNTS.find(x=>x.id===b.dataset.demo); f.querySelector('#si-id').value=a.id; f.querySelector('#si-pin').value=a.pin; }));
 };
 
