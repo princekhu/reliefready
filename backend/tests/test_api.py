@@ -74,3 +74,30 @@ def test_estimate_uses_model_and_sphere():
 def test_model_info():
     r = client.get("/api/demand/model").json()
     assert r["data_is_synthetic"] is True and r["metrics"]["water"]["r2"] > 0.9
+
+
+def test_national_incidents_and_resources():
+    h = token("ADM-01", "2026")
+    data = client.get("/api/sync", headers=h).json()["data"]
+    assert len(data["incidents"]) >= 10 and len(data["resources"]) >= 40
+    assert {i["calamity"] for i in data["incidents"]} >= {"flood", "cyclone", "earthquake", "landslide", "drought", "heatwave", "fire", "coldwave"}
+    r = client.put("/api/incidents/inc-test", headers=h, json={"id": "inc-test", "name": "Test flood", "calamity": "flood", "lat": 25.6, "lon": 85.1, "people": 900})
+    assert r.status_code == 200, r.text
+    bad = client.put("/api/incidents/inc-bad", headers=h, json={"id": "inc-bad", "name": "x", "calamity": "meteor", "lat": 1, "lon": 1})
+    assert bad.status_code == 422
+    # drivers cannot create national incidents
+    assert client.put("/api/incidents/inc-d", headers=token("D-101", "1234"), json={"id": "inc-d", "name": "x", "calamity": "flood", "lat": 1, "lon": 1}).status_code == 403
+
+
+def test_new_collections_seed_into_existing_database():
+    from app.db import Record, SessionLocal
+    from app.main import seed_if_empty
+    db = SessionLocal()
+    db.query(Record).filter(Record.collection == "resources").delete(); db.commit()
+    sos_before = db.query(Record).filter(Record.collection == "sos").count()
+    db.close()
+    seed_if_empty()
+    db = SessionLocal()
+    assert db.query(Record).filter(Record.collection == "resources").count() >= 40
+    assert db.query(Record).filter(Record.collection == "sos").count() == sos_before   # live data untouched
+    db.close()

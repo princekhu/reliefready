@@ -87,6 +87,7 @@
 <script src="assets/config.js"></script>
 <script src="assets/common.js"></script>
 <script src="assets/maptools.js"></script>
+<script src="assets/art.js"></script>
 <script>
 (function(){
 const root = document.getElementById('root');
@@ -114,10 +115,12 @@ root.innerHTML = `
   <button type="button" data-tab="sms">SMS inbox</button>
   <button type="button" data-tab="settings">Settings</button>
   <span class="sep"></span>
+  <a href="india.html">All India →</a>
   <a href="planner.html">Allocation planner →</a>
 </div></nav>
 </div>
 <main class="main wrap">
+  <section class="hero" id="hero"></section>
   <header class="mh"><div><h1 id="pt">Overview</h1><p id="ps"></p></div><div class="right"><span class="livechip" id="live"><i></i>Live</span><span class="when" id="when"></span></div></header>
   <div class="kpis" id="kpis"></div>
   <div class="top" id="mapRow">
@@ -132,6 +135,7 @@ root.innerHTML = `
   <section class="panel" id="panelWrap"><div class="tabpanel" id="panel"></div></section>
 </main>`;
 $('out').onclick = RR.signOut;
+$('hero').innerHTML = RR.heroBanner('admin');
 const tick = () => { $('when').textContent = RR.CONFIG.district + ' · ' + new Date().toLocaleString('en-IN',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}); };
 tick(); setInterval(tick, 30000);
 const SECTIONS = {
@@ -220,6 +224,7 @@ function renderFeed(){
 function renderTab(){
   if(!SECTIONS[tab]) tab = 'overview';
   const [t, sub, showMap, showFeed, showKpi] = SECTIONS[tab];
+  $('hero').hidden = tab!=='overview';
   document.querySelectorAll('#tabs [data-tab]').forEach(b => b.dataset.tab===tab ? b.setAttribute('aria-current','page') : b.removeAttribute('aria-current'));
   try{ window.scrollTo({top:0}); }catch(e){}
   $('pt').textContent = t; $('ps').textContent = sub;

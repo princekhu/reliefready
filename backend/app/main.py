@@ -21,7 +21,7 @@ from .db import Record, User, get_db, init_db, SessionLocal, engine
 from .logic import decode_sos, estimate_supplies, model_info, predict_demand, sos_priority
 from .security import hash_pin, make_token, read_token, verify_pin
 
-COLLECTIONS = ("sos", "stops", "reports", "escalations", "drivers", "zones")
+COLLECTIONS = ("sos", "stops", "reports", "escalations", "drivers", "zones", "incidents", "resources")
 SMS_TOKEN = os.getenv("SMS_WEBHOOK_TOKEN", "")
 ORIGINS = [o.strip() for o in os.getenv("ALLOWED_ORIGINS", "*").split(",") if o.strip()]
 
@@ -100,7 +100,28 @@ class ZoneIn(Loose):
     coords: list[list[float]] = Field(..., min_length=3)
 
 
-SCHEMAS = {"sos": SosIn, "stops": StopIn, "reports": ReportIn, "escalations": EscalationIn, "drivers": DriverIn, "zones": ZoneIn}
+class IncidentIn(Loose):
+    """An affected zone anywhere in India: one calamity, its affected people and status."""
+    name: str = Field(..., max_length=200)
+    calamity: Literal["flood", "cyclone", "earthquake", "landslide", "drought", "heatwave", "fire", "coldwave"]
+    lat: float
+    lon: float
+    people: int = Field(0, ge=0)
+    status: Literal["active", "contained", "resolved"] = "active"
+
+
+class ResourceIn(Loose):
+    """A worker team, supplier truck, boat, helicopter or other asset that can be sent to an incident."""
+    name: str = Field(..., max_length=200)
+    type: Literal["truck", "boat", "helicopter", "tanker", "ndrf", "medical", "volunteers", "jcb", "firetender"]
+    lat: float
+    lon: float
+    units: int = Field(1, ge=0)
+    status: Literal["available", "assigned", "offline"] = "available"
+
+
+SCHEMAS = {"sos": SosIn, "stops": StopIn, "reports": ReportIn, "escalations": EscalationIn, "drivers": DriverIn, "zones": ZoneIn,
+           "incidents": IncidentIn, "resources": ResourceIn}
 
 
 class LoginIn(BaseModel):
@@ -172,16 +193,20 @@ def check_write(user: User, col: str, doc: dict, existing: dict | None):
 def seed_if_empty():
     db = SessionLocal()
     try:
-        if db.query(User).count() == 0 or os.getenv("RESEED") == "1":
-            seed = json.loads((Path(__file__).parent / "seed.json").read_text(encoding="utf-8"))
+        seed = json.loads((Path(__file__).parent / "seed.json").read_text(encoding="utf-8"))
+        full = db.query(User).count() == 0 or os.getenv("RESEED") == "1"
+        if full:
             if os.getenv("RESEED") == "1":
                 db.query(Record).delete(); db.query(User).delete(); db.commit()
             for a in seed["accounts"]:
                 db.add(User(id=a["id"], role=a["role"], name=a["name"], pin_hash=hash_pin(a["pin"]),
                             vehicle=a.get("vehicle", ""), vehicle_type=a.get("type", "truck")))
+        # Collections added in later versions are seeded on their own when still empty, without touching live data.
+        cols = [c for c in seed["data"] if full or db.query(Record).filter(Record.collection == c).count() == 0]
+        if cols:
             t = now_ms()
-            for col, docs in seed["data"].items():
-                for d in docs:
+            for col in cols:
+                for d in seed["data"][col]:
                     d = dict(d)
                     for k in ("createdAt", "lastSeen"):
                         if k + "Offset" in d:

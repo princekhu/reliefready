@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="icon.svg">
+<title>ReliefReady National Operations</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="assets/leaflet.css">
+<link rel="stylesheet" href="assets/common.css">
+<link rel="stylesheet" href="assets/maptools.css">
+<style>
+/* National operations: India map with incidents of every calamity type, matched to the nearest workers and vehicles. */
+.hdr{position:sticky;top:env(safe-area-inset-top,0px);z-index:900}
+.hdr .bar{position:static}
+.hdr .who{color:var(--navy-ink)}
+.conn{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--navy-muted);white-space:nowrap}
+.conn::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--ok)}
+.conn.warn::before{background:var(--warn)} .conn.bad::before{background:var(--bad)}
+.tabs2{background:var(--surface);border-bottom:1px solid var(--line)}
+.tabs2 .wrap{display:flex;gap:2px;overflow-x:auto;padding-block:0}
+.tabs2 button,.tabs2 a{flex:none;display:flex;align-items:center;gap:7px;border:0;background:none;padding:12px 12px 10px;font:600 14px var(--f-body);color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;text-decoration:none;white-space:nowrap}
+.tabs2 button:hover,.tabs2 a:hover{color:var(--ink)}
+.tabs2 button[aria-current=page]{color:var(--ink);border-bottom-color:var(--tc,var(--accent))}
+.tabs2 button svg{color:var(--tc,var(--muted))}
+.tabs2 .sep{flex:1}
+.tabs2 .count{font:600 11.5px/1 var(--f-mono)!important;color:var(--muted)!important;background:var(--sunk)!important;border-radius:999px;padding:3px 7px!important;min-width:0!important}
+.tabs2 .count:empty{display:none}
+.main{padding-block:18px 40px;display:flex;flex-direction:column;gap:14px}
+.kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+@media (max-width:1200px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:620px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{padding:12px 16px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:1px;min-width:0;margin:0 0 -1px 0}
+.kpi b{font:600 24px/1.15 var(--f-mono);font-variant-numeric:tabular-nums}
+.kpi .l{font-size:12.5px;font-weight:600}
+.kpi .s{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi.alert b{color:var(--bad)}
+.top{display:grid;grid-template-columns:minmax(0,1fr) 430px;gap:14px;align-items:start}
+.top .mapbox{height:min(76vh,760px);border-radius:var(--r);overflow:hidden;border:1px solid var(--line)}
+@media (max-width:1150px){.top{grid-template-columns:minmax(0,1fr)}.top .mapbox{height:460px}}
+.side{display:flex;flex-direction:column;max-height:min(76vh,760px)}
+@media (max-width:1150px){.side{max-height:none}}
+.side .ph{gap:10px}
+.side .pb{overflow:auto;padding-top:6px}
+.seg2{display:inline-flex;border:1px solid var(--line);border-radius:5px;overflow:hidden}
+.seg2 button{border:0;background:var(--surface);padding:6px 12px;font:600 13px var(--f-body);color:var(--muted);cursor:pointer}
+.seg2 button[aria-pressed=true]{background:var(--navy);color:var(--navy-ink)}
+/* incident cards */
+.ilist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.icard{display:grid;grid-template-columns:38px minmax(0,1fr) auto;gap:2px 12px;align-items:center;padding:11px 12px;border:1px solid var(--line);border-left:4px solid var(--cc);border-radius:5px;background:var(--surface);cursor:pointer;text-align:left;width:100%;font:inherit;color:inherit}
+.icard:hover{border-color:var(--cc)}
+.icard .ci{grid-row:span 2;width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:color-mix(in srgb,var(--cc) 14%,transparent);color:var(--cc)}
+.icard b{font-size:14.5px;line-height:1.3}
+.icard .m{font-size:12.5px;color:var(--muted)}
+.icard .cov{grid-row:span 2;text-align:right;font:600 13px var(--f-mono)}
+.icard .cov small{display:block;font:500 11px var(--f-body);color:var(--muted)}
+.icard.done{opacity:.6}
+.sev{display:inline-flex;gap:2px;vertical-align:1px;margin-left:4px}
+.sev i{width:5px;height:9px;border-radius:1px;background:var(--line)}
+.sev i.on{background:var(--cc)}
+/* detail */
+.back2{border:0;background:none;color:var(--accent);font:600 13px var(--f-body);cursor:pointer;padding:0;margin-bottom:8px}
+.dhead{display:flex;flex-direction:column;gap:6px;padding-bottom:12px;border-bottom:1px solid var(--line)}
+.cbadge{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;padding:3px 10px 3px 7px;border-radius:999px;background:color-mix(in srgb,var(--cc) 14%,transparent);color:var(--cc);font:700 12px var(--f-body);text-transform:uppercase;letter-spacing:.06em}
+.dhead h2{font-size:21px;line-height:1.2}
+.facts{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line);border-radius:5px;margin-top:4px}
+.facts div{padding:8px 10px;border-left:1px solid var(--line)} .facts div:first-child{border-left:0}
+.facts b{display:block;font:600 18px/1.2 var(--f-mono)} .facts span{font-size:11.5px;color:var(--muted)}
+.access{font-size:12.5px;color:var(--muted);margin:0;padding-left:10px;border-left:3px solid var(--cc)}
+.covbar{height:8px;border-radius:4px;background:var(--sunk);overflow:hidden;margin-top:6px}
+.covbar span{display:block;height:100%;background:var(--ok)}
+.covbar span.mid{background:var(--warn)} .covbar span.low{background:var(--bad)}
+.sec{font:600 10.5px/1 var(--f-body);text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin:16px 0 8px}
+.crow{border-top:1px solid var(--line);padding:9px 0;display:grid;grid-template-columns:12px minmax(0,1fr) auto;gap:3px 10px;align-items:baseline}
+.crow .dot{width:10px;height:10px;border-radius:3px;background:var(--rc);align-self:center}
+.crow .nm{font-weight:600;font-size:13.5px}
+.crow .ct{font:600 13px var(--f-mono);white-space:nowrap}
+.crow .why{grid-column:2/-1;font-size:11.5px;color:var(--muted)}
+.crow ul{grid-column:2/-1;list-style:none;margin:2px 0 0;padding:0;font-size:12.5px;display:flex;flex-direction:column;gap:2px}
+.crow li{display:flex;gap:6px;justify-content:space-between}
+.crow li span:last-child{font-family:var(--f-mono);color:var(--muted);white-space:nowrap}
+.gap{color:var(--bad);font-weight:700}
+.stbl{width:100%;border-collapse:collapse;font-size:13px}
+.stbl td{padding:6px 0;border-top:1px solid var(--line)} .stbl td:last-child,.stbl td:nth-child(2){text-align:right;font-family:var(--f-mono);white-space:nowrap;padding-left:10px}
+.stbl small{color:var(--muted)}
+.acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px;padding-top:14px;border-top:1px solid var(--line)}
+.src{font-size:11.5px;color:var(--muted);margin-top:12px}
+/* resources */
+.rgroup{border-top:1px solid var(--line);padding:10px 0}
+.rgroup:first-child{border-top:0}
+.rgroup h3{font-size:14px;display:flex;align-items:center;gap:8px;justify-content:space-between}
+.rgroup h3 .dot{width:10px;height:10px;border-radius:3px;background:var(--rc)}
+.rgroup h3 span:last-child{font:600 12.5px var(--f-mono);color:var(--muted)}
+.rgroup ul{list-style:none;margin:6px 0 0;padding:0;font-size:12.5px;display:flex;flex-direction:column;gap:3px}
+.rgroup li{display:flex;justify-content:space-between;gap:8px}
+.rgroup li span:last-child{font-family:var(--f-mono);white-space:nowrap;color:var(--muted)}
+.formbox{border:1px solid var(--line);border-radius:5px;padding:12px;display:flex;flex-direction:column;gap:10px;margin-bottom:12px;background:var(--sunk)}
+.formbox .g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+/* map markers */
+.imk{display:grid;place-items:center;border-radius:50%;background:var(--cc);color:#fff;border:2.5px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.35)}
+.imk.sel{outline:3px solid var(--cc);outline-offset:3px}
+.imk.s5{animation:ipulse 1.8s ease-out infinite}
+@keyframes ipulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--cc) 60%,transparent),0 2px 8px rgba(0,0,0,.35)}100%{box-shadow:0 0 0 16px transparent,0 2px 8px rgba(0,0,0,.35)}}
+@media (prefers-reduced-motion:reduce){.imk.s5{animation:none}}
+.rmk{width:13px;height:13px;border-radius:3px;background:var(--rc);border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.rmk.busy{opacity:.45}
+.stline{stroke:#0F2A28;stroke-width:1;fill:none;opacity:.55}
+:root[data-theme="dark"] .stline{stroke:#9DB5AE}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .stline{stroke:#9DB5AE}}
+.dline2{stroke-dasharray:6 6;stroke-width:2.2;fill:none}
+.pickbar{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:860;background:var(--navy);color:var(--navy-ink);padding:7px 12px;border-radius:5px;font:600 13px var(--f-body);display:flex;gap:10px;align-items:center;width:max-content;max-width:calc(100% - 120px)}
+.pickbar button{background:transparent;border:1px solid currentColor;color:inherit;border-radius:3px;padding:2px 9px;font:inherit;cursor:pointer}
+/* playbook */
+.pbk{width:100%;border-collapse:collapse;font-size:13px}
+.pbk th,.pbk td{text-align:left;padding:8px 10px;border-top:1px solid var(--line);vertical-align:top}
+.pbk th{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);border-top:0}
+.pbk td:first-child{white-space:nowrap;font-weight:600}
+.pbk td:first-child span{color:var(--cc)}
+.tblwrap{overflow-x:auto}
+@media (max-width:700px){.hdr .who b,.hdr .conn{display:none}.facts b{font-size:15px}}
+</style>
+<style>[hidden]{display:none!important}img{max-width:100%}</style>
+</head>
+<body>
+
+
+<div id="root"></div>
+
+<script src="assets/leaflet.js"></script>
+<script src="js/model.js"></script>
+<script src="assets/config.js"></script>
+<script src="assets/common.js"></script>
+<script src="assets/maptools.js"></script>
+<script src="assets/india.js"></script>
+<script src="assets/national.js"></script>
+<script src="assets/art.js"></script>
+<script>
+(function(){
+const root = document.getElementById('root');
+let S = RR.session();
+if(!S || S.role!=='admin' || (RR.CONFIG.api && !S.token)){ RR.renderSignIn(root, 'admin', s => { S = s; boot(); }); } else boot();
+
+function boot(){
+const $ = id => document.getElementById(id), esc = RR.esc, N = RR.fmtN;
+let filter = 'all', view = 'inc', selId = null, days = 3, picking = null, showDone = false;
+const cals = Object.keys(RR.CALAMITY);
+root.innerHTML = `
+<div class="hdr">
+<header class="bar"><div class="wrap">
+  ${RR.backBtn()}
+  <a class="logo" href="index.html">${RR.logo}<b>ReliefReady</b><span>National operations · India</span></a>
+  <span class="grow"></span>
+  <span class="conn" id="mode">Connecting…</span>
+  <div class="who"><b>${esc(S.name)}</b><button class="btn small" id="out">Sign out</button></div>
+</div></header>
+<nav class="tabs2" aria-label="Filter by calamity"><div class="wrap" id="tabs">
+  <button type="button" data-f="all">All India <span class="count" id="n-all"></span></button>
+  ${cals.map(k => `<button type="button" data-f="${k}" style="--tc:${RR.CALAMITY[k].color}">${RR.calIcon(k,16)}${RR.CALAMITY[k].label} <span class="count" id="n-${k}"></span></button>`).join('')}
+  <span class="sep"></span>
+  <a href="admin.html">District control room →</a>
+</div></nav>
+</div>
+<main class="main wrap">
+  <section class="hero" id="hero"></section>
+  <div class="kpis" id="kpis"></div>
+  <div class="top">
+    <div class="mapbox" id="map"></div>
+    <section class="panel side">
+      <div class="ph"><div class="seg2" role="group" aria-label="Show"><button type="button" data-v="inc">Incidents</button><button type="button" data-v="res">Workers and vehicles</button></div><span class="sub" id="sideSub"></span></div>
+      <div class="pb" id="side"></div>
+    </section>
+  </div>
+  <section class="panel"><div class="ph"><h2>Calamity playbooks</h2><span class="sub">How needs are worked out for each type of disaster</span></div><div class="pb tblwrap" id="playbook"></div></section>
+</main>`;
+$('out').onclick = RR.signOut;
+$('hero').innerHTML = RR.heroBanner ? RR.heroBanner('india') : '';
+
+/* ---------- map ---------- */
+const map = RR.makeMap($('map'), {center:[22.6, 80.5], zoom:5, noDistrict:true, locate:true});
+const stLay = L.geoJSON(window.RR_INDIA.states, {style:{className:'stline', weight:1, fill:false}, interactive:false}).addTo(map);
+const hiLay = L.layerGroup().addTo(map), lineLay = L.layerGroup().addTo(map), resLay = L.layerGroup().addTo(map), incLay = L.layerGroup().addTo(map);
+RR.addMapLayer(map, 'Incidents (by calamity)', incLay, '<i class="rr-dot" style="background:#C42B1C"></i>');
+RR.addMapLayer(map, 'Workers, trucks, boats and helicopters', resLay, '<i class="rr-dot" style="background:#0D6B5B;border-radius:3px"></i>');
+RR.addMapLayer(map, 'Dispatch lines for the selected incident', lineLay, '<i class="rr-line-sw"></i>');
+RR.addMapLayer(map, 'State boundaries', stLay, '<i class="zl rr-dist"></i>');
+map.attributionControl.addAttribution('Boundaries: Census of India 2011 districts');
+map.on('click', e => { if(!picking || map.rrBusy) return; picking(e.latlng.lat, e.latlng.lng); });
+let bar = null;
+const startPick = (text, fn) => { endPick(); bar = document.createElement('div'); bar.className = 'pickbar'; bar.innerHTML = `${text} <button type="button">Cancel</button>`; bar.querySelector('button').onclick = endPick; $('map').appendChild(bar); $('map').classList.add('picking'); picking = (a,b) => { endPick(); fn(a,b); }; $('map').scrollIntoView({behavior:'smooth', block:'center'}); };
+function endPick(){ picking = null; bar && bar.remove(); bar = null; $('map').classList.remove('picking'); }
+
+const incidents = () => RR.store.all('incidents');
+const visible = () => incidents().filter(i => (filter==='all' || i.calamity===filter) && (showDone || i.status!=='resolved'))
+  .sort((a,b) => (a.status==='resolved')-(b.status==='resolved') || (b.severity||0)-(a.severity||0) || (b.people||0)-(a.people||0));
+const planOf = (inc, d) => RR.planIncident(inc, d || inc.days || 3);
+
+function drawMap(){
+  incLay.clearLayers(); resLay.clearLayers(); lineLay.clearLayers(); hiLay.clearLayers();
+  const pool = RR.resourcePool();
+  pool.forEach(r => { const T = RR.RES[r.type]||{}; const free = RR.freeUnits(r);
+    L.marker([r.lat, r.lon], {icon:L.divIcon({className:'', html:`<div class="rmk${free?'':' busy'}" style="--rc:${T.color}"></div>`, iconSize:[13,13], iconAnchor:[6,6]}), zIndexOffset:-100})
+      .bindTooltip(`<b>${esc(r.name)}</b><br>${esc(T.label||r.type)} · ${free} of ${r.units} free`).addTo(resLay); });
+  visible().forEach(i => { const C = RR.CALAMITY[i.calamity]; const sz = Math.round(26 + Math.min(20, Math.log10(Math.max(10, i.people||10))*4));
+    const m = L.marker([i.lat, i.lon], {icon:L.divIcon({className:'', html:`<div class="imk${i.id===selId?' sel':''}${i.severity>=5&&i.status==='active'?' s5':''}" style="--cc:${C.color};width:${sz}px;height:${sz}px">${RR.calIcon(i.calamity, Math.round(sz*.55))}</div>`, iconSize:[sz,sz], iconAnchor:[sz/2,sz/2]}), zIndexOffset:i.id===selId?1000:0})
+      .bindTooltip(`<b>${esc(i.name)}</b><br>${esc(i.district)}, ${esc(i.state)} · ${N(i.people)} people`);
+    m.on('click', () => select(i.id)); m.addTo(incLay); });
+  const inc = selId && RR.store.get('incidents', selId);
+  if(inc){ const C = RR.CALAMITY[inc.calamity];
+    const f = RR.districtFeature(inc.district, inc.state);
+    if(f) L.geoJSON(f, {style:{color:C.color, fillColor:C.color, fillOpacity:.12, weight:2.2, dashArray:'6 4'}, interactive:false}).addTo(hiLay);
+    const plan = planOf(inc, days);
+    plan.rows.forEach(row => row.picks.forEach(p => L.polyline([[p.r.lat,p.r.lon],[inc.lat,inc.lon]], {className:'dline2', color:RR.RES[row.type].color, weight:2.2, opacity:.85, interactive:false}).addTo(lineLay)));
+  }
+}
+const zoomTo = inc => { const plan = planOf(inc, days); const pts = [[inc.lat,inc.lon]]; plan.rows.forEach(r => r.picks.forEach(p => pts.push([p.r.lat,p.r.lon])));
+  const f = RR.districtFeature(inc.district, inc.state); let b = L.latLngBounds(pts); if(f) b = b.extend(L.geoJSON(f).getBounds());
+  map.fitBounds(b, {padding:[40,40], maxZoom:9}); };
+
+/* ---------- KPIs and tabs ---------- */
+function renderTop(){
+  const act = incidents().filter(i => i.status!=='resolved');
+  const pool = RR.resourcePool(), units = pool.reduce((t,r)=>t+(+r.units||0),0), free = pool.reduce((t,r)=>t+RR.freeUnits(r),0);
+  const plans = act.map(i => planOf(i)); const cov = plans.length ? plans.reduce((t,p)=>t+p.coverage,0)/plans.length : 1;
+  const shortReq = RR.store.all('escalations').filter(e => e.from==='national' && e.status!=='resolved').length;
+  const k = (v, l, s, alert) => `<div class="kpi${alert?' alert':''}"><b>${v}</b><span class="l">${l}</span><span class="s">${s}</span></div>`;
+  $('kpis').innerHTML = k(act.length, 'Active incidents', `${new Set(act.map(i=>i.state)).size} states · ${new Set(act.map(i=>i.calamity)).size} calamity types`)
+    + k(N(act.reduce((t,i)=>t+(+i.people||0),0)), 'People affected', 'across all active incidents')
+    + k(N(act.reduce((t,i)=>t+(+i.stranded||0),0)), 'People stranded', 'need rescue or evacuation', act.some(i=>i.stranded>0))
+    + k(`${N(free)} / ${N(units)}`, 'Units free', 'teams, trucks, boats, helicopters')
+    + k(Math.round(cov*100)+'%', 'Needs matched', 'average over active incidents', cov<.8)
+    + k(shortReq, 'Shortfall requests', 'open with NDMA / MHA', shortReq>0);
+  $('n-all').textContent = act.length;
+  cals.forEach(c => { const n = act.filter(i=>i.calamity===c).length; $('n-'+c).textContent = n || ''; });
+  document.querySelectorAll('#tabs [data-f]').forEach(b => b.setAttribute('aria-current', b.dataset.f===filter ? 'page' : 'false'));
+  document.querySelectorAll('[data-v]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.v===view)));
+  const m = $('mode');
+  if(RR.CONFIG.api){ const ok = RR.store.apiOk; m.textContent = ok===false ? 'Server unreachable, showing last data' : 'Connected to server'; m.className = 'conn'+(ok===false?' bad':''); }
+  else { m.textContent = 'Demo mode, this browser'; m.className = 'conn warn'; }
+}
+$('tabs').onclick = e => { const b = e.target.closest('[data-f]'); if(!b) return; filter = b.dataset.f; selId = null; render();
+  const list = visible(); if(list.length && filter!=='all') map.fitBounds(L.latLngBounds(list.map(i=>[i.lat,i.lon])).pad(.4), {maxZoom:8}); else if(filter==='all') map.setView([22.6,80.5], 5); };
+document.querySelector('.seg2').onclick = e => { const b = e.target.closest('[data-v]'); if(!b) return; view = b.dataset.v; selId = null; render(); };
+
+/* ---------- side panel ---------- */
+const sevDots = (n, c) => `<span class="sev" style="--cc:${c}" title="Severity ${n} of 5">${[1,2,3,4,5].map(x=>`<i class="${x<=n?'on':''}"></i>`).join('')}</span>`;
+function renderSide(){
+  if(view==='res') return renderResources();
+  if(selId && RR.store.get('incidents', selId)) return renderDetail(RR.store.get('incidents', selId));
+  const list = visible();
+  $('sideSub').textContent = list.length+' shown';
+  $('side').innerHTML = `<div class="btns" style="margin-bottom:10px"><button class="btn primary small" id="newInc">+ New incident</button><label class="hint" style="display:flex;gap:6px;align-items:center;margin-left:auto"><input type="checkbox" id="showDone" ${showDone?'checked':''}> Show resolved</label></div>
+    <div id="incForm"></div>
+    <ul class="ilist">${list.map(i => { const C = RR.CALAMITY[i.calamity], p = planOf(i);
+      return `<li><button type="button" class="icard${i.status==='resolved'?' done':''}" data-sel="${i.id}" style="--cc:${C.color}"><span class="ci">${RR.calIcon(i.calamity,20)}</span>
+        <b>${esc(i.name)}${sevDots(i.severity||3, C.color)}</b><span class="cov">${Math.round(p.coverage*100)}%<small>matched</small></span>
+        <span class="m">${esc(i.district)}, ${esc(i.state)} · ${N(i.people)} people${i.stranded?' · '+N(i.stranded)+' stranded':''}${i.status!=='active'?' · '+i.status:''}</span></button></li>`; }).join('') || '<li class="hint">No incidents for this calamity.</li>'}</ul>`;
+  $('newInc').onclick = incidentForm;
+  $('showDone').onchange = e => { showDone = e.target.checked; render(); };
+}
+function incidentForm(){
+  const box = $('incForm'); let loc = null;
+  box.innerHTML = `<div class="formbox"><div class="g2">
+    <div class="field"><label for="ni-cal">Calamity</label><select id="ni-cal">${cals.map(k=>`<option value="${k}">${RR.CALAMITY[k].label}</option>`).join('')}</select></div>
+    <div class="field"><label for="ni-sev">Severity (1–5)</label><input type="number" id="ni-sev" min="1" max="5" value="4"></div></div>
+    <div class="field"><label for="ni-name">Short description</label><input type="text" id="ni-name" placeholder="e.g. River overflow in low-lying wards"></div>
+    <div class="g2"><div class="field"><label for="ni-people">People affected</label><input type="number" id="ni-people" min="0" value="5000"></div>
+    <div class="field"><label for="ni-str">People stranded</label><input type="number" id="ni-str" min="0" value="0"></div></div>
+    <div class="field"><label for="ni-inj">People injured</label><input type="number" id="ni-inj" min="0" value="0"></div>
+    <p class="hint" id="ni-loc">Location: not set</p>
+    <div class="btns"><button class="btn" id="ni-pick">Pick location on the map</button><button class="btn primary" id="ni-save">Save incident</button><button class="btn" id="ni-x">Cancel</button></div></div>`;
+  $('ni-x').onclick = () => box.innerHTML = '';
+  $('ni-pick').onclick = () => startPick('Click where the incident is', (lat, lon) => { const d = RR.districtAt(lat, lon);
+    loc = {lat:+lat.toFixed(4), lon:+lon.toFixed(4), district:d?d.district:'Unknown district', state:d?d.state:'Outside India'};
+    $('ni-loc').innerHTML = `Location: <b>${esc(loc.district)}, ${esc(loc.state)}</b> <span class="mono">(${loc.lat}, ${loc.lon})</span>`; });
+  $('ni-save').onclick = () => { if(!loc){ RR.toast('Pick the location on the map first.'); return; }
+    const cal = $('ni-cal').value, name = $('ni-name').value.trim() || RR.CALAMITY[cal].label+' in '+loc.district;
+    const doc = RR.store.put('incidents', {name, calamity:cal, severity:Math.min(5,Math.max(1,+$('ni-sev').value||3)), people:Math.max(0,+$('ni-people').value||0), stranded:Math.max(0,+$('ni-str').value||0), injured:Math.max(0,+$('ni-inj').value||0),
+      ...loc, days:3, status:'active', createdAt:Date.now(), by:S.id, note:'', source:'Reported by '+S.name});
+    RR.toast('Incident added. Nearest units are matched automatically.'); select(doc.id); };
+}
+function renderDetail(inc){
+  const C = RR.CALAMITY[inc.calamity], plan = planOf(inc, days), pct = Math.round(plan.coverage*100);
+  $('sideSub').textContent = '';
+  const disp = plan.rows.reduce((t,r)=>t+r.dispatched,0);
+  $('side').innerHTML = `<button class="back2" id="bk">← All incidents</button>
+  <div class="dhead" style="--cc:${C.color}"><span class="cbadge">${RR.calIcon(inc.calamity,15)}${C.label}${sevDots(inc.severity||3, C.color)}</span>
+    <h2>${esc(inc.name)}</h2><span class="hint">${esc(inc.district)}, ${esc(inc.state)} · reported ${RR.ago(inc.createdAt)}${inc.status!=='active'?' · <b>'+inc.status+'</b>':''}${inc.dispatchedAt?' · dispatched '+RR.ago(inc.dispatchedAt):''}</span>
+    <div class="facts"><div><b>${N(inc.people)}</b><span>people affected</span></div><div><b>${N(inc.stranded||0)}</b><span>stranded</span></div><div><b>${N(inc.injured||0)}</b><span>injured</span></div></div>
+    <p class="access">${esc(C.access)}${inc.note?'. '+esc(inc.note):''}</p></div>
+  <div class="sec">Plan for <span class="seg2" role="group" aria-label="Days" style="vertical-align:middle;margin-left:6px">${[1,3,7].map(d=>`<button type="button" data-days="${d}" aria-pressed="${d===days}">${d} day${d>1?'s':''}</button>`).join('')}</span></div>
+  <div style="display:flex;justify-content:space-between;font-size:13px"><b>${pct}% of teams and vehicles matched</b><span class="mono">${plan.firstEta!=null?'all on site in '+RR.etaText(plan.firstEta):''}</span></div>
+  <div class="covbar"><span class="${pct>=90?'':pct>=60?'mid':'low'}" style="width:${pct}%"></span></div>
+  <div class="sec">Workers and vehicles (nearest available first, within 36 h by road or 8 h by air)</div>
+  ${plan.rows.map(r => { const T = RR.RES[r.type];
+    return `<div class="crow" style="--rc:${T.color}"><span class="dot"></span><span class="nm">${esc(T.short)}</span><span class="ct">${r.got} / ${r.n}${r.gap?` <span class="gap">−${r.gap}</span>`:''}</span>
+      <span class="why">${esc(r.why)} · ${esc(T.unitLabel)}</span>
+      <ul>${r.picks.map(p => `<li><span>${p.units} × ${esc(p.r.name)}${p.mine?' <b style="color:var(--ok)">sent</b>':''}</span><span>${Math.round(p.km)} km · ${RR.etaText(p.hours)}</span></li>`).join('') || '<li class="gap">None available</li>'}</ul></div>`; }).join('')}
+  <div class="sec">Supplies for ${plan.need.days} day${plan.need.days>1?'s':''}</div>
+  <table class="stbl"><tbody>${plan.need.supplies.map(s => `<tr><td>${esc(RR.SUPPLY[s.k].label)}${s.byTanker?' <small>by tanker</small>':''}</td><td>${N(s.qty)} ${esc(RR.SUPPLY[s.k].unit)}</td><td><small>${s.kind==='daily'?N(s.perDay)+' a day':'once'}</small></td></tr>`).join('')}
+    <tr><td><b>Weight to move by road</b></td><td><b>${N(plan.need.kgDay)} kg</b></td><td><small>a day</small></td></tr></tbody></table>
+  <div class="acts">
+    <button class="btn primary" id="dsp">${disp?'Update dispatch':'Dispatch matched units'}</button>
+    ${plan.gaps.length?`<button class="btn danger" id="req">Request shortfall from NDMA</button>`:''}
+    ${inc.link?`<a class="btn" href="${esc(inc.link)}">Open district control room</a>`:''}
+    <button class="btn" id="zm">Zoom to</button>
+    ${inc.status==='active'?'<button class="btn" id="cont">Mark contained</button>':''}
+    ${inc.status!=='resolved'?'<button class="btn" id="res">Mark resolved</button>':'<button class="btn" id="reopen">Reopen</button>'}
+  </div>
+  <p class="src">${esc(inc.source||'')}</p>`;
+  $('bk').onclick = () => { selId = null; render(); };
+  $('side').querySelectorAll('[data-days]').forEach(b => b.onclick = () => { days = +b.dataset.days; render(); });
+  $('dsp').onclick = () => { const n = RR.dispatchPlan(inc, plan); RR.toast(n ? `${n} units sent to ${inc.district}. They now show as busy for other incidents.` : 'District vehicles get their orders in the control room.'); };
+  if($('req')) $('req').onclick = () => { RR.requestShortfall(inc, plan); RR.toast('Shortfall request sent to NDMA / MHA. Track it under Agency requests.'); };
+  $('zm').onclick = () => zoomTo(inc);
+  if($('cont')) $('cont').onclick = () => RR.store.patch('incidents', inc.id, {status:'contained'});
+  if($('res')) $('res').onclick = () => { RR.releaseIncident(inc); RR.store.patch('incidents', inc.id, {status:'resolved'}); RR.toast('Resolved. Its units are free again.'); };
+  if($('reopen')) $('reopen').onclick = () => RR.store.patch('incidents', inc.id, {status:'active'});
+}
+function renderResources(){
+  const pool = RR.resourcePool(), incs = Object.fromEntries(incidents().map(i=>[i.id,i]));
+  $('sideSub').textContent = pool.length+' pools';
+  $('side').innerHTML = `<div class="btns" style="margin-bottom:10px"><button class="btn primary small" id="newRes">+ Add workers or vehicles</button></div><div id="resForm"></div>
+  ${Object.keys(RR.RES).map(t => { const T = RR.RES[t], rs = pool.filter(r=>r.type===t); if(!rs.length) return '';
+    const units = rs.reduce((a,r)=>a+(+r.units||0),0), free = rs.reduce((a,r)=>a+RR.freeUnits(r),0);
+    return `<div class="rgroup" style="--rc:${T.color}"><h3><span style="display:flex;gap:8px;align-items:center"><span class="dot"></span>${esc(T.label)}</span><span>${free} / ${units} free</span></h3>
+      <ul>${rs.sort((a,b)=>a.name.localeCompare(b.name)).map(r => { const as = Object.entries(r.assigned||{}).filter(([k])=>incs[k]);
+        return `<li><span>${esc(r.name)}${as.length?' <span class="hint">→ '+as.map(([k,v])=>v+' to '+esc(incs[k].district)).join(', ')+'</span>':''}</span><span>${RR.freeUnits(r)}/${r.units}</span></li>`; }).join('')}</ul></div>`; }).join('')}`;
+  $('newRes').onclick = () => { let loc = null; const box = $('resForm');
+    box.innerHTML = `<div class="formbox"><div class="g2"><div class="field"><label for="nr-type">Type</label><select id="nr-type">${Object.keys(RR.RES).map(k=>`<option value="${k}">${RR.RES[k].label}</option>`).join('')}</select></div>
+      <div class="field"><label for="nr-units">How many</label><input type="number" id="nr-units" min="1" value="2"></div></div>
+      <div class="field"><label for="nr-name">Name / base</label><input type="text" id="nr-name" placeholder="e.g. SDRF boats, Patna"></div>
+      <div class="field"><label for="nr-owner">Agency or supplier</label><input type="text" id="nr-owner" placeholder="e.g. State, NDRF, private supplier"></div>
+      <p class="hint" id="nr-loc">Base location: not set</p>
+      <div class="btns"><button class="btn" id="nr-pick">Pick base on the map</button><button class="btn primary" id="nr-save">Save</button><button class="btn" id="nr-x">Cancel</button></div></div>`;
+    $('nr-x').onclick = () => box.innerHTML = '';
+    $('nr-pick').onclick = () => startPick('Click the base location', (lat, lon) => { const d = RR.districtAt(lat, lon); loc = {lat:+lat.toFixed(4), lon:+lon.toFixed(4)}; $('nr-loc').innerHTML = `Base: <b>${esc(d?d.district+', '+d.state:'map point')}</b>`; });
+    $('nr-save').onclick = () => { if(!loc){ RR.toast('Pick the base on the map first.'); return; } const t = $('nr-type').value;
+      RR.store.put('resources', {type:t, name:$('nr-name').value.trim()||RR.RES[t].label, owner:$('nr-owner').value.trim(), units:Math.max(1,+$('nr-units').value||1), ...loc, status:'available', assigned:{}, createdAt:Date.now(), by:S.id});
+      RR.toast('Added. These units are now matched to incidents nearby.'); }; };
+}
+function select(id){ selId = id; view = 'inc'; render(); const inc = RR.store.get('incidents', id); if(inc) zoomTo(inc); }
+$('side').addEventListener('click', e => { const b = e.target.closest('[data-sel]'); if(b) select(b.dataset.sel); });
+
+/* playbook reference */
+$('playbook').innerHTML = `<table class="pbk"><thead><tr><th>Calamity</th><th>Supplies</th><th>Workers and vehicles</th><th>Access</th></tr></thead><tbody>${cals.map(k => { const C = RR.CALAMITY[k];
+  return `<tr style="--cc:${C.color}"><td><span>${RR.calIcon(k,15)}</span> ${C.label}</td>
+  <td>${C.supplies.map(([s,a,kind])=>`${RR.SUPPLY[s].label}: ${a<1?'1 per '+Math.round(1/a):a} ${kind==='daily'?(a<1?'people a day':RR.SUPPLY[s].unit+'/person/day'):(a<1?'people':'per person')}`).join('<br>')}</td>
+  <td>${C.crews.filter(c=>c[0]!=='truck').map(([t,per,b,min])=>`${RR.RES[t].short}: ${t==='tanker'?'by water volume':'1 per '+N(per)+' '+(b==='people'?'affected':b)}${min>1?', min '+min:''}`).join('<br>')}<br>Supply trucks: by weight</td>
+  <td class="hint">${esc(C.access)}</td></tr>`; }).join('')}</tbody></table>
+  <p class="hint" style="margin-top:8px">Ratios follow Sphere minimum standards for water, food and shelter, and common NDMA practice for team deployment. Adjust them in <span class="mono">RR.CALAMITY</span> in assets/common.js.</p>`;
+
+function render(){ renderTop(); renderSide(); drawMap(); }
+RR.store.on(render); render();
+}
+})();
+</script>
+
+</body>
+</html>

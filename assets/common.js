@@ -76,6 +76,103 @@ RR.seedZones = () => {
       source:'Collection and dispatch point at the Deputy Commissioner’s office (demo).'},
   };
 };
+
+/* ---------- All-India operations: calamity playbooks, resource types, demo incidents ---------- */
+// Supplies: per person per day (daily) or once per person (once). kg = weight of one unit, for transport planning.
+RR.SUPPLY = {
+  water:{label:'Drinking water', unit:'L', kg:1}, food:{label:'Food rations', unit:'rations', kg:0.6}, ors:{label:'ORS sachets', unit:'sachets', kg:0.03},
+  hygiene:{label:'Hygiene kits', unit:'kits', kg:3}, tarp:{label:'Tarpaulins', unit:'sheets', kg:4}, tent:{label:'Family tents', unit:'tents', kg:25},
+  blanket:{label:'Blankets', unit:'blankets', kg:1.5}, medkit:{label:'Medical kits', unit:'kits', kg:5}, burnkit:{label:'Burn-care kits', unit:'kits', kg:2},
+};
+// Resource types: the people and vehicles that can be sent. speed in km/h (helicopter flies straight, others use roads).
+RR.RES = {
+  ndrf:{label:'NDRF / SDRF rescue team', short:'Rescue teams', unitLabel:'teams of 35', speed:40, color:'#E8590C'},
+  boat:{label:'Rescue boat (moved by road on a trailer)', short:'Boats', unitLabel:'boats', speed:30, color:'#0B7380'},
+  helicopter:{label:'Helicopter', short:'Helicopters', unitLabel:'helicopters', speed:180, air:true, color:'#5F3DC4'},
+  truck:{label:'Supply truck (5 t)', short:'Supply trucks', unitLabel:'trucks', speed:35, cap:5000, color:'#0D6B5B'},
+  tanker:{label:'Water tanker (10,000 L)', short:'Water tankers', unitLabel:'tankers', speed:30, cap:10000, color:'#1F6FB2'},
+  medical:{label:'Medical team', short:'Medical teams', unitLabel:'teams', speed:40, color:'#C42B1C'},
+  volunteers:{label:'Volunteer group (10 people)', short:'Volunteers', unitLabel:'groups of 10', speed:30, color:'#975A00'},
+  jcb:{label:'Earthmover (JCB)', short:'Earthmovers', unitLabel:'machines', speed:20, color:'#7A5B12'},
+  firetender:{label:'Fire tender', short:'Fire tenders', unitLabel:'tenders', speed:35, color:'#B42318'},
+};
+// Calamity playbooks. supplies: [key, amount, 'daily'|'once', base] base = people | stranded.
+// crews: [type, one unit per N of base, base, minimum when base > 0].
+RR.CALAMITY = {
+  flood:{label:'Flood', color:'#1F6FB2', access:'Roads cut: boats and air drops for stranded people',
+    supplies:[['water',15,'daily'],['food',1,'daily'],['ors',0.2,'daily'],['hygiene',0.2,'once'],['tarp',0.2,'once']],
+    crews:[['boat',60,'stranded',1],['ndrf',400,'stranded',1],['helicopter',1500,'stranded',0],['medical',2000,'people',1],['volunteers',500,'people',1]]},
+  cyclone:{label:'Cyclone', color:'#5F3DC4', access:'Fallen trees and power lines block roads',
+    supplies:[['water',15,'daily'],['food',1,'daily'],['tarp',0.2,'once'],['hygiene',0.2,'once']],
+    crews:[['ndrf',8000,'people',1],['jcb',12000,'people',1],['medical',5000,'people',1],['volunteers',1000,'people',1]]},
+  earthquake:{label:'Earthquake', color:'#7A5B12', access:'Collapsed buildings: search and rescue first 72 hours',
+    supplies:[['tent',0.2,'once'],['blanket',1,'once'],['food',1,'daily'],['water',15,'daily'],['medkit',0.02,'once']],
+    crews:[['ndrf',2500,'people',2],['jcb',4000,'people',1],['medical',1500,'people',1],['volunteers',800,'people',1],['helicopter',300,'injured',0]]},
+  landslide:{label:'Landslide', color:'#8A4B1C', access:'Roads buried: earthmovers and air evacuation',
+    supplies:[['food',1,'daily'],['water',15,'daily'],['blanket',1,'once'],['medkit',0.02,'once']],
+    crews:[['ndrf',300,'stranded',1],['jcb',800,'people',2],['helicopter',250,'stranded',0],['medical',1500,'people',1],['volunteers',600,'people',1]]},
+  drought:{label:'Drought', color:'#B07A00', access:'Water by tanker; villages spread out',
+    supplies:[['water',20,'daily'],['food',0.5,'daily']],
+    crews:[['tanker',0,'water',1],['medical',25000,'people',1],['volunteers',5000,'people',1]]},
+  heatwave:{label:'Heatwave', color:'#D9480F', access:'Cooling centres, drinking water points, ORS',
+    supplies:[['ors',1,'daily'],['water',4,'daily']],
+    crews:[['medical',12000,'people',1],['volunteers',4000,'people',1],['tanker',0,'water',1]]},
+  fire:{label:'Fire', color:'#B42318', access:'Fire lines and evacuation of nearby villages',
+    supplies:[['burnkit',0.01,'once'],['water',15,'daily'],['food',1,'daily']],
+    crews:[['firetender',500,'people',2],['ndrf',3000,'people',1],['medical',1500,'people',1],['volunteers',800,'people',1]]},
+  coldwave:{label:'Cold wave', color:'#3B7EA1', access:'Night shelters, blankets, hot meals',
+    supplies:[['blanket',1,'once'],['food',1,'daily'],['tent',0.1,'once']],
+    crews:[['medical',6000,'people',1],['volunteers',2000,'people',1],['truck',0,'kg',1]]},
+};
+RR.NAT_SRC = 'Demo scenario built on a recurring hazard for this district (NDMA hazard profiles). Numbers are illustrative.';
+RR.seedNational = () => {
+  const t = Date.now(), H = 3600e3;
+  const inc = (id, name, district, state, calamity, lat, lon, people, stranded, injured, sev, hrs, note, extra={}) =>
+    [id, {id, name, district, state, calamity, lat, lon, people, stranded, injured, severity:sev, days:3, status:'active', createdAt:t-hrs*H, note, source:RR.NAT_SRC, ...extra}];
+  const incidents = Object.fromEntries([
+    inc('inc-mys','Kabini and Kapila floods','Mysuru','Karnataka','flood',12.12,76.68,1535,64,3,3,6,'Hosakote bridge submerged; Tumbasogu and nearby villages cut off.',{link:'admin.html', source:'Places from the August 2019 Kabini floods (The News Minute). Numbers illustrative.'}),
+    inc('inc-kam','Brahmaputra floods','Kamrup','Assam','flood',26.23,91.43,42000,3200,40,5,30,'Embankment breach; 60 villages under water.'),
+    inc('inc-puri','Cyclone landfall','Puri','Odisha','cyclone',19.81,85.83,68000,0,120,4,18,'Trees and power lines down on coastal roads.'),
+    inc('inc-chm','Landslides on the Badrinath highway','Chamoli','Uttarakhand','landslide',30.40,79.32,2600,450,25,4,10,'Pilgrims and villagers stranded between two slides.'),
+    inc('inc-kut','Earthquake, magnitude 6.1','Kachchh','Gujarat','earthquake',23.25,69.67,18000,0,640,5,8,'Older houses collapsed in three towns.'),
+    inc('inc-wyd','Landslide after cloudburst','Wayanad','Kerala','landslide',11.61,76.08,4200,600,85,5,14,'Debris flow cut the road to two hamlets.'),
+    inc('inc-bmr','Drought, third failed monsoon','Barmer','Rajasthan','drought',25.75,71.39,120000,0,0,3,240,'Village ponds and handpumps dry.'),
+    inc('inc-dl','Severe heatwave, 46 °C','New Delhi','Delhi','heatwave',28.61,77.21,250000,0,310,4,48,'Outdoor workers and elderly most at risk.'),
+    inc('inc-pau','Forest fires near villages','Pauri Garhwal','Uttarakhand','fire',30.15,78.78,3000,0,18,3,20,'Fire line within 2 km of four villages.'),
+    inc('inc-leh','Cold wave, -22 °C nights','Leh','Ladakh','coldwave',34.15,77.58,9000,0,12,3,72,'Road to two valleys closed by snow.'),
+  ]);
+  const r = (id, type, name, lat, lon, units, owner) => [id, {id, type, name, lat, lon, units, status:'available', owner, assigned:{}}];
+  const resources = Object.fromEntries([
+    r('rs-ndrf-ghy','ndrf','NDRF team, Guwahati',26.14,91.74,3,'NDRF'), r('rs-ndrf-kol','ndrf','NDRF team, Kolkata',22.57,88.36,2,'NDRF'),
+    r('rs-ndrf-ctk','ndrf','NDRF team, Cuttack',20.46,85.88,3,'NDRF'), r('rs-ndrf-ark','ndrf','NDRF team, Arakkonam',13.08,79.67,3,'NDRF'),
+    r('rs-ndrf-pun','ndrf','NDRF team, Pune',18.52,73.86,2,'NDRF'), r('rs-ndrf-vad','ndrf','NDRF team, Vadodara',22.31,73.18,3,'NDRF'),
+    r('rs-ndrf-gzb','ndrf','NDRF team, Ghaziabad',28.67,77.45,2,'NDRF'), r('rs-ndrf-pat','ndrf','NDRF team, Patna',25.59,85.14,2,'NDRF'),
+    r('rs-sdrf-ddn','ndrf','SDRF Uttarakhand, Dehradun',30.32,78.03,2,'State'), r('rs-sdrf-blr','ndrf','SDRF Karnataka, Bengaluru',12.97,77.59,2,'State'),
+    r('rs-sdrf-tcr','ndrf','SDRF Kerala, Thrissur',10.52,76.21,1,'State'),
+    r('rs-boat-ghy','boat','Assam SDRF boats, Guwahati',26.17,91.70,25,'State'), r('rs-boat-ctk','boat','Odisha Fire Service boats, Cuttack',20.46,85.90,20,'State'),
+    r('rs-boat-kzd','boat','Fishermen volunteer boats, Kozhikode',11.25,75.78,30,'Community'), r('rs-boat-mys','boat','Fire and Emergency boats, Mysuru',12.30,76.64,4,'State'),
+    r('rs-heli-ghy','helicopter','IAF helicopters, Guwahati',26.10,91.59,2,'IAF'), r('rs-heli-brl','helicopter','IAF helicopters, Bareilly',28.42,79.45,2,'IAF'),
+    r('rs-heli-bhj','helicopter','IAF helicopter, Bhuj',23.29,69.67,1,'IAF'), r('rs-heli-slr','helicopter','IAF helicopters, Sulur',11.01,77.16,2,'IAF'),
+    r('rs-heli-leh','helicopter','IAF helicopter, Leh',34.14,77.55,1,'IAF'),
+    r('rs-trk-ghy','truck','FCI depot trucks, Guwahati',26.15,91.79,12,'FCI'), r('rs-trk-bbs','truck','Civil supplies trucks, Bhubaneswar',20.30,85.82,15,'State'),
+    r('rs-trk-ddn','truck','Civil supplies trucks, Dehradun',30.31,78.05,6,'State'), r('rs-trk-gim','truck','FCI depot trucks, Gandhidham',23.08,70.13,10,'FCI'),
+    r('rs-trk-kzd','truck','Civil supplies trucks, Kozhikode',11.26,75.80,8,'State'), r('rs-trk-leh','truck','Army supply trucks, Leh',34.16,77.58,4,'Army'),
+    r('rs-trk-mys','truck','District relief trucks, Mysuru',12.31,76.65,3,'District'), r('rs-trk-del','truck','Delhi civil supplies trucks',28.65,77.23,10,'State'),
+    r('rs-tnk-jdh','tanker','Water tankers, Jodhpur',26.24,73.02,20,'State'), r('rs-tnk-del','tanker','Delhi Jal Board tankers',28.63,77.22,30,'State'),
+    r('rs-med-bbs','medical','Medical teams, Bhubaneswar',20.25,85.78,4,'Health'), r('rs-med-ghy','medical','Medical teams, Guwahati',26.16,91.77,5,'Health'),
+    r('rs-med-ddn','medical','Medical teams, Dehradun',30.33,78.06,3,'Health'), r('rs-med-bhj','medical','Medical teams, Bhuj',23.25,69.67,3,'Health'),
+    r('rs-med-del','medical','Medical teams, Delhi',28.57,77.21,10,'Health'), r('rs-med-kzd','medical','Medical teams, Kozhikode',11.27,75.84,5,'Health'),
+    r('rs-med-mys','medical','Medical teams, Mysuru',12.31,76.65,2,'Health'), r('rs-med-leh','medical','Medical team, Leh',34.16,77.58,1,'Health'),
+    r('rs-vol-ghy','volunteers','Red Cross volunteers, Guwahati',26.18,91.75,20,'Red Cross'), r('rs-vol-ori','volunteers','Odisha volunteers',20.30,85.84,30,'Community'),
+    r('rs-vol-del','volunteers','NSS volunteers, Delhi',28.69,77.21,25,'NSS'), r('rs-vol-jdh','volunteers','NSS volunteers, Jodhpur',26.27,73.02,10,'NSS'),
+    r('rs-vol-ker','volunteers','Kerala volunteers, Kalpetta',11.61,76.08,25,'Community'), r('rs-vol-mys','volunteers','Volunteers, Mysuru',12.30,76.64,8,'Community'),
+    r('rs-vol-ddn','volunteers','Volunteers, Dehradun',30.32,78.04,8,'Community'), r('rs-vol-guj','volunteers','Volunteers, Bhuj',23.24,69.66,12,'Community'),
+    r('rs-jcb-jsm','jcb','Border Roads earthmovers, Joshimath',30.55,79.56,6,'BRO'), r('rs-jcb-bhj','jcb','PWD earthmovers, Bhuj',23.25,69.68,8,'State'),
+    r('rs-jcb-kpt','jcb','PWD earthmovers, Kalpetta',11.61,76.09,4,'State'), r('rs-jcb-bbs','jcb','PWD earthmovers, Bhubaneswar',20.29,85.82,6,'State'),
+    r('rs-fire-pau','firetender','Forest fire tenders, Pauri',30.15,78.78,6,'Forest Dept'), r('rs-fire-ddn','firetender','Fire tenders, Dehradun',30.31,78.03,4,'Fire Service'),
+  ]);
+  return {incidents, resources};
+};
 RR.DEPOT = {name:'Mysuru relief depot (DC office)', lat:12.3086, lon:76.6538};
 RR.seed = () => ({
   sos: {
@@ -100,6 +197,7 @@ RR.seed = () => ({
     'esc-1':{id:'esc-1',from:'admin',by:'ADM-01',to:'NDRF',type:'Boat evacuation',place:'Tumbasogu & Maadaapura, H.D. Kote',lat:12.0350,lon:76.3050,people:64,urgency:'Critical',note:'Villages cut off by the submerged Hosakote bridge, two injured. Need boats and a medical team.',status:'acknowledged',createdAt:now-4.5*H,timeline:[{t:now-4.5*H,s:'sent',n:'Sent to NDRF 10th Bn control'},{t:now-4*H,s:'acknowledged',n:'Two boats moving from Mysuru'}]},
   },
   zones: RR.seedZones(),
+  ...RR.seedNational(),
   drivers: {
     'D-101':{id:'D-101',name:'Ravi Kumar',vehicle:'Truck KA-09 C 4471',type:'truck',lat:12.3086,lon:76.6538,lastSeen:now-20*60e3,status:'loading'},
     'D-102':{id:'D-102',name:'Anjali Rao',vehicle:'Pickup KA-09 B 8810',type:'truck',lat:12.1700,lon:76.6700,lastSeen:now-6*60e3,status:'on the road'},
@@ -107,13 +205,13 @@ RR.seed = () => ({
     'D-104':{id:'D-104',name:'Manjunath S.',vehicle:'Fire & Emergency boat 07',type:'boat',lat:12.0880,lon:76.3300,lastSeen:now-9*60e3,status:'launching at H.D. Kote'},
   },
 });
-RR.COLS = ['sos','stops','reports','escalations','drivers','zones'];
+RR.COLS = ['sos','stops','reports','escalations','drivers','zones','incidents','resources'];
 
 /* ---------- Store: local + cross-tab; shared artifact db when available ---------- */
 const KEY = 'rr.data.v4';
 const store = RR.store = {data:null, mode:'local', db:null, fns:new Set()};
 function loadLocal(){
-  try{ const d = JSON.parse(localStorage.getItem(KEY)||'null'); if(d && d.sos){ if(!d.zones) d.zones = RR.seedZones(); return d; } }catch(e){}
+  try{ const d = JSON.parse(localStorage.getItem(KEY)||'null'); if(d && d.sos){ if(!d.zones) d.zones = RR.seedZones(); if(!d.incidents) Object.assign(d, RR.seedNational()); return d; } }catch(e){}
   return RR.seed();
 }
 function saveLocal(){ try{ localStorage.setItem(KEY, JSON.stringify(store.data)); }catch(e){} }
@@ -303,7 +401,7 @@ RR.makeMap = (el, opts={}) => {
     {time:gibsDate, maxNativeZoom:9, maxZoom:19, opacity:.85, attribution:'NASA EOSDIS GIBS (MODIS Terra, '+gibsDate+')'});
   const zones = L.layerGroup().addTo(map);
   const overlays = {'Impact zones':zones, ['NASA satellite, '+gibsDate]:nasa};
-  if(RR.DISTRICT){
+  if(RR.DISTRICT && !opts.noDistrict){
     const dist = L.layerGroup(), world = [[-85,-179.9],[85,-179.9],[85,179.9],[-85,179.9]];
     L.polygon([world, RR.DISTRICT.coords], {className:'dmask', weight:0, fillOpacity:.32, interactive:false}).addTo(dist);
     L.polygon(RR.DISTRICT.coords, {className:'dline', fill:false, weight:2.2, interactive:false}).addTo(dist);
@@ -474,6 +572,7 @@ RR.renderSignIn = (root, role, onDone) => {
     </details>
     <p class="hint" style="margin-top:14px">${RR.CONFIG.api?'Accounts are issued by the district control room.':'Demo mode: data is stored in this browser.'}</p>
   </div></div></div>`;
+  try{ if(RR.artDataUri){ const bs = root.querySelector('.brandside'); bs && bs.style.setProperty('--photo-art', `url("${RR.artDataUri(role==='admin'?'relief':'convoy')}")`); } }catch(e){}
   const f = root.querySelector('#si');
   f.addEventListener('submit', async e => { e.preventDefault(); const btn = f.querySelector('button[type=submit]'); btn.disabled = true; btn.textContent = 'Signing in…';
     const r = await RR.signIn(f.querySelector('#si-id').value, f.querySelector('#si-pin').value, role);
