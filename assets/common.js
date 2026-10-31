@@ -5,7 +5,7 @@ const RR = window.RR = {};
 
 /* ---------- Config ---------- */
 RR.CONFIG = {
-  district: 'Wayanad, Kerala',
+  district: 'Mysuru, Karnataka',
   smsGateway: '+919000000000',          // replace with your SMS gateway long-code before deployment
   controlRoom: '1077',                  // district emergency operations centre (toll-free in India)
   emergency: '112',
@@ -22,11 +22,11 @@ RR.saveConfig = patch => { Object.assign(RR.CONFIG, patch); try{ localStorage.se
 
 /* ---------- Demo accounts (replace with phone OTP / SSO in production) ---------- */
 RR.ACCOUNTS = [
-  {id:'ADM-01', role:'admin',  name:'District control room', pin:'2026', post:'Kalpetta EOC'},
-  {id:'D-101',  role:'driver', name:'Ravi Kumar',  pin:'1234', vehicle:'Truck KL-12 4471', type:'truck', cap:500},
-  {id:'D-102',  role:'driver', name:'Anjali Menon',pin:'1234', vehicle:'Pickup KL-12 8810', type:'truck', cap:300},
-  {id:'D-103',  role:'driver', name:'Faisal P.',   pin:'1234', vehicle:'4x4 Jeep KL-73 2205', type:'jeep', cap:250},
-  {id:'D-104',  role:'driver', name:'Shibu Thomas',pin:'1234', vehicle:'Rescue boat KL-BT 07', type:'boat', cap:400},
+  {id:'ADM-01', role:'admin',  name:'District control room', pin:'2026', post:'Mysuru DEOC'},
+  {id:'D-101',  role:'driver', name:'Ravi Kumar',  pin:'1234', vehicle:'Truck KA-09 C 4471', type:'truck', cap:500},
+  {id:'D-102',  role:'driver', name:'Anjali Rao',  pin:'1234', vehicle:'Pickup KA-09 B 8810', type:'truck', cap:300},
+  {id:'D-103',  role:'driver', name:'Faisal Khan', pin:'1234', vehicle:'4x4 Jeep KA-55 M 2205', type:'jeep', cap:250},
+  {id:'D-104',  role:'driver', name:'Manjunath S.',pin:'1234', vehicle:'Fire & Emergency boat 07', type:'boat', cap:400},
 ];
 RR.session = () => { try{ return JSON.parse(localStorage.getItem('rr.session')||'null'); }catch(e){ return null; } };
 RR.signIn = async (id, pin, role) => {
@@ -50,77 +50,65 @@ RR.signIn = async (id, pin, role) => {
 };
 RR.signOut = () => { try{ localStorage.removeItem('rr.session'); }catch(e){} location.reload(); };
 
-/* ---------- Seed: Wayanad, Kerala (real places, illustrative needs) ---------- */
+/* ---------- Seed: Mysuru, Karnataka. Places and figures from the August 2019 Kabini floods; extents are illustrative. ---------- */
+RR.DISTRICT = {name:'Mysuru district', source:'District boundary: Census of India 2011 (dtcode 577), via india-maps-data', coords:[[12.5706,76.0188],[12.571,76.0191],[12.5771,76.0456],[12.5544,76.0522],[12.5456,76.0906],[12.5388,76.0863],[12.5127,76.1154],[12.527,76.1141],[12.5287,76.1332],[12.5472,76.1514],[12.5797,76.1524],[12.5775,76.1964],[12.5941,76.1921],[12.6217,76.2153],[12.6289,76.2057],[12.6445,76.2193],[12.637,76.2457],[12.6204,76.2547],[12.6338,76.2798],[12.6168,76.2802],[12.6292,76.3003],[12.6227,76.3096],[12.6103,76.3063],[12.6113,76.3265],[12.6113,76.3278],[12.6351,76.3235],[12.6552,76.3424],[12.6556,76.3427],[12.6285,76.3626],[12.5765,76.3768],[12.5732,76.3963],[12.5524,76.391],[12.5579,76.4112],[12.5423,76.4277],[12.5326,76.4228],[12.5056,76.4522],[12.4838,76.4519],[12.4259,76.5674],[12.3992,76.5654],[12.392,76.5551],[12.3819,76.5664],[12.352,76.566],[12.3676,76.622],[12.3953,76.6435],[12.3949,76.6468],[12.3943,76.6524],[12.391,76.6829],[12.367,76.6819],[12.3507,76.7001],[12.3566,76.7189],[12.3426,76.7305],[12.3165,76.7315],[12.3182,76.7434],[12.3022,76.754],[12.3117,76.7639],[12.3504,76.7656],[12.3553,76.803],[12.3871,76.8145],[12.3845,76.8331],[12.4024,76.8324],[12.4086,76.8543],[12.3998,76.8774],[12.4089,76.9002],[12.4366,76.9049],[12.4418,76.9224],[12.4005,76.9376],[12.3527,76.939],[12.3533,76.9241],[12.3383,76.932],[12.3217,76.9218],[12.3269,76.9575],[12.3523,76.9562],[12.353,76.977],[12.3279,76.9767],[12.3335,76.9866],[12.313,76.9979],[12.3006,76.9929],[12.3071,76.977],[12.2905,76.9717],[12.2869,76.9906],[12.2424,76.9952],[12.2323,77.0362],[12.2365,77.0786],[12.2212,77.0779],[12.2206,77.1061],[12.2407,77.1084],[12.2407,77.1084],[12.2427,77.1239],[12.2293,77.1325],[12.2267,77.1342],[12.2261,77.1342],[12.1971,77.1223],[12.191,77.0846],[12.1692,77.0448],[12.1285,77.0399],[12.1392,77.0369],[12.1337,77.0161],[12.134,77.0161],[12.1633,77.0141],[12.16,77.0038],[12.1757,76.9936],[12.1757,76.9929],[12.1405,76.9893],[12.0976,76.9489],[12.121,76.891],[12.1415,76.8715],[12.174,76.8715],[12.1789,76.8516],[12.1675,76.8457],[12.1594,76.8536],[12.1561,76.8407],[12.1321,76.8314],[12.1132,76.8457],[12.1151,76.8768],[12.0826,76.884],[12.0631,76.8701],[12.0598,76.8536],[12.0582,76.8907],[12.026,76.9151],[12.0263,76.939],[12.0133,76.936],[11.999,76.9042],[12.0013,76.8857],[12.0156,76.883],[11.9996,76.8566],[12.0,76.8364],[12.011,76.8212],[12.0273,76.8202],[12.027,76.8116],[12.0107,76.792],[11.9863,76.7937],[12.0094,76.7408],[11.985,76.7173],[11.9853,76.705],[12.0006,76.6944],[12.0081,76.6511],[11.9831,76.6428],[11.9883,76.5783],[11.9489,76.5574],[11.9235,76.5766],[11.8949,76.5568],[11.8588,76.5535],[11.8734,76.5346],[11.861,76.4913],[11.8223,76.4926],[11.8191,76.4688],[11.7927,76.4621],[11.8113,76.4099],[11.7957,76.4287],[11.7878,76.4132],[11.7765,76.4228],[11.7761,76.4228],[11.7589,76.4142],[11.7589,76.4138],[11.7384,76.3523],[11.7407,76.3457],[11.7514,76.3185],[11.7849,76.3076],[11.8126,76.2802],[11.8031,76.2454],[11.8083,76.2236],[11.8275,76.2097],[11.8617,76.2074],[11.8711,76.1905],[11.8702,76.1561],[11.8503,76.12],[11.8584,76.1127],[11.9788,76.1124],[11.9801,76.1137],[12.0175,76.1501],[12.0185,76.1511],[12.0195,76.1521],[12.0325,76.1829],[12.0501,76.1892],[12.1187,76.171],[12.1545,76.1442],[12.1916,76.1332],[12.1971,76.1018],[12.2492,76.0621],[12.2489,76.0247],[12.2925,76.0145],[12.3175,75.9946],[12.3305,76.0012],[12.3439,75.9605],[12.3842,75.9221],[12.3962,75.9106],[12.3982,75.9086],[12.4002,75.9096],[12.4372,75.9281],[12.4395,75.9291],[12.448,75.9638],[12.4503,75.9714],[12.4509,75.9714],[12.4906,75.9582],[12.5199,75.9754],[12.5222,75.9939],[12.5404,75.9833],[12.5475,75.9989],[12.5609,75.9926],[12.5622,75.992],[12.5544,76.0125],[12.5706,76.0188]]};
 const now = Date.now(), H = 3600e3;
-/* Impact zones. Sources are stated on every zone so nobody mistakes a demo zone for official data. */
-function bufferLine(pts, widths){ // pts [[lat,lon]], widths in metres per point -> polygon
-  const L = [], R = [];
-  for(let i=0;i<pts.length;i++){
-    const a = pts[Math.max(0,i-1)], b = pts[Math.min(pts.length-1,i+1)];
-    const kx = 111320*Math.cos(pts[i][0]*Math.PI/180), ky = 110540;
-    let dx = (b[1]-a[1])*kx, dy = (b[0]-a[0])*ky; const n = Math.hypot(dx,dy)||1; dx/=n; dy/=n;
-    const w = widths[i];
-    L.push([pts[i][0] + dx*w/ky, pts[i][1] - dy*w/kx]); R.push([pts[i][0] - dx*w/ky, pts[i][1] + dy*w/kx]);
-  }
-  return L.concat(R.reverse()).map(p=>[+p[0].toFixed(5), +p[1].toFixed(5)]);
-}
+RR.SRC_2019 = 'https://www.thenewsminute.com/karnataka/over-1000-people-mysuru-shifted-relief-camps-water-4-reservoirs-released-106982';
 RR.seedZones = () => {
-  const t = Date.now();
+  const t = Date.now(), src = 'Places from news reports of the August 2019 Kabini floods (The News Minute, 10 Aug 2019). Extent drawn for the demo, not an official flood map.';
   return {
-    'zn-1':{id:'zn-1',name:'Debris-flow corridor, 30 Jul 2024',type:'landslide',official:false,createdAt:t,by:'ADM-01',
-      coords:bufferLine([[11.46544,76.13576],[11.4720,76.1420],[11.4790,76.1480],[11.4855,76.1525],[11.4910,76.1560],[11.4960,76.1595]],[140,170,200,230,260,260]),
-      source:'Approximate corridor drawn from ISRO-reported headscarp (11.46544, 76.13576), 8 km runout, and the NRSC/ISRO Charter 1029 map. Not an official boundary.',
-      sourceUrl:'https://bhuvan-app1.nrsc.gov.in/disaster/usrtasks/landslide/doc/Charter_1029_VAP_7_6Aug2024.pdf'},
-    'zn-2':{id:'zn-2',name:'NRSC/ISRO mapped area (Charter 1029)',type:'info',official:true,createdAt:t,by:'ADM-01',
-      coords:[[11.48333,76.15],[11.5,76.15],[11.5,76.1625],[11.48333,76.1625]],
-      source:'Map frame of the NRSC/ISRO rapid-mapping product “Landslide occurred in Chooralmala town, Wayanad” (6 Aug 2024): 11°29′–11°30′N, 76°9′–76°9′45″E.',
-      sourceUrl:'https://bhuvan-app1.nrsc.gov.in/disaster/usrtasks/landslide/doc/Charter_1029_VAP_7_6Aug2024.pdf'},
-    'zn-3':{id:'zn-3',name:'Mundakkai–Punchirimattom no-entry',type:'red',official:false,createdAt:t,by:'ADM-01',
-      coords:[[11.4610,76.1300],[11.4700,76.1290],[11.4800,76.1440],[11.4880,76.1500],[11.4870,76.1560],[11.4780,76.1530],[11.4660,76.1420]],
-      source:'Demo zone drawn by the control room (illustrative).'},
-    'zn-4':{id:'zn-4',name:'Panamaram river-side flooding',type:'flooded',official:false,createdAt:t,by:'ADM-01',
-      coords:[[11.7250,76.0700],[11.7330,76.0680],[11.7420,76.0720],[11.7470,76.0820],[11.7400,76.0860],[11.7300,76.0830]],
-      source:'Demo zone drawn from driver reports (illustrative).'},
-    'zn-5':{id:'zn-5',name:'Meppadi relief camp area',type:'relief',official:false,createdAt:t,by:'ADM-01',
-      coords:[[11.5520,76.1310],[11.5575,76.1310],[11.5575,76.1365],[11.5520,76.1365]],
-      source:'Demo zone (illustrative).'},
+    'zn-1':{id:'zn-1',name:'Kapila river flooding, Nanjangud town',type:'flooded',official:false,createdAt:t,by:'ADM-01',
+      coords:[[12.1330,76.6660],[12.1290,76.6760],[12.1200,76.6880],[12.1120,76.6990],[12.1040,76.7080],[12.0990,76.7030],[12.1080,76.6920],[12.1150,76.6810],[12.1230,76.6700],[12.1290,76.6620]],
+      source:'Nanjangud town, Halladakere and Topabeedi flooded; 617 people in 7 relief camps. '+src, sourceUrl:RR.SRC_2019},
+    'zn-2':{id:'zn-2',name:'Kabini backwater villages cut off (Tumbasogu, Maadaapura, Chekkooru)',type:'flooded',official:false,createdAt:t,by:'ADM-01',
+      coords:[[12.0600,76.2700],[12.0650,76.3050],[12.0480,76.3300],[12.0250,76.3350],[12.0080,76.3150],[12.0150,76.2800],[12.0380,76.2650]],
+      source:'Hosakote bridge submerged, cutting off Tumbasogu, Maadaapura, Chekkooru, Hommarahalli and M.C. Talalu. '+src, sourceUrl:RR.SRC_2019},
+    'zn-3':{id:'zn-3',name:'Hosakote bridge approach, no entry',type:'red',official:false,createdAt:t,by:'ADM-01',
+      coords:[[12.0640,76.3080],[12.0640,76.3220],[12.0540,76.3220],[12.0540,76.3080]],
+      source:'Bridge submerged by Kabini outflow (1,02,083 cusecs on 10 Aug 2019). '+src, sourceUrl:RR.SRC_2019},
+    'zn-4':{id:'zn-4',name:'Cauvery–Kabini confluence, T. Narasipura',type:'caution',official:false,createdAt:t,by:'ADM-01',
+      coords:[[12.2280,76.8850],[12.2250,76.9150],[12.2050,76.9200],[12.1950,76.9000],[12.2080,76.8800]],
+      source:'Low-lying wards flood when KRS and Kabini release together (illustrative).'},
+    'zn-5':{id:'zn-5',name:'Mysuru relief depot area',type:'relief',official:false,createdAt:t,by:'ADM-01',
+      coords:[[12.3120,76.6490],[12.3120,76.6590],[12.3050,76.6590],[12.3050,76.6490]],
+      source:'Collection and dispatch point at the Deputy Commissioner’s office (demo).'},
   };
 };
-RR.DEPOT = {name:'Kalpetta collection centre', lat:11.6085, lon:76.0830};
+RR.DEPOT = {name:'Mysuru relief depot (DC office)', lat:12.3086, lon:76.6538};
 RR.seed = () => ({
   sos: {
-    'sos-1':{id:'sos-1',code:'',createdAt:now-5.2*H,lat:11.4855,lon:76.1525,place:'Mundakkai, near the estate school',people:42,infants:5,elderly:9,injured:3,needs:['rescue','medical','water'],note:'Bridge to Chooralmala gone. Families on the school terrace.',phone:'',channel:'sms',status:'new'},
-    'sos-2':{id:'sos-2',code:'',createdAt:now-3.1*H,lat:11.7392,lon:76.0751,place:'Panamaram, river-side colony',people:60,infants:4,elderly:11,injured:0,needs:['water','food','infant'],note:'Ground floors flooded. Drinking water finished.',phone:'',channel:'app',status:'assigned',assignedTo:'D-102'},
-    'sos-3':{id:'sos-3',code:'',createdAt:now-1.4*H,lat:11.5501,lon:76.0412,place:'Vythiri, Lakkidi road',people:18,infants:1,elderly:4,injured:1,needs:['food','medical'],note:'Elderly woman needs insulin.',phone:'',channel:'relay',status:'new'},
+    'sos-1':{id:'sos-1',code:'',createdAt:now-5.2*H,lat:12.0350,lon:76.3050,place:'Tumbasogu, H.D. Kote taluk',people:64,infants:4,elderly:11,injured:2,needs:['rescue','medical','water'],note:'Hosakote bridge under water. Village cut off, two injured.',phone:'',channel:'sms',status:'new'},
+    'sos-2':{id:'sos-2',code:'',createdAt:now-3.1*H,lat:12.1150,lon:76.6870,place:'Halladakere, Nanjangud',people:120,infants:6,elderly:18,injured:0,needs:['water','food','infant'],note:'Houses flooded by the Kapila. Drinking water finished.',phone:'',channel:'app',status:'assigned',assignedTo:'D-102'},
+    'sos-3':{id:'sos-3',code:'',createdAt:now-1.4*H,lat:12.3060,lon:76.2860,place:'Hunsur, Lakshmanatirtha riverbank',people:35,infants:1,elderly:6,injured:1,needs:['food','medical'],note:'Elderly man needs insulin.',phone:'',channel:'relay',status:'new'},
   },
   stops: {
-    'st-1':{id:'st-1',driverId:'D-101',name:'Meppadi relief camp (GHSS)',lat:11.5548,lon:76.1337,items:{water:300,food:200,infant:6},order:1,status:'pending',note:'Camp register at the school office.',source:'admin'},
-    'st-2':{id:'st-2',driverId:'D-101',name:'Chooralmala north (relief point)',lat:11.5010,lon:76.1585,items:{water:150,food:100,infant:4},order:2,status:'pending',note:'Check bridge status before leaving Meppadi.',source:'admin'},
-    'st-3':{id:'st-3',driverId:'D-102',name:'Panamaram river-side colony',lat:11.7392,lon:76.0751,items:{water:270,food:180,infant:4},order:1,status:'enroute',note:'From SOS sos-2.',source:'sos',sosId:'sos-2'},
-    'st-5':{id:'st-5',driverId:'D-104',name:'Panamaram flooded houses (ward 6)',lat:11.7440,lon:76.0805,items:{water:200,food:120,infant:3},order:1,status:'pending',note:'Road under water. Boat only.',source:'admin'},
-    'st-4':{id:'st-4',driverId:'D-103',name:'Vythiri PHC',lat:11.5496,lon:76.0418,items:{water:80,food:60,infant:0},order:1,status:'pending',note:'',source:'admin'},
+    'st-1':{id:'st-1',driverId:'D-101',name:'Nanjangud relief camp (Govt. school)',lat:12.1180,lon:76.6830,items:{water:900,food:300,infant:8},order:1,status:'pending',note:'617 people across 7 camps in Nanjangud.',source:'admin'},
+    'st-2':{id:'st-2',driverId:'D-101',name:'T. Narasipura camp',lat:12.2110,lon:76.9010,items:{water:400,food:150,infant:4},order:2,status:'pending',note:'Check Cauvery level before crossing.',source:'admin'},
+    'st-3':{id:'st-3',driverId:'D-102',name:'Halladakere, Nanjangud',lat:12.1150,lon:76.6870,items:{water:360,food:120,infant:6},order:1,status:'enroute',note:'From SOS sos-2.',source:'sos',sosId:'sos-2'},
+    'st-5':{id:'st-5',driverId:'D-104',name:'Tumbasogu (Kabini backwaters)',lat:12.0350,lon:76.3050,items:{water:200,food:70,infant:4},order:1,status:'pending',note:'Road cut at Hosakote bridge. Boat only.',source:'admin'},
+    'st-4':{id:'st-4',driverId:'D-103',name:'Hunsur taluk hospital',lat:12.3100,lon:76.2900,items:{water:120,food:60,infant:0},order:1,status:'pending',note:'',source:'admin'},
   },
   reports: {
-    'hz-1':{id:'hz-1',lat:11.4905,lon:76.1555,type:'bridge',note:'Chooralmala–Mundakkai bridge washed away. No vehicle crossing.',by:'D-101',createdAt:now-6*H},
-    'hz-2':{id:'hz-2',lat:11.7290,lon:76.0790,type:'flooded',note:'Panamaram puzha over the road, ~60 cm water.',by:'D-102',createdAt:now-2*H},
-    'hz-3':{id:'hz-3',lat:11.5895,lon:76.1010,type:'landslide',note:'Small slip, one lane open. Slow.',by:'D-103',createdAt:now-4*H},
-    'hz-4':{id:'hz-4',lat:11.5800,lon:76.0640,type:'safe',note:'NH 766 Kalpetta–Vythiri clear, police checkpoint.',by:'D-103',createdAt:now-1*H},
+    'hz-1':{id:'hz-1',lat:12.0590,lon:76.3150,type:'bridge',note:'Hosakote bridge submerged. Tumbasogu, Maadaapura, Chekkooru cut off.',by:'D-104',createdAt:now-6*H},
+    'hz-2':{id:'hz-2',lat:12.1080,lon:76.7000,type:'flooded',note:'Hejjige bridge inundated by the Kapila.',by:'D-102',createdAt:now-2*H},
+    'hz-3':{id:'hz-3',lat:12.1420,lon:76.7650,type:'flooded',note:'Suttur bridge inundated. Use Mysuru–Nanjangud road.',by:'D-102',createdAt:now-4*H},
+    'hz-4':{id:'hz-4',lat:12.2150,lon:76.6600,type:'safe',note:'Mysuru–Nanjangud road (NH 766) clear.',by:'D-101',createdAt:now-1*H},
   },
   escalations: {
-    'esc-1':{id:'esc-1',from:'admin',by:'ADM-01',to:'NDRF',type:'Rescue team',place:'Mundakkai',lat:11.4855,lon:76.1525,people:42,urgency:'Critical',note:'42 people cut off by bridge collapse, 3 injured. Need rope-bridge crossing team.',status:'acknowledged',createdAt:now-4.5*H,timeline:[{t:now-4.5*H,s:'sent',n:'Sent to NDRF 4th Bn control'},{t:now-4*H,s:'acknowledged',n:'Team being mobilised from Kalpetta'}]},
+    'esc-1':{id:'esc-1',from:'admin',by:'ADM-01',to:'NDRF',type:'Boat evacuation',place:'Tumbasogu & Maadaapura, H.D. Kote',lat:12.0350,lon:76.3050,people:64,urgency:'Critical',note:'Villages cut off by the submerged Hosakote bridge, two injured. Need boats and a medical team.',status:'acknowledged',createdAt:now-4.5*H,timeline:[{t:now-4.5*H,s:'sent',n:'Sent to NDRF 10th Bn control'},{t:now-4*H,s:'acknowledged',n:'Two boats moving from Mysuru'}]},
   },
   zones: RR.seedZones(),
   drivers: {
-    'D-101':{id:'D-101',name:'Ravi Kumar',vehicle:'Truck KL-12 4471',type:'truck',lat:11.6085,lon:76.0830,lastSeen:now-20*60e3,status:'loading'},
-    'D-102':{id:'D-102',name:'Anjali Menon',vehicle:'Pickup KL-12 8810',type:'truck',lat:11.7010,lon:76.0790,lastSeen:now-6*60e3,status:'on the road'},
-    'D-103':{id:'D-103',name:'Faisal P.',vehicle:'4x4 Jeep KL-73 2205',type:'jeep',lat:11.5800,lon:76.0640,lastSeen:now-12*60e3,status:'on the road'},
-    'D-104':{id:'D-104',name:'Shibu Thomas',vehicle:'Rescue boat KL-BT 07',type:'boat',lat:11.7330,lon:76.0700,lastSeen:now-9*60e3,status:'on the water'},
+    'D-101':{id:'D-101',name:'Ravi Kumar',vehicle:'Truck KA-09 C 4471',type:'truck',lat:12.3086,lon:76.6538,lastSeen:now-20*60e3,status:'loading'},
+    'D-102':{id:'D-102',name:'Anjali Rao',vehicle:'Pickup KA-09 B 8810',type:'truck',lat:12.1700,lon:76.6700,lastSeen:now-6*60e3,status:'on the road'},
+    'D-103':{id:'D-103',name:'Faisal Khan',vehicle:'4x4 Jeep KA-55 M 2205',type:'jeep',lat:12.3050,lon:76.4500,lastSeen:now-12*60e3,status:'on the road'},
+    'D-104':{id:'D-104',name:'Manjunath S.',vehicle:'Fire & Emergency boat 07',type:'boat',lat:12.0880,lon:76.3300,lastSeen:now-9*60e3,status:'launching at H.D. Kote'},
   },
 });
 RR.COLS = ['sos','stops','reports','escalations','drivers','zones'];
 
-/* ---------- Store: browser storage, synced across tabs; REST API when configured ---------- */
-const KEY = 'rr.data.v3';
+/* ---------- Store: local + cross-tab; shared artifact db when available ---------- */
+const KEY = 'rr.data.v4';
 const store = RR.store = {data:null, mode:'local', db:null, fns:new Set()};
 function loadLocal(){
   try{ const d = JSON.parse(localStorage.getItem(KEY)||'null'); if(d && d.sos){ if(!d.zones) d.zones = RR.seedZones(); return d; } }catch(e){}
@@ -178,6 +166,7 @@ store.put = (col, doc) => {
 store.patch = (col, id, patch) => { const d = store.get(col,id); if(!d) return; return store.put(col, Object.assign({}, d, patch)); };
 store.del = (col, id) => { if(store.data[col]) delete store.data[col][id]; saveLocal(); emit(true); if(RR.CONFIG.api){ pushApi(col, {id}, 'DELETE'); return; } if(store.db) store.db.collection(col).doc(id).delete().catch(()=>{}); };
 store.reset = () => { store.data = RR.seed(); saveLocal(); emit(true); };
+
 
 /* ---------- Connectivity + offline outbox ---------- */
 RR.online = () => navigator.onLine !== false;
@@ -293,7 +282,7 @@ RR.copy = (text, btn) => {
 
 /* ---------- Map ---------- */
 RR.makeMap = (el, opts={}) => {
-  const map = L.map(el, {zoomControl:true, attributionControl:true}).setView(opts.center||[11.62,76.09], opts.zoom||11);
+  const map = L.map(el, {zoomControl:true, attributionControl:true}).setView(opts.center||[12.22,76.62], opts.zoom||10);
   const ESRI = 'https://server.arcgisonline.com/ArcGIS/rest/services/';
   const street = L.tileLayer(ESRI+'World_Street_Map/MapServer/tile/{z}/{y}/{x}', {maxZoom:19, attribution:'Tiles © Esri — Esri, HERE, Garmin, USGS, © OpenStreetMap contributors'});
   const sat = L.layerGroup([
@@ -308,6 +297,16 @@ RR.makeMap = (el, opts={}) => {
     {time:gibsDate, maxNativeZoom:9, maxZoom:19, opacity:.85, attribution:'NASA EOSDIS GIBS (MODIS Terra, '+gibsDate+')'});
   const zones = L.layerGroup().addTo(map);
   const overlays = {'Impact zones':zones, ['NASA satellite, '+gibsDate]:nasa};
+  if(RR.DISTRICT){
+    const dist = L.layerGroup(), world = [[-85,-179.9],[85,-179.9],[85,179.9],[-85,179.9]];
+    L.polygon([world, RR.DISTRICT.coords], {className:'dmask', weight:0, fillOpacity:.32, interactive:false}).addTo(dist);
+    L.polygon(RR.DISTRICT.coords, {className:'dline', fill:false, weight:2.2, interactive:false}).addTo(dist);
+    dist.addTo(map); overlays['District boundary'] = dist;
+    map.attributionControl.addAttribution('District boundary: Census of India 2011');
+    map.rrDistrictBounds = L.polygon(RR.DISTRICT.coords).getBounds();
+    if(opts.fitDistrict) map.fitBounds(map.rrDistrictBounds, {padding:[12,12]});
+  }
+  if(opts.locate) RR.addLocate(map);
   (RR.CONFIG.wms||[]).forEach(w => { try{ overlays[w.name] = L.tileLayer.wms(w.url, {layers:w.layers, format:'image/png', transparent:true, version:w.version||'1.1.1', opacity:.7, attribution:w.attribution||w.name}); }catch(e){} });
   L.control.layers({'Street map (English)':street, 'Satellite with labels':sat, 'Terrain':topo, 'OpenStreetMap (local names)':osm}, overlays, {collapsed:true, position:'topright'}).addTo(map);
   let fails = 0, loaded = 0;
@@ -317,6 +316,27 @@ RR.makeMap = (el, opts={}) => {
   map.rrZones = zones;
   setTimeout(() => map.invalidateSize(), 50);
   return map;
+};
+/* Live location of this device on a map (control room / home page). */
+RR.addLocate = map => {
+  const Ctl = L.Control.extend({options:{position:'topleft'}, onAdd(){
+    const b = L.DomUtil.create('button','locbtn'); b.type='button'; b.title='Show my live location'; b.setAttribute('aria-label','Show my live location');
+    b.innerHTML = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="currentColor"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
+    L.DomEvent.disableClickPropagation(b);
+    let watch = null, mk = null, acc = null, first = true;
+    b.onclick = () => {
+      if(watch!==null){ navigator.geolocation.clearWatch(watch); watch=null; mk&&mk.remove(); acc&&acc.remove(); mk=acc=null; b.classList.remove('on'); return; }
+      if(!navigator.geolocation){ RR.toast('This browser cannot share its location.'); return; }
+      b.classList.add('on'); first = true;
+      watch = navigator.geolocation.watchPosition(p => {
+        const ll = [p.coords.latitude, p.coords.longitude];
+        if(!mk){ mk = L.marker(ll,{icon:L.divIcon({className:'',html:'<div class="me"></div>',iconSize:[18,18],iconAnchor:[9,9]}),zIndexOffset:2000}).bindTooltip('You (live)').addTo(map); acc = L.circle(ll,{radius:p.coords.accuracy,className:'meacc',weight:1,interactive:false}).addTo(map); }
+        else { mk.setLatLng(ll); acc.setLatLng(ll).setRadius(p.coords.accuracy); }
+        if(first){ first=false; map.setView(ll, Math.max(map.getZoom(), 13)); }
+      }, err => { RR.toast(err.code===1 ? 'Location permission was refused.' : 'Could not get your location.'); b.classList.remove('on'); watch=null; }, {enableHighAccuracy:true, maximumAge:10000});
+    };
+    return b; }});
+  new Ctl().addTo(map);
 };
 RR.drawZones = (map, popup) => {
   const g = map.rrZones; g.clearLayers();
@@ -400,6 +420,14 @@ RR.route = async (from, to, hazards) => {
   }catch(e){ return straight(); }
 };
 RR.verdictPill = v => v==='safe'?'<span class="pill ok">Safe so far</span>':v==='caution'?'<span class="pill warn">Use caution</span>':'<span class="pill bad">Unsafe</span>';
+
+/* ---------- Back navigation inside the site ---------- */
+RR.backBtn = () => '<a class="backbtn" href="index.html" data-back aria-label="Go back"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Back</a>';
+document.addEventListener('click', e => {
+  const a = e.target.closest && e.target.closest('[data-back]'); if(!a) return;
+  let same = false; try{ same = document.referrer && new URL(document.referrer).origin === location.origin; }catch(err){}
+  if(same && history.length > 1){ e.preventDefault(); history.back(); }
+});
 
 /* ---------- Header / sign-in UI ---------- */
 RR.logo = `<svg viewBox="0 0 40 40" aria-hidden="true"><rect x="1" y="1" width="38" height="38" rx="6" fill="var(--accent)"/><path d="M9 26c4-3 7-3 11 0s7 3 11 0" fill="none" stroke="var(--accent-ink)" stroke-width="2.5" stroke-linecap="round"/><path d="M20 8v12M14 14h12" stroke="var(--accent-ink)" stroke-width="3" stroke-linecap="round"/></svg>`;

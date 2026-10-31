@@ -9,11 +9,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="assets/leaflet.css">
 <style>
 /* Layout: field-console. Two working columns (situation + controls | plan + outcome), full-width reference below. */
 :root{
-  --bg:#F2F4F7; --surface:#FFFFFF; --sunk:#F5F7FA; --ink:#0F1B2D; --muted:#5A6A7E; --line:#DDE3EA;
-  --navy:#0E2240; --navy-2:#173158; --navy-ink:#EEF3FA; --navy-muted:#A3B4CB; --navy-line:#24406A;
+  --bg:#EEF0F2; --surface:#FFFFFF; --sunk:#F5F6F7; --ink:#15191E; --muted:#5D6670; --line:#D9DDE1;
+  --navy:#1A1D21; --navy-2:#2A2F35; --navy-ink:#F2F3F4; --navy-muted:#A8AFB7; --navy-line:#33383F;
   --accent:#1D5FB4; --accent-soft:#E4EEFA; --accent-ink:#FFFFFF;
   --flood:#CFE1EC; --flood-edge:#9FC1D6; --land:#E3E8E1;
   --ok:#2C7A4B; --ok-bg:#DFEFE5; --warn:#9C5F0C; --warn-bg:#F6EAD3; --bad:#B4370F; --bad-bg:#F7DFD5;
@@ -52,7 +53,10 @@ button,input,select{font:inherit;color:inherit}
 .top{background:var(--navy);color:var(--navy-ink);border-bottom:1px solid var(--navy-line)}
 .top .btn{background:transparent;border-color:var(--navy-line);color:var(--navy-ink)}
 .top .btn:hover{border-color:var(--navy-muted);color:#fff}
-.top .wrap{padding-block:18px 16px;display:flex;flex-wrap:wrap;gap:14px 40px;align-items:flex-end;justify-content:space-between}
+.top .wrap{padding-block:14px 14px;display:flex;flex-wrap:wrap;gap:14px 32px;align-items:center;justify-content:space-between}
+.backbtn{display:inline-flex;align-items:center;gap:4px;color:var(--navy-ink);text-decoration:none;font-weight:600;font-size:13.5px;padding:6px 10px 6px 6px;border:1px solid var(--navy-line);border-radius:5px}
+.backbtn:hover{background:var(--navy-2)}
+.dmask{fill:#1A1D21}.dline{stroke:#1A1D21;stroke-dasharray:6 4}
 .brand{display:flex;gap:14px;align-items:center;min-width:0}
 .mark{width:40px;height:40px;flex:none}
 .brand h1{font-size:30px;font-weight:800;line-height:1}
@@ -67,7 +71,7 @@ button,input,select{font:inherit;color:inherit}
 .col{display:flex;flex-direction:column;gap:20px;min-width:0}
 .full{padding-block:8px 48px;display:flex;flex-direction:column;gap:20px}
 @media (max-width:980px){.layout{grid-template-columns:minmax(0,1fr)}}
-.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;min-width:0;box-shadow:0 1px 2px rgba(15,27,45,.05),0 6px 20px rgba(15,27,45,.05)}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;min-width:0}
 .ph{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline;justify-content:space-between;padding:14px 16px 10px;border-bottom:1px solid var(--line)}
 .ph h2{font-size:19px;font-weight:700}
 .ph .sub{color:var(--muted);font-size:13px}
@@ -76,7 +80,36 @@ button,input,select{font:inherit;color:inherit}
 .hint{color:var(--muted);font-size:13px;margin:0}
 
 /* map */
-.map svg{display:block;width:100%;height:auto;max-width:100%}
+.map #map{height:480px;background:var(--sunk);position:relative}
+.map .leaflet-container{font:13px var(--f-body);background:#E3E8EE}
+.leaflet-popup-content{margin:10px 12px;font-size:13px;line-height:1.45}
+.leaflet-tooltip.lbl-loc{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:3px 7px;font:600 12px/1.25 var(--f-body);box-shadow:0 2px 6px rgba(0,0,0,.15)}
+.leaflet-tooltip.lbl-loc small{display:block;font-weight:400;color:var(--muted)}
+.leaflet-tooltip.lbl-loc::before{display:none}
+.lrt-open{stroke:#6B7A8C;opacity:.7} .lrt-used{stroke:var(--accent)} .lrt-blocked{stroke:var(--bad);stroke-dasharray:7 7}
+.lv{stroke:#fff;stroke-width:2.5;fill-opacity:.95}
+.lv-fulfilled{fill:var(--ok)} .lv-partial{fill:var(--warn)} .lv-unmet{fill:var(--bad)} .lv-noaccess{fill:#fff;stroke:var(--bad);stroke-dasharray:4 3}
+.rank{width:26px;height:26px;border-radius:50%;background:var(--ink);color:#fff;font:700 11px/26px var(--f-mono);text-align:center;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.3)}
+.depotm{width:24px;height:24px;border-radius:5px;background:var(--navy,#0E2240);color:#fff;display:grid;place-items:center;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35)}
+.xmark{width:20px;height:20px;border-radius:50%;background:#fff;border:2px solid var(--bad);color:var(--bad);font:800 12px/16px var(--f-mono);text-align:center}
+.mapnote{position:absolute;left:10px;bottom:28px;z-index:500;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:5px 9px;font-size:12px;color:var(--muted);max-width:calc(100% - 20px)}
+.zn{stroke-width:1.5}.zn-red{stroke:var(--bad);fill:var(--bad)}.zn-landslide{stroke:#8A4B1C;fill:#A65E26}.zn-flooded{stroke:#1F6FB2;fill:#2F86D1}.zn-caution{stroke:var(--warn);fill:var(--warn)}.zn-relief{stroke:var(--ok);fill:var(--ok)}.zn-info{stroke:var(--accent);fill:var(--accent)}
+.legend i.z{width:14px;height:10px;border-radius:2px;border:1.5px solid}
+.locbtn{width:34px;height:34px;display:grid;place-items:center;background:var(--surface);color:var(--ink);border:2px solid rgba(0,0,0,.2);border-radius:4px;cursor:pointer;background-clip:padding-box}
+.locbtn.on{color:#1A73E8}
+.me{width:18px;height:18px;border-radius:50%;background:#1A73E8;border:3px solid #fff}
+.meacc{stroke:#1A73E8;fill:#1A73E8;fill-opacity:.12}
+/* stock requests */
+.sr-items{width:100%;border-collapse:collapse;font-size:13.5px}
+.sr-items td,.sr-items th{padding:6px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+.sr-items input{width:100px}
+.sr-items .basis{font-size:12px;color:var(--muted)}
+.sr-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.sr-list>li{border:1px solid var(--line);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.gap{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-bottom:12px}
+.gap div{background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.gap b{display:block;font:600 18px var(--f-mono);color:var(--bad)}
+.gap span{font-size:12px;color:var(--muted)}
 .map .land{fill:var(--land)}
 .map .flood{fill:var(--flood);stroke:var(--flood-edge);stroke-width:1}
 .map .rt{fill:none;stroke-width:2.5;stroke-linecap:round}
@@ -192,9 +225,10 @@ footer{color:var(--muted);font-size:12.5px;padding-block:0 32px}
 
 <header class="top">
   <div class="wrap">
+    <a class="backbtn" href="index.html" data-back aria-label="Go back" style="align-self:center"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Back</a>
     <div class="brand">
       <svg class="mark" viewBox="0 0 40 40" aria-hidden="true"><rect x="1" y="1" width="38" height="38" rx="6" fill="var(--accent)"/><path d="M9 26c4-3 7-3 11 0s7 3 11 0" fill="none" stroke="var(--accent-ink)" stroke-width="2.5" stroke-linecap="round"/><path d="M20 8v12M14 14h12" stroke="var(--accent-ink)" stroke-width="3" stroke-linecap="round"/></svg>
-      <div><h1><a href="index.html" style="color:inherit;text-decoration:none">ReliefReady</a></h1><p id="scenarioLine">Wayanad district flood · day 3 · one depot</p></div>
+      <div><h1><a href="index.html" style="color:inherit;text-decoration:none">ReliefReady</a></h1><p id="scenarioLine">Mysuru district flood · Kabini release · one depot</p></div>
     </div>
     <div class="kpis" id="kpis"></div>
     <nav style="display:flex;gap:8px;flex-wrap:wrap"><a class="btn small" href="admin.html">Control room</a><a class="btn small" href="index.html">All apps</a></nav>
@@ -205,17 +239,23 @@ footer{color:var(--muted);font-size:12.5px;padding-block:0 32px}
   <div class="wrap layout">
     <div class="col">
       <section class="panel map" aria-labelledby="h-map">
-        <div class="ph"><h2 id="h-map"><span class="step">01</span>The picture</h2><span class="sub">Depot, affected locations, routes</span></div>
+        <div class="ph"><h2 id="h-map"><span class="step">01</span>The picture</h2><span class="sub">Mysuru district: depot, affected locations, road routes</span></div>
         <div id="map"></div>
         <div class="legend">
           <span><i style="background:var(--ok)"></i>Fulfilled</span><span><i style="background:var(--warn)"></i>Partly fulfilled</span><span><i style="background:var(--bad)"></i>Unmet</span>
           <span><i class="l"></i>Route used</span><span><i class="lb"></i>Blocked</span><span>Circle size = people affected</span>
+          <span><i class="z zn-landslide" style="background:#E9CDB4"></i>Landslide zone</span><span><i class="z zn-flooded" style="background:#C9DFF2"></i>Flooded</span><span><i class="z zn-red" style="background:var(--bad-bg)"></i>No entry</span><span>Use the layers button for satellite view</span>
         </div>
       </section>
 
       <section class="panel" aria-labelledby="h-sup">
         <div class="ph"><h2 id="h-sup">Supplies, fleet and rules</h2><span class="sub">Edit any number; the plan updates</span></div>
         <div class="pb" id="supplies"></div>
+      </section>
+
+      <section class="panel" aria-labelledby="h-sr">
+        <div class="ph"><h2 id="h-sr"><span class="step">06</span>Request stock from State / Centre</h2><span class="sub">Food, water and sanitation supplies</span></div>
+        <div class="pb" id="stockreq"></div>
       </section>
 
       <section class="panel" aria-labelledby="h-tw">
@@ -263,9 +303,12 @@ footer{color:var(--muted);font-size:12.5px;padding-block:0 32px}
       <div class="pb how" id="howBody"></div>
     </section>
   </div>
-  <footer class="wrap">ReliefReady allocation planner. Place names are real; quantities are illustrative. No live inventory is connected; edits are kept in this browser only.</footer>
+  <footer class="wrap">ReliefReady allocation planner. Places and camp populations from the August 2019 Kabini floods in Mysuru district; other quantities are illustrative. No live inventory is connected; edits are kept in this browser only.</footer>
 </main>
 
+<script src="assets/leaflet.js"></script>
+<script src="assets/config.js"></script>
+<script src="assets/common.js"></script>
 <script src="js/model.js"></script>
 <script>
 /* ===================== Model ===================== */
@@ -285,28 +328,30 @@ const CRIT=[
 const clone=o=>JSON.parse(JSON.stringify(o));
 
 function initialState(){return{
-  stock:{water:600,infant:15,food:400},
-  vehicles:[{id:'v1',name:'Truck 1',cap:500,hours:14}],
+  stock:{water:2400,infant:30,food:1000},
+  vehicles:[{id:'v1',name:'Truck 1',cap:1000,hours:14}],
   loadTime:0.5, floor:50,
   weights:{urgency:35,people:25,vulnerable:20,wait:10,isolation:10},
-  depot:{name:'Kalpetta depot',x:330,y:288},
+  depot:{name:'Mysuru relief depot (DC office)',lat:12.3086,lon:76.6538},
+  stockReqs:[],
   locations:[
-    {id:'kodipur',name:'Mundakkai',x:560,y:66,people:300,infants:14,vulnerable:48,days:3,urgency:5,
-     req:{water:450,infant:14,food:300},
-     routes:[{id:'kodipur-bridge',name:'Bridge road',hours:1.2,open:false},
-             {id:'kodipur-hill',name:'Estate road detour',hours:3.5,open:true,cx:660,cy:250}]},
-    {id:'belur',name:'Panamaram',x:170,y:108,people:180,infants:6,vulnerable:24,days:2,urgency:4,
-     req:{water:270,infant:6,food:180},
-     routes:[{id:'belur-road',name:'District road',hours:0.8,open:true}]},
-    {id:'hosur',name:'Vythiri',x:68,y:250,people:220,infants:5,vulnerable:53,days:3,urgency:4,
-     req:{water:300,infant:5,food:160},
-     routes:[{id:'hosur-road',name:'Lakkidi road',hours:1.6,open:true}]},
-    {id:'gangavati',name:'Meppadi GHSS camp',x:200,y:352,people:140,infants:4,vulnerable:16,days:1,urgency:3,
-     req:{water:180,infant:0,food:100},
-     routes:[{id:'gang-road',name:'School road',hours:1.0,open:true}]},
-    {id:'manch',name:'Muttil',x:468,y:342,people:90,infants:2,vulnerable:8,days:1,urgency:2,
-     req:{water:120,infant:0,food:60},
-     routes:[{id:'manch-road',name:'Village road',hours:0.5,open:true}]},
+    {id:'nanj',name:'Nanjangud camps (Halladakere, Topabeedi)',lat:12.1180,lon:76.6830,people:617,infants:15,vulnerable:95,days:1,urgency:4,
+     req:{water:1850,infant:15,food:617},
+     routes:[{id:'nanj-nh',name:'NH 766 Mysuru–Nanjangud',hours:0.8,open:true}]},
+    {id:'hdk',name:'H.D. Kote camps and cut-off villages',lat:12.0350,lon:76.3050,people:358,infants:9,vulnerable:60,days:2,urgency:5,
+     req:{water:1075,infant:9,food:358},
+     routes:[{id:'hdk-bridge',name:'Via Hosakote bridge',hours:1.6,open:false,via:[[12.0880,76.3300],[12.0590,76.3150]]},
+             {id:'hdk-sargur',name:'Detour via Sargur',hours:2.8,open:true,via:[[12.1500,76.5200],[11.9970,76.3930]]}]},
+    {id:'hun',name:'Hunsur riverside camps',lat:12.3100,lon:76.2900,people:260,infants:6,vulnerable:40,days:1,urgency:3,
+     req:{water:780,infant:6,food:260},
+     routes:[{id:'hun-road',name:'Mysuru–Hunsur road',hours:1.1,open:true}]},
+    {id:'tn',name:'T. Narasipura town',lat:12.2110,lon:76.9010,people:180,infants:4,vulnerable:30,days:1,urgency:3,
+     req:{water:540,infant:4,food:180},
+     routes:[{id:'tn-road',name:'Mysuru–T. Narasipura road',hours:0.9,open:true}]},
+    {id:'sut',name:'Suttur',lat:12.1420,lon:76.7700,people:120,infants:3,vulnerable:18,days:2,urgency:3,
+     req:{water:360,infant:3,food:120},
+     routes:[{id:'sut-bridge',name:'Via Suttur bridge',hours:0.9,open:false,via:[[12.1500,76.7400]]},
+             {id:'sut-tn',name:'Detour via T. Narasipura road',hours:1.5,open:true,via:[[12.2110,76.9010]]}]},
   ],
   log:[]
 };}
@@ -432,7 +477,7 @@ const REASON={stock:'stock ran out',transport:'no truck time left',access:'no op
 const hrs=h=>(Math.round(h*10)/10)+' h';
 
 /* ===================== State ===================== */
-const KEY='reliefready.planner.v2';
+const KEY='reliefready.planner.v4';
 let S,BASE,BASE_PLAN,CUR;
 function loadSaved(){try{const raw=localStorage.getItem(KEY);if(raw){const d=JSON.parse(raw);if(d&&d.state&&d.base&&d.v===1)return d;}}catch(e){}return null;}
 function persist(){try{localStorage.setItem(KEY,JSON.stringify({v:1,state:S,base:BASE}));}catch(e){}}
@@ -440,7 +485,7 @@ function stamp(){const d=new Date();return String(d.getHours()).padStart(2,'0')+
 function logEvent(text){S.log.push({t:stamp(),text});}
 
 /* ===================== Render ===================== */
-function renderAll(){renderSupplies();renderTwist();renderData();renderHow();renderResults();}
+function renderAll(){renderSupplies();renderTwist();renderData();renderHow();renderResults();renderStockReq();}
 
 function renderResults(){
   CUR=plan(S);
@@ -459,37 +504,62 @@ function renderKpis(){
   ].map(([b,s])=>`<div class="kpi"><b>${b}</b><span>${s}</span></div>`).join('');
 }
 
-function quad(p0,c,p1,t){return(1-t)*(1-t)*p0+2*(1-t)*t*c+t*t*p1;}
+/* Real map: Esri English street map (default), satellite, OpenStreetMap; OSRM road geometry when online. */
+let MAP=null, LAY=null, GEO={}, fitted=false;
+try{ GEO=JSON.parse(localStorage.getItem('rr.planner.geo')||'{}'); }catch(e){ GEO={}; }
+function routePts(l,r){ return [[S.depot.lat,S.depot.lon],...(r.via||[]),[l.lat,l.lon]]; }
+function geoKey(l,r){ return routePts(l,r).map(p=>p.map(v=>(+v).toFixed(4)).join(',')).join(';'); }
+async function fetchGeo(l,r){
+  const k=geoKey(l,r); if(GEO[k]||!navigator.onLine) return;
+  GEO[k]='pending';
+  try{ const c=routePts(l,r).map(p=>p[1]+','+p[0]).join(';');
+    const res=await fetch('https://router.project-osrm.org/route/v1/driving/'+c+'?overview=full&geometries=geojson');
+    const j=await res.json(); if(j.routes&&j.routes[0]){ GEO[k]=j.routes[0].geometry.coordinates.map(x=>[x[1],x[0]]); try{localStorage.setItem('rr.planner.geo',JSON.stringify(GEO));}catch(e){} renderMap(); } else delete GEO[k]; }
+  catch(e){ delete GEO[k]; }
+}
+function initMap(){
+  if(MAP||typeof L==='undefined') return;
+  const el=document.getElementById('map'); el.innerHTML='';
+  MAP=L.map(el,{zoomControl:true,scrollWheelZoom:false}).setView([S.depot.lat,S.depot.lon],10);
+  const E='https://server.arcgisonline.com/ArcGIS/rest/services/';
+  const street=L.tileLayer(E+'World_Street_Map/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Tiles © Esri — Esri, HERE, Garmin, USGS, © OpenStreetMap contributors'}).addTo(MAP);
+  const sat=L.layerGroup([L.tileLayer(E+'World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Imagery © Esri, Maxar'}),L.tileLayer(E+'Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',{maxZoom:19})]);
+  const topo=L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{maxZoom:17,attribution:'© OpenStreetMap contributors, SRTM · © OpenTopoMap'});
+  const zones=L.layerGroup().addTo(MAP); MAP.rrZones=zones;
+  L.control.layers({'Street map':street,'Satellite':sat,'Terrain':topo},{'Impact zones':zones},{position:'topright'}).addTo(MAP);
+  L.control.scale({imperial:false}).addTo(MAP);
+  LAY=L.layerGroup().addTo(MAP);
+  let ok=0,bad=0; const note=document.createElement('div'); note.className='mapnote'; note.hidden=true; el.appendChild(note);
+  street.on('tileload',()=>{ok++;note.hidden=true;}); street.on('tileerror',()=>{ if(++bad>3&&!ok){note.hidden=false;note.textContent='Map tiles need an internet connection. Locations, routes and zones are still accurate.';} });
+  if(window.RR&&RR.DISTRICT){ const world=[[-85,-179.9],[85,-179.9],[85,179.9],[-85,179.9]];
+    const dl=L.layerGroup([L.polygon([world,RR.DISTRICT.coords],{className:'dmask',weight:0,fillOpacity:.3,interactive:false}),L.polygon(RR.DISTRICT.coords,{className:'dline',fill:false,weight:2.2,interactive:false})]).addTo(MAP);
+    MAP.attributionControl.addAttribution('District boundary: Census of India 2011'); }
+  if(window.RR&&RR.addLocate) RR.addLocate(MAP);
+  if(window.RR&&RR.drawZones){ RR.drawZones(MAP); RR.store.on(()=>RR.drawZones(MAP)); }
+}
 function renderMap(){
-  const d=S.depot;let routes='',labels='',nodes='';
-  const om=Object.fromEntries(CUR.out.map(o=>[o.id,o]));
+  initMap(); if(!MAP) return;
+  LAY.clearLayers();
+  const d=S.depot, om=Object.fromEntries(CUR.out.map(o=>[o.id,o])), pts=[[d.lat,d.lon]];
   for(const l of S.locations){
-    const o=om[l.id],best=bestRoute(l);
+    if(l.lat==null) continue;
+    const o=om[l.id], best=bestRoute(l);
     for(const r of l.routes){
       const cls=!r.open?'blocked':(r===best&&o.gotKg>0?'used':'open');
-      let path,mx,my;
-      if(r.cx!=null){path=`M${d.x} ${d.y} Q${r.cx} ${r.cy} ${l.x} ${l.y}`;mx=quad(d.x,r.cx,l.x,.5);my=quad(d.y,r.cy,l.y,.5);}
-      else{path=`M${d.x} ${d.y} L${l.x} ${l.y}`;mx=(d.x+l.x)/2;my=(d.y+l.y)/2;}
-      routes+=`<path class="rt ${cls}" d="${path}"><title>${esc(l.name)} · ${esc(r.name)} · ${r.hours} h one way · ${r.open?'open':'blocked'}</title></path>`;
-      if(!r.open)labels+=`<g transform="translate(${mx} ${my})"><circle r="9" fill="var(--surface)" stroke="var(--bad)" stroke-width="2"/><path d="M-4 -4L4 4M4 -4L-4 4" stroke="var(--bad)" stroke-width="2.2" stroke-linecap="round"/></g>`;
-      else labels+=`<text class="h" x="${mx+6}" y="${my-6}">${r.hours} h</text>`;
+      const g=GEO[geoKey(l,r)]; const line=Array.isArray(g)?g:routePts(l,r); if(!g) fetchGeo(l,r);
+      L.polyline(line,{className:'lrt-'+cls,weight:cls==='used'?5:3.5,opacity:1,lineCap:'round'}).bindTooltip(`${esc(l.name)} · ${esc(r.name)} · ${r.hours} h one way${r.open?'':' · BLOCKED'}`,{sticky:true}).addTo(LAY);
+      if(!r.open){ const m=line[Math.floor(line.length/2)]; L.marker(m,{icon:L.divIcon({className:'',html:'<div class="xmark">✕</div>',iconSize:[20,20],iconAnchor:[10,10]}),interactive:false}).addTo(LAY); }
     }
-    const rad=7+Math.sqrt(l.people)/1.5,noacc=!best;
-    const anchor=l.x>520?'end':l.x<120?'start':'middle';
-    const tx=anchor==='end'?l.x+rad:anchor==='start'?l.x-rad:l.x;
-    const ty=l.y<200?l.y-rad-8:l.y+rad+15;
-    const ty2=l.y<200?ty-14:ty+13;
-    nodes+=`<circle class="v ${noacc?'noaccess':o.status}" cx="${l.x}" cy="${l.y}" r="${rad}"><title>${esc(l.name)}: ${STATUS[o.status]}${noacc?' (no open route)':''}</title></circle>`;
-    nodes+=`<text font-size="11" text-anchor="middle" x="${l.x}" y="${l.y+4}" style="font:700 11px var(--f-mono);stroke-width:0;fill:${noacc?'var(--bad)':'var(--surface)'}">#${o.rank}</text>`;
-    const lines=l.y<200?[`${fmt(l.people)} people`,l.name]:[l.name,`${fmt(l.people)} people`];
-    nodes+=`<text class="${l.y<200?'':'nm'}" text-anchor="${anchor}" x="${tx}" y="${ty2}">${esc(lines[0])}</text><text class="${l.y<200?'nm':''}" text-anchor="${anchor}" x="${tx}" y="${ty}">${esc(lines[1])}</text>`;
+    const noacc=!best, rad=7+Math.sqrt(l.people)/1.6;
+    L.circleMarker([l.lat,l.lon],{radius:rad,className:'lv lv-'+(noacc?'noaccess':o.status),weight:2.5})
+      .bindPopup(`<b>${esc(l.name)}</b><br>${fmt(l.people)} people · ${l.infants} infants<br>${STATUS[o.status]}${noacc?' · no open route':''}<br>Water ${fmt(o.alloc.water)}/${fmt(l.req.water||0)} L · Food ${fmt(o.alloc.food)}/${fmt(l.req.food||0)}`)
+      .bindTooltip(`#${o.rank} ${esc(l.name)}<small>${fmt(l.people)} people · ${STATUS[o.status].toLowerCase()}</small>`,{permanent:true,direction:l.lon<d.lon?'left':'right',offset:[l.lon<d.lon?-(rad+2):rad+2,0],className:'lbl-loc'}).addTo(LAY);
+    pts.push([l.lat,l.lon]);
   }
-  const depot=`<rect class="depot" x="${d.x-9}" y="${d.y-9}" width="18" height="18" rx="2"/><path d="M${d.x} ${d.y-5}v10M${d.x-5} ${d.y}h10" stroke="var(--surface)" stroke-width="2.4" stroke-linecap="round"/><text class="nm" text-anchor="middle" x="${d.x}" y="${d.y+26}">${esc(d.name)}</text>`;
-  document.getElementById('map').innerHTML=`<svg viewBox="0 0 680 410" role="img" aria-label="Schematic map of the depot, affected locations and routes">
-    <rect class="land" x="0" y="0" width="680" height="410"/>
-    <path class="flood" d="M-10 150 C 120 130, 230 238, 370 196 S 570 120, 690 182 L690 236 C 580 176, 470 262, 370 252 S 140 188, -10 212 Z"/>
-    <text class="h" x="22" y="176" style="font-style:italic">Punnapuzha · flooded</text>
-    ${routes}${labels}${depot}${nodes}</svg>`;
+  L.marker([d.lat,d.lon],{icon:L.divIcon({className:'',html:'<div class="depotm"><svg width="12" height="12" viewBox="0 0 12 12"><path d="M6 1v10M1 6h10" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg></div>',iconSize:[24,24],iconAnchor:[12,12]}),zIndexOffset:1000})
+    .bindTooltip(`${esc(d.name)}<small>Supply depot</small>`,{permanent:true,direction:'left',offset:[-14,0],className:'lbl-loc'}).addTo(LAY);
+  if(!fitted){ MAP.fitBounds(pts,{paddingTopLeft:[150,30],paddingBottomRight:[150,90]}); fitted=true; }
+  setTimeout(()=>MAP.invalidateSize(),60);
 }
 
 function cellFor(o,res,b){
@@ -624,10 +694,10 @@ function renderSupplies(){
   document.getElementById('supplies').innerHTML=h;
 }
 
-const NEW_AREA={name:'Thariyode',people:160,infants:9,vulnerable:22,days:2,urgency:5,hours:2.0,water:240,infant:9,food:160};
+const NEW_AREA={name:'Hejjige',people:140,infants:4,vulnerable:20,days:1,urgency:4,hours:1.0,water:420,infant:4,food:140};
 function renderTwist(){
   const hasNag=S.locations.some(l=>l.id==='nagarahalli');
-  const hill=S.locations.find(l=>l.id==='kodipur')?.routes.find(r=>r.id==='kodipur-hill');
+  const hill=S.locations.find(l=>l.id==='hdk')?.routes.find(r=>r.id==='hdk-sargur');
   const truckDown=S.log.some(e=>e.key==='breakdown');
   const hasPickup=S.vehicles.some(v=>v.id==='v2');
   const routeOpts=S.locations.flatMap(l=>l.routes.map(r=>`<option value="${l.id}|${r.id}">${esc(l.name)} · ${esc(r.name)} (${r.open?'open':'blocked'})</option>`)).join('');
@@ -636,8 +706,8 @@ function renderTwist(){
   document.getElementById('twist').innerHTML=`
     <div class="subhead">Quick scenarios</div>
     <div class="presets">
-      <button type="button" class="preset" data-preset="landslide" ${!hill||!hill.open?'disabled':''}><b>Landslide on the hill detour</b><span>Mundakkai loses its only open road</span></button>
-      <button type="button" class="preset" data-preset="newarea" ${hasNag?'disabled':''}><b>New area reported</b><span>Thariyode: 160 people, urgency 5, 2 h away</span></button>
+      <button type="button" class="preset" data-preset="landslide" ${!hill||!hill.open?'disabled':''}><b>Sargur detour flooded</b><span>H.D. Kote villages lose their only open road</span></button>
+      <button type="button" class="preset" data-preset="newarea" ${hasNag?'disabled':''}><b>New area reported</b><span>Hejjige: 140 people, urgency 4, 1 h away</span></button>
       <button type="button" class="preset" data-preset="water"><b>200 L water contaminated</b><span>Remove 200 L from depot stock</span></button>
       <button type="button" class="preset" data-preset="breakdown" ${truckDown?'disabled':''}><b>Truck breakdown</b><span>Truck 1 loses 4 hours of its day</span></button>
       <button type="button" class="preset" data-preset="pickup" ${hasPickup?'disabled':''}><b>Second vehicle arrives</b><span>Pickup on loan: 300 kg per trip, 10 h</span></button>
@@ -652,7 +722,7 @@ function renderTwist(){
       <div class="field" style="justify-content:flex-end"><button type="button" class="btn" data-act="stock">Apply</button></div></div>
       <div class="subhead">Add an affected area</div>
       <div class="grid2">
-        <div class="field"><label for="na-name">Name</label><input type="text" id="na-name" value="Kunnampatta"></div>
+        <div class="field"><label for="na-name">Name</label><input type="text" id="na-name" value="Bannur"></div>
         <div class="field"><label for="na-people">People</label><input type="number" min="1" id="na-people" value="120"></div>
         <div class="field"><label for="na-inf">Infants</label><input type="number" min="0" id="na-inf" value="4"></div>
         <div class="field"><label for="na-urg">Urgency (1–5)</label><input type="number" min="1" max="5" id="na-urg" value="4"></div>
@@ -710,6 +780,90 @@ score = Σ weight × criterion / Σ weights × 100</div>
     <p>A simulated change (blocked route, new area, lost stock, breakdown) reruns the same rules. The new plan is compared with the saved baseline per location and per item, so the coordinator can see who gained, who lost and why.</p></div>`;
 }
 
+/* ===================== Stock requests to State / Centre ===================== */
+const SR_TO=['State: Revenue Dept. (Disaster Management) / KSDMA','Centre: NDMA / MHA, through the State (NDRF)','Food Corporation of India (food grains)','Karnataka Food & Civil Supplies Corporation'];
+const SR_ITEMS=[
+  {id:'food',name:'Food packets',unit:'pkts',plan:'food'},
+  {id:'water',name:'Drinking water',unit:'L',plan:'water'},
+  {id:'infant',name:'Infant kits',unit:'kits',plan:'infant'},
+  {id:'hygiene',name:'Family hygiene kits',unit:'kits'},
+  {id:'pads',name:'Sanitary napkin packs',unit:'packs'},
+  {id:'bleach',name:'Bleaching powder',unit:'kg'},
+  {id:'tablets',name:'Water purification tablets',unit:'tabs'},
+  {id:'ors',name:'ORS sachets',unit:'sachets'},
+];
+const SR_STATUS={sent:['Sent','warn'],acknowledged:['Acknowledged','info'],dispatched:['Dispatched','info'],received:['Received','ok']};
+let srDays=3, srTo=0;
+function srSuggest(){
+  const ppl=S.locations.reduce((t,l)=>t+(+l.people||0),0), inf=S.locations.reduce((t,l)=>t+(+l.infants||0),0);
+  const daily=k=>S.locations.reduce((t,l)=>t+(+(l.req[k])||0),0);
+  const plan=k=>Math.max(0,daily(k)*srDays-(S.stock[k]||0));
+  return {food:plan('food'),water:plan('water'),infant:plan('infant'),hygiene:Math.ceil(ppl/5),pads:Math.ceil(ppl*0.25),bleach:0,tablets:0,ors:0,_ppl:ppl,_inf:inf};
+}
+const SR_BASIS={food:'Daily requests × days, minus depot stock',water:'Daily requests × days, minus depot stock',infant:'Daily requests × days, minus depot stock',hygiene:'One kit per family of five',pads:'About one pack for every four people (women of menstruating age)',bleach:'Enter as assessed',tablets:'Enter as assessed',ors:'Enter as assessed'};
+function renderStockReq(){
+  const el=document.getElementById('stockreq'); if(!el) return;
+  if(el.contains(document.activeElement)&&/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) return;
+  const sh={water:0,food:0,infant:0}; let unmetPpl=0;
+  (CUR?CUR.out:[]).forEach(o=>{ for(const k in sh) sh[k]+=o.short[k]||0; if(o.status!=='fulfilled') unmetPpl+=o.people; });
+  const sg=srSuggest();
+  const list=(S.stockReqs||[]).slice().reverse();
+  el.innerHTML=`<div class="gap"><div><b>${fmt(sh.water)} L</b><span>Water short today</span></div><div><b>${fmt(sh.food)}</b><span>Food packets short</span></div><div><b>${fmt(sh.infant)}</b><span>Infant kits short</span></div><div><b>${fmt(unmetPpl)}</b><span>People not fully served</span></div></div>
+  <div class="grid2"><div class="field"><label for="sr-to">Send to</label><select id="sr-to">${SR_TO.map((t,i)=>`<option value="${i}" ${i==srTo?'selected':''}>${t}</option>`).join('')}</select></div>
+  <div class="field"><label for="sr-days">Days of cover</label><select id="sr-days">${[1,2,3,5,7,10].map(d=>`<option ${d==srDays?'selected':''}>${d}</option>`).join('')}</select></div></div>
+  <div class="tw" style="margin-top:10px"><table class="sr-items"><thead><tr><th>Item</th><th>Quantity</th><th>Basis</th></tr></thead><tbody>
+  ${SR_ITEMS.map(it=>`<tr><td>${it.name} <span class="hint">(${it.unit})</span></td><td><input type="number" min="0" id="sr-${it.id}" value="${sg[it.id]}"></td><td class="basis">${SR_BASIS[it.id]}</td></tr>`).join('')}
+  </tbody></table></div>
+  <div class="field" style="margin-top:10px"><label for="sr-note">Justification</label><textarea id="sr-note" rows="3" style="font:13.5px/1.5 var(--f-body);width:100%;background:var(--sunk);border:1px solid var(--line);border-radius:7px;padding:8px">${esc(`${fmt(sg._ppl)} people in ${S.locations.length} affected locations of Mysuru district (${fmt(sg._inf)} infants). Current depot stock covers ${CUR?Math.round(CUR.tot.reqKg?CUR.tot.gotKg/CUR.tot.reqKg*100:0):0}% of today's requests; ${fmt(unmetPpl)} people are not fully served. Requesting ${srDays} days of cover.`)}</textarea></div>
+  <div class="btns" style="margin-top:10px"><button type="button" class="btn primary" data-sr="send">Send request</button><span class="hint">Also appears in the control room under Agency requests.</span></div>
+  ${list.length?`<div class="subhead" style="margin-top:18px">Requests sent</div><ul class="sr-list">${list.map(r=>{ const st=SR_STATUS[r.status];
+    return `<li><div style="display:flex;flex-wrap:wrap;gap:6px 10px;align-items:center"><b>${esc(r.to)}</b><span class="pill ${st[1]==='ok'?'fulfilled':st[1]==='warn'?'partial':''}" style="${st[1]==='info'?'background:var(--accent-soft);color:var(--accent)':''}">${st[0]}</span><span class="hint">${r.t} · ${r.days} days of cover</span></div>
+      <span style="font-size:13px">${SR_ITEMS.filter(it=>r.items[it.id]>0).map(it=>`${it.name}: ${fmt(r.items[it.id])} ${it.unit}`).join(' · ')}</span>
+      <span class="hint">${r.timeline.map(x=>x.t+' '+x.s).join(' → ')}</span>
+      <div class="btns">${r.status==='sent'?`<button class="btn small" data-sr="acknowledged" data-id="${r.id}">Mark acknowledged</button>`:''}${r.status!=='received'&&r.status!=='dispatched'?`<button class="btn small" data-sr="dispatched" data-id="${r.id}">Mark dispatched</button>`:''}${r.status!=='received'?`<button class="btn small" data-sr="received" data-id="${r.id}">Mark received (adds to depot stock)</button>`:''}<button class="btn small" data-sr="letter" data-id="${r.id}">Copy request letter</button></div></li>`; }).join('')}</ul>`:''}`;
+}
+function srLetter(r){
+  return `To: ${r.to}
+From: Deputy Commissioner & Chairperson, District Disaster Management Authority, Mysuru
+Date: ${new Date(r.at).toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'})}
+Subject: Request for relief stock — ${r.days} days of cover
+
+Sir/Madam,
+
+${r.note}
+
+Items requested:
+${SR_ITEMS.filter(it=>r.items[it.id]>0).map(it=>`  - ${it.name}: ${fmt(r.items[it.id])} ${it.unit}`).join('\n')}
+
+Delivery to: ${S.depot.name}, Mysuru (${S.depot.lat}, ${S.depot.lon}).
+Reference: ${r.id}
+
+District Emergency Operations Centre, Mysuru`;
+}
+document.addEventListener('change',e=>{ if(e.target.id==='sr-days'){ srDays=+e.target.value; e.target.blur(); renderStockReq(); } else if(e.target.id==='sr-to'){ srTo=+e.target.value; } });
+document.addEventListener('click',e=>{
+  const b=e.target.closest('[data-sr]'); if(!b) return; const a=b.dataset.sr;
+  S.stockReqs=S.stockReqs||[];
+  if(a==='send'){
+    const items={}; SR_ITEMS.forEach(it=>items[it.id]=Math.max(0,Math.round(+document.getElementById('sr-'+it.id).value||0)));
+    if(!Object.values(items).some(v=>v>0)){ return; }
+    const r={id:'SR-'+Date.now().toString(36).toUpperCase(),to:SR_TO[srTo],days:srDays,items,note:document.getElementById('sr-note').value,status:'sent',t:stamp(),at:Date.now(),timeline:[{t:stamp(),s:'sent'}]};
+    S.stockReqs.push(r);
+    const sess=window.RR&&RR.session&&RR.session();
+    if(window.RR&&RR.store&&(!RR.CONFIG.api||(sess&&sess.token&&sess.role==='admin'))){ try{ RR.store.put('escalations',{id:'esc-'+r.id.toLowerCase(),from:'admin',by:'planner',to:r.to.split(':')[0].split(' (')[0],type:'Stock replenishment',place:S.depot.name,lat:S.depot.lat,lon:S.depot.lon,people:S.locations.reduce((t,l)=>t+(+l.people||0),0),urgency:'High',note:SR_ITEMS.filter(it=>items[it.id]>0).map(it=>`${it.name} ${items[it.id]} ${it.unit}`).join(', '),status:'sent',createdAt:Date.now(),timeline:[{t:Date.now(),s:'sent',n:'Stock request '+r.id+' from the allocation planner'}]}); }catch(err){} }
+  } else {
+    const r=S.stockReqs.find(x=>x.id===b.dataset.id); if(!r) return;
+    if(a==='letter'){ const txt=srLetter(r); try{ navigator.clipboard.writeText(txt).then(()=>{b.textContent='Copied';setTimeout(()=>b.textContent='Copy request letter',1500);},()=>{}); }catch(err){} return; }
+    r.status=a; r.timeline.push({t:stamp(),s:a});
+    const sess=window.RR&&RR.session&&RR.session(), eid='esc-'+r.id.toLowerCase();
+    if(window.RR&&RR.store&&RR.store.get('escalations',eid)&&(!RR.CONFIG.api||(sess&&sess.token&&sess.role==='admin'))){ const e=RR.store.get('escalations',eid), ns=a==='received'?'resolved':a;
+      try{ RR.store.put('escalations',{...e,status:ns,timeline:[...(e.timeline||[]),{t:Date.now(),s:ns,n:a==='received'?'Stock received at '+S.depot.name:'Updated from the allocation planner'}]}); }catch(err){} }
+    if(a==='received'){ const add=[]; for(const k of ['water','food','infant']){ if(r.items[k]>0){ S.stock[k]=(S.stock[k]||0)+r.items[k]; add.push(`+${fmt(r.items[k])} ${RBY[k].unit} ${RBY[k].short.toLowerCase()}`); } }
+      if(add.length) logEvent(`Stock received from ${r.to.split(':')[0].split(' (')[0]}: ${add.join(', ')}`); }
+  }
+  renderAll();
+});
+
 /* ===================== Events ===================== */
 function locById(id){return S.locations.find(l=>l.id===id);}
 function afterChange(full){if(full){renderAll();}else{renderResults();renderSupplies();}}
@@ -736,8 +890,8 @@ document.addEventListener('change',e=>{
 document.addEventListener('click',e=>{
   const b=e.target.closest('button');if(!b)return;
   const p=b.dataset.preset,a=b.dataset.act;
-  if(p==='landslide'){const r=locById('kodipur')?.routes.find(x=>x.id==='kodipur-hill');if(r){r.open=false;logEvent('Landslide: Mundakkai hill detour blocked');}}
-  else if(p==='newarea'){const n=NEW_AREA;S.locations.push({id:'nagarahalli',name:n.name,x:612,y:300,people:n.people,infants:n.infants,vulnerable:n.vulnerable,days:n.days,urgency:n.urgency,req:{water:n.water,infant:n.infant,food:n.food},routes:[{id:'nag-road',name:'Canal road',hours:n.hours,open:true}]});logEvent('New area reported: Thariyode, 160 people, urgency 5');}
+  if(p==='landslide'){const r=locById('hdk')?.routes.find(x=>x.id==='hdk-sargur');if(r){r.open=false;logEvent('Sargur detour flooded: H.D. Kote villages cut off by road');}}
+  else if(p==='newarea'){const n=NEW_AREA;S.locations.push({id:'nagarahalli',name:n.name,lat:12.1050,lon:76.7000,people:n.people,infants:n.infants,vulnerable:n.vulnerable,days:n.days,urgency:n.urgency,req:{water:n.water,infant:n.infant,food:n.food},routes:[{id:'nag-road',name:'Nanjangud–Hejjige road',hours:n.hours,open:true}]});logEvent('New area reported: Hejjige, 140 people, urgency 4');}
   else if(p==='water'){S.stock.water=Math.max(0,S.stock.water-200);logEvent('200 L of drinking water contaminated and removed');}
   else if(p==='breakdown'){const v=S.vehicles[0];if(v){v.hours=Math.max(0,v.hours-4);S.log.push({t:stamp(),text:`${v.name} breakdown: ${v.hours} h left today`,key:'breakdown'});}}
   else if(p==='pickup'){S.vehicles.push({id:'v2',name:'Pickup 2',cap:300,hours:10});logEvent('Second vehicle arrives: Pickup 2, 300 kg per trip, 10 h');}
@@ -748,9 +902,9 @@ document.addEventListener('click',e=>{
   else if(a==='addArea'){
     const g=id=>document.getElementById(id);const name=g('na-name').value.trim()||'New area';
     const id='area-'+Date.now().toString(36);const ang=(S.locations.length*67)%360*Math.PI/180;
-    const x=Math.round(Math.min(640,Math.max(40,S.depot.x+Math.cos(ang)*230))),y=Math.round(Math.min(380,Math.max(40,S.depot.y-Math.abs(Math.sin(ang))*200)));
+    const lat=+(S.depot.lat+Math.sin(ang)*0.09).toFixed(4),lon=+(S.depot.lon+Math.cos(ang)*0.09).toFixed(4);
     const hours=Math.max(0.1,+g('na-hours').value||1);
-    S.locations.push({id,name,x,y,people:Math.max(1,+g('na-people').value||1),infants:+g('na-inf').value||0,vulnerable:0,days:0,urgency:Math.min(5,Math.max(1,+g('na-urg').value||3)),
+    S.locations.push({id,name,lat,lon,people:Math.max(1,+g('na-people').value||1),infants:+g('na-inf').value||0,vulnerable:0,days:0,urgency:Math.min(5,Math.max(1,+g('na-urg').value||3)),
       req:{water:+g('na-water').value||0,infant:+g('na-kits').value||0,food:+g('na-food').value||0},routes:[{id:id+'-road',name:'Road',hours,open:true}]});
     logEvent(`New area added: ${name}, ${g('na-people').value} people, urgency ${g('na-urg').value}`);
   }

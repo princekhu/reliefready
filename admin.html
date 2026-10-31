@@ -10,65 +10,57 @@
 <link rel="stylesheet" href="assets/leaflet.css">
 <link rel="stylesheet" href="assets/common.css">
 <style>
-/* Control room: fixed sidebar navigation, one working area per section. */
-body{min-height:100%}
-.shell{display:grid;grid-template-columns:232px minmax(0,1fr);min-height:100vh}
-.side{position:sticky;top:0;height:100vh;background:var(--navy);color:var(--navy-ink);border-right:1px solid var(--navy-line);display:flex;flex-direction:column;padding:16px 12px calc(16px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
-.side .logo{padding:2px 6px 14px}
-.side .logo b{font-size:20px}
-.nav{display:flex;flex-direction:column;gap:2px;margin-top:6px}
-.nav .grp{font:600 10.5px/1 var(--f-body);letter-spacing:.1em;text-transform:uppercase;color:var(--navy-muted);padding:16px 12px 7px;opacity:.85}
-.nav button,.nav a{position:relative;display:flex;align-items:center;gap:11px;width:100%;padding:9px 12px;border:0;border-radius:7px;background:none;color:var(--navy-muted);font:500 14px var(--f-body);cursor:pointer;text-align:left;text-decoration:none}
-.nav button:hover,.nav a:hover{background:var(--navy-2);color:var(--navy-ink)}
-.nav button[aria-current=page]{background:var(--navy-2);color:#fff;font-weight:600}
-.nav button[aria-current=page]::before{content:"";position:absolute;left:-12px;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;background:var(--accent)}
-.nav svg{width:17px;height:17px;flex:none;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.nav .count{margin-left:auto}
-.side .foot2{margin-top:auto;border-top:1px solid var(--navy-line);padding-top:12px;display:flex;flex-direction:column;gap:8px;font-size:13px}
-.conn{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--navy-muted)}
-.side .btn{background:transparent;border-color:var(--navy-line);color:var(--navy-ink)}
-.side .btn:hover{border-color:var(--navy-muted);color:#fff}
+/* Control room: one top bar with tabs (no sidebar); map-first overview; flat panels separated by rules. */
+.hdr{position:sticky;top:env(safe-area-inset-top,0px);z-index:900}
+.hdr .bar{position:static}
+.hdr .who{color:var(--navy-ink)}
+.conn{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--navy-muted);white-space:nowrap}
 .conn::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--ok)}
 .conn.warn::before{background:var(--warn)} .conn.bad::before{background:var(--bad)}
-.main{min-width:0;padding:22px max(16px,env(safe-area-inset-right,0px)) 40px 24px;display:flex;flex-direction:column;gap:16px}
+.tabs2{background:var(--surface);border-bottom:1px solid var(--line)}
+.tabs2 .wrap{display:flex;gap:2px;overflow-x:auto;padding-block:0}
+.tabs2 button,.tabs2 a{flex:none;display:flex;align-items:center;gap:6px;border:0;background:none;padding:12px 14px 10px;font:600 14px var(--f-body);color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;text-decoration:none;white-space:nowrap}
+.tabs2 button:hover,.tabs2 a:hover{color:var(--ink)}
+.tabs2 button[aria-current=page]{color:var(--ink);border-bottom-color:var(--accent)}
+.tabs2 .sep{flex:1}
+.tabs2 svg{display:none}
+.main{padding-block:18px 40px;display:flex;flex-direction:column;gap:14px}
 .mh{display:flex;flex-wrap:wrap;gap:8px 20px;align-items:flex-end;justify-content:space-between}
-.mh h1{font-size:30px;font-weight:800}
+.mh h1{font-size:24px;font-weight:700}
 .mh .right{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
-.mh p{margin:4px 0 0;color:var(--muted);font-size:14px}
+.mh p{margin:3px 0 0;color:var(--muted);font-size:14px}
 .mh .when{font:500 13px var(--f-mono);color:var(--muted)}
-.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
-@media (min-width:1700px){.kpis{grid-template-columns:repeat(6,minmax(0,1fr))}}
-@media (max-width:900px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (max-width:480px){.kpis{grid-template-columns:minmax(0,1fr)}}
-.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px 16px 14px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 12px;box-shadow:var(--shadow);align-items:center}
-.kpi .ico{grid-row:span 3;width:40px;height:40px;border-radius:10px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);align-self:start}
-.kpi .ico svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
-.kpi.alert .ico{background:var(--bad-bg);color:var(--bad)} .kpi.good .ico{background:var(--ok-bg);color:var(--ok)}
-.kpi b{font:600 26px/1.1 var(--f-mono);font-variant-numeric:tabular-nums}
-.kpi .l{font-size:13px;font-weight:600}
+/* status strip: one row of figures with rules between them */
+.kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+@media (max-width:1200px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:620px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{padding:12px 16px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:1px;min-width:0;margin:0 0 -1px 0}
+.kpi .ico{display:none}
+.kpi b{font:600 24px/1.15 var(--f-mono);font-variant-numeric:tabular-nums}
+.kpi .l{font-size:12.5px;font-weight:600}
 .kpi .s{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .kpi.alert b{color:var(--bad)}
-.ov3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
-@media (max-width:1180px){.ov3{grid-template-columns:minmax(0,1fr)}}
+.ov3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:1100px){.ov3{grid-template-columns:minmax(0,1fr)}}
 .fleet{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
-.fleet li{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:3px 12px;padding:11px 0;border-bottom:1px solid var(--line);align-items:center}
+.fleet li{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:3px 12px;padding:10px 0;border-bottom:1px solid var(--line);align-items:center}
 .fleet li:last-child{border-bottom:0}
-.fleet .veh{position:static;width:34px;height:34px;box-shadow:none;grid-row:span 2}
-.fleet .veh svg{width:19px;height:19px}
-.fleet .bar2{grid-column:2/-1;height:6px;border-radius:3px;background:var(--sunk);overflow:hidden;display:flex}
+.fleet .veh{position:static;width:32px;height:32px;box-shadow:none;grid-row:span 2}
+.fleet .veh svg{width:18px;height:18px}
+.fleet .bar2{grid-column:2/-1;height:5px;border-radius:2px;background:var(--sunk);overflow:hidden;display:flex}
 .fleet .bar2 span{display:block;height:100%}
 .hbar{display:grid;grid-template-columns:104px minmax(0,1fr) auto;gap:8px;align-items:center;font-size:13px;padding:5px 0}
-.hbar .t{height:10px;border-radius:5px;background:var(--sunk);overflow:hidden}
-.hbar .t span{display:block;height:100%;border-radius:5px;background:var(--accent)}
+.hbar .t{height:9px;border-radius:2px;background:var(--sunk);overflow:hidden}
+.hbar .t span{display:block;height:100%;background:var(--accent)}
 .hbar .t span.r{background:var(--bad)} .hbar .t span.w{background:var(--warn)}
 .hbar b{font:600 13px var(--f-mono);text-align:right;white-space:nowrap;min-width:64px}
-.pbar{grid-column:2;height:4px;border-radius:2px;background:var(--sunk);overflow:hidden;margin-top:2px}
+.pbar{grid-column:2;height:3px;border-radius:2px;background:var(--sunk);overflow:hidden;margin-top:2px}
 .pbar span{display:block;height:100%}
-.top{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:16px}
+.top{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:14px}
 .top.solo{grid-template-columns:minmax(0,1fr)}
-.top .mapbox{height:min(62vh,600px);border-radius:var(--r);overflow:hidden;border:1px solid var(--line)}
-.feed{max-height:calc(min(62vh,600px) - 52px);overflow:auto}
-.prio{font:700 17px/1 var(--f-mono);min-width:36px;text-align:center;padding:6px 0;border-radius:4px;background:var(--sunk)}
+.top .mapbox{height:min(64vh,620px);border-radius:var(--r);overflow:hidden;border:1px solid var(--line)}
+.feed{max-height:calc(min(64vh,620px) - 50px);overflow:auto}
+.prio{font:700 16px/1 var(--f-mono);min-width:36px;text-align:center;padding:6px 0;border-radius:3px;background:var(--sunk)}
 .prio.hi{background:var(--bad-bg);color:var(--bad)} .prio.mid{background:var(--warn-bg);color:var(--warn)}
 .feed li{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 12px;align-items:start}
 .tabpanel{padding:18px}
@@ -77,20 +69,11 @@ body{min-height:100%}
 .inline{display:flex;flex-wrap:wrap;gap:8px;align-items:end}
 .inline .field{min-width:120px;flex:1}
 .esc{border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:8px}
-.esc.crit{border-left:4px solid var(--bad)}
+.esc.crit{border-color:color-mix(in srgb,var(--bad) 45%,var(--line))}
 .sitrep{white-space:pre-wrap;font:12.5px/1.55 var(--f-mono);background:var(--sunk);border:1px solid var(--line);border-radius:4px;padding:10px;margin:0;max-height:260px;overflow:auto}
 .rt-line{stroke:var(--accent)}
-@media (max-width:1100px){.top{grid-template-columns:minmax(0,1fr)}.feed{max-height:420px}}
-@media (max-width:820px){
-  .shell{grid-template-columns:minmax(0,1fr)}
-  .side{position:sticky;top:env(safe-area-inset-top,0px);height:auto;z-index:900;flex-direction:row;align-items:center;gap:8px;padding:8px max(12px,env(safe-area-inset-right,0px)) 8px max(12px,env(safe-area-inset-left,0px));border-right:0;border-bottom:1px solid var(--line);overflow-x:auto}
-  .side .logo{padding:0;flex:none}.side .logo b{display:none}
-  .nav{flex:none}
-  .nav{flex-direction:row;margin:0}.nav .grp{display:none}.nav button,.nav a{white-space:nowrap;padding:7px 9px}
-  .side .foot2{margin:0;border:0;padding:0;flex-direction:row;align-items:center;white-space:nowrap}
-  .main{padding:16px max(16px,env(safe-area-inset-right,0px)) 32px max(16px,env(safe-area-inset-left,0px))}
-  .top .mapbox{height:360px}
-}
+@media (max-width:1100px){.top{grid-template-columns:minmax(0,1fr)}.feed{max-height:420px}.top .mapbox{height:420px}}
+@media (max-width:700px){.hdr .who b,.hdr .conn{display:none}}
 </style>
 <style>[hidden]{display:none!important}img{max-width:100%}</style>
 </head>
@@ -111,29 +94,32 @@ if(!S || S.role!=='admin' || (RR.CONFIG.api && !S.token)){ RR.renderSignIn(root,
 function boot(){
 const $ = id => document.getElementById(id);
 root.innerHTML = `
-<div class="shell">
-<aside class="side" aria-label="Control room navigation">
-  <a class="logo" href="index.html">${RR.logo}<b>ReliefReady</b></a>
-  <nav class="nav" id="tabs">
-    <span class="grp">Operations</span>
-    <button type="button" data-tab="overview"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>Overview</button>
-    <button type="button" data-tab="sos"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/></svg>SOS requests<span class="count" id="c-sos"></span></button>
-    <button type="button" data-tab="fleet"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 7h12v9H2zM14 10h4l3 3v3h-7"/><circle cx="6" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg>Fleet and stops</button>
-    <button type="button" data-tab="zones"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6l5-2 6 2 5-2v14l-5 2-6-2-5 2z"/><path d="M9 4v14M15 6v14"/></svg>Impact zones</button>
-    <button type="button" data-tab="roads"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3L4 21M16 3l4 18M12 5v2M12 11v2M12 17v2"/></svg>Road conditions<span class="count" id="c-roads"></span></button>
-    <button type="button" data-tab="esc"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M5 12l7-7 7 7"/></svg>Agency requests<span class="count" id="c-esc"></span></button>
-    <span class="grp">Tools</span>
-    <a href="planner.html"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Allocation planner</a>
-    <button type="button" data-tab="sms"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v11H8l-4 4z"/></svg>SMS inbox</button>
-    <button type="button" data-tab="settings"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Settings</button>
-  </nav>
-  <div class="foot2"><span class="conn" id="mode">Connecting…</span><span><b>${RR.esc(S.name)}</b></span><button class="btn small" id="out">Sign out</button></div>
-</aside>
-<main class="main">
+<div class="hdr">
+<header class="bar"><div class="wrap">
+  ${RR.backBtn()}
+  <a class="logo" href="index.html">${RR.logo}<b>ReliefReady</b><span>Control room · ${RR.esc(RR.CONFIG.district)}</span></a>
+  <span class="grow"></span>
+  <span class="conn" id="mode">Connecting…</span>
+  <div class="who"><b>${RR.esc(S.name)}</b><button class="btn small" id="out">Sign out</button></div>
+</div></header>
+<nav class="tabs2" aria-label="Control room sections"><div class="wrap" id="tabs">
+  <button type="button" data-tab="overview">Overview</button>
+  <button type="button" data-tab="sos">SOS requests<span class="count" id="c-sos"></span></button>
+  <button type="button" data-tab="fleet">Fleet and stops</button>
+  <button type="button" data-tab="zones">Impact zones</button>
+  <button type="button" data-tab="roads">Road conditions<span class="count" id="c-roads"></span></button>
+  <button type="button" data-tab="esc">Agency requests<span class="count" id="c-esc"></span></button>
+  <button type="button" data-tab="sms">SMS inbox</button>
+  <button type="button" data-tab="settings">Settings</button>
+  <span class="sep"></span>
+  <a href="planner.html">Allocation planner →</a>
+</div></nav>
+</div>
+<main class="main wrap">
   <header class="mh"><div><h1 id="pt">Overview</h1><p id="ps"></p></div><div class="right"><span class="livechip" id="live"><i></i>Live</span><span class="when" id="when"></span></div></header>
   <div class="kpis" id="kpis"></div>
   <div class="top" id="mapRow">
-    <div><div class="mapbox" id="map"></div><div class="vlegend" style="margin-top:8px"><span>${RR.vehSvg('truck')}Truck</span><span>${RR.vehSvg('jeep')}4x4 jeep</span><span class="b">${RR.vehSvg('boat')}Rescue boat</span><span><span class="pin sos" style="display:inline-block;width:12px;height:12px;vertical-align:-1px;margin-right:4px"></span>SOS</span><span><span class="pin stop" style="display:inline-block;width:12px;height:12px;vertical-align:-1px;margin-right:4px"></span>Planned stop</span></div><div class="vlegend" style="margin-top:4px">${RR.zoneLegend()}</div></div>
+    <div><div class="mapbox" id="map"></div><div class="vlegend" style="margin-top:8px"><span>${RR.vehSvg('truck')}Truck</span><span>${RR.vehSvg('jeep')}4x4 jeep</span><span class="b">${RR.vehSvg('boat')}Rescue boat</span><span><span class="pin sos" style="display:inline-block;width:12px;height:12px;vertical-align:-1px;margin-right:4px"></span>SOS</span><span><span class="pin stop" style="display:inline-block;width:12px;height:12px;vertical-align:-1px;margin-right:4px"></span>Planned stop</span><span><i class="zl" style="border-color:var(--ink);border-style:solid;background:transparent"></i>District boundary</span></div><div class="vlegend" style="margin-top:4px">${RR.zoneLegend()}</div></div>
     <section class="panel" id="feedPanel"><div class="ph"><h2>Priority queue</h2><span class="sub">Open SOS, highest first</span></div><div class="pb feed" id="feed"></div></section>
   </div>
   <div class="ov3" id="ovExtra">
@@ -142,8 +128,7 @@ root.innerHTML = `
     <section class="panel"><div class="ph"><h2>Agency requests</h2><span class="sub">Latest first</span></div><div class="pb" id="ovEsc"></div></section>
   </div>
   <section class="panel" id="panelWrap"><div class="tabpanel" id="panel"></div></section>
-</main>
-</div>`;
+</main>`;
 $('out').onclick = RR.signOut;
 const tick = () => { $('when').textContent = RR.CONFIG.district + ' · ' + new Date().toLocaleString('en-IN',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}); };
 tick(); setInterval(tick, 30000);
@@ -168,7 +153,7 @@ const pcls = p => p>=70?'hi':p>=45?'mid':'';
 const ST = {new:['New','warn'],verified:['Verified','info'],assigned:['Assigned','info'],served:['Served','ok'],escalated:['Escalated','bad']};
 
 /* map */
-const map = RR.makeMap($('map'), {center:[11.62,76.09], zoom:11});
+const map = RR.makeMap($('map'), {fitDistrict:true, locate:true});
 const lay = L.layerGroup().addTo(map);
 function drawMap(){
   RR.drawZones(map);
@@ -226,6 +211,7 @@ function renderTab(){
   if(!SECTIONS[tab]) tab = 'overview';
   const [t, sub, showMap, showFeed, showKpi] = SECTIONS[tab];
   document.querySelectorAll('#tabs [data-tab]').forEach(b => b.dataset.tab===tab ? b.setAttribute('aria-current','page') : b.removeAttribute('aria-current'));
+  try{ window.scrollTo({top:0}); }catch(e){}
   $('pt').textContent = t; $('ps').textContent = sub;
   const wasHidden = $('mapRow').hidden;
   $('mapRow').hidden = !showMap; $('feedPanel').hidden = !showFeed; $('mapRow').classList.toggle('solo', !showFeed); $('kpis').hidden = !showKpi; $('ovExtra').hidden = tab!=='overview'; $('panelWrap').hidden = tab==='overview';
@@ -259,9 +245,9 @@ function tabFleet(){
       <span class="meta">${s.items.water||0} L · ${s.items.food||0} food · ${s.items.infant||0} kits${s.given?` · given ${s.given.water}/${s.given.food}/${s.given.infant}`:''}${s.remark?' · '+RR.esc(s.remark):''}${s.note?' · '+RR.esc(s.note):''}</span></li>`).join('')||'<li class="hint">No stops.</li>'}</ul></div>`; }).join('')}</div>
   <div class="section"><div class="lbl" style="margin-bottom:8px">Add a stop</div><div class="inline">
     <div class="field"><label for="ns-d">Driver</label><select id="ns-d">${drvOpts()}</select></div>
-    <div class="field"><label for="ns-n">Place</label><input type="text" id="ns-n" placeholder="Muttil relief camp"></div>
-    <div class="field"><label for="ns-lat">Latitude</label><input type="number" step="0.0001" id="ns-lat" value="11.6745"></div>
-    <div class="field"><label for="ns-lon">Longitude</label><input type="number" step="0.0001" id="ns-lon" value="76.1310"></div>
+    <div class="field"><label for="ns-n">Place</label><input type="text" id="ns-n" placeholder="T. Narasipura relief camp"></div>
+    <div class="field"><label for="ns-lat">Latitude</label><input type="number" step="0.0001" id="ns-lat" value="12.2110"></div>
+    <div class="field"><label for="ns-lon">Longitude</label><input type="number" step="0.0001" id="ns-lon" value="76.9010"></div>
     <div class="field"><label for="ns-w">Water L</label><input type="number" id="ns-w" value="200"></div>
     <div class="field"><label for="ns-f">Food</label><input type="number" id="ns-f" value="120"></div>
     <div class="field"><label for="ns-i">Infant kits</label><input type="number" id="ns-i" value="2"></div>
@@ -279,7 +265,7 @@ function tabRoads(){
   <ul class="rows">${r.map(h=>`<li><div class="rowhead"><span class="pill ${h.type==='safe'?'ok':RR.HAZ[h.type]?.sev>=3?'bad':'warn'}">${RR.HAZ[h.type]?.label}</span><b>${RR.esc(h.note||'')}</b><button class="btn small" style="margin-left:auto" data-clear="${h.id}">${h.type==='safe'?'Remove':'Mark cleared'}</button></div><span class="meta">${RR.esc(h.by)} · ${RR.ago(h.createdAt)} · <span class="mono">${(+h.lat).toFixed(4)}, ${(+h.lon).toFixed(4)}</span></span></li>`).join('')||'<li class="hint">No reports.</li>'}</ul>`;
 }
 
-const AGENCIES = ['State EOC (KSDMA)','NDRF','Fire & Rescue','Health / 108 ambulance','Air support (IAF / Navy)','Army engineers (bridge)','District control room'];
+const AGENCIES = ['State EOC (KSDMA)','NDRF','Fire & Rescue','Health / 108 ambulance','Air support (IAF)','Army engineers (bridge)','District control room'];
 const TYPES = ['Boat evacuation','Airlift / air drop','Medical evacuation','Rescue team','Bridge / road clearing','More supplies','Fuel / vehicle breakdown'];
 let escDraft = null;
 function tabEsc(){
@@ -316,12 +302,12 @@ function sitrep(e){
 function tabSMS(){
   $('panel').innerHTML = `<div class="grid2" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:20px"><div class="stack">
     <p class="hint">SOS messages sent by SMS arrive at the gateway number <b class="mono">${RR.esc(RR.CONFIG.smsGateway)}</b>. With an SMS gateway (e.g. an Android phone running an SMS-forwarding app, or a bulk-SMS provider's inbound webhook) they are added automatically. For the demo, paste received SMS text here.</p>
-    <div class="field"><label for="smsIn">Received SMS text (one or many)</label><textarea id="smsIn" rows="6" placeholder="RR1 11.47720,76.14800 P12 I2 E3 J1 NRMW T2610301830 | Mundakkai school terrace"></textarea></div>
+    <div class="field"><label for="smsIn">Received SMS text (one or many)</label><textarea id="smsIn" rows="6" placeholder="RR1 12.03500,76.30500 P64 I4 E11 J2 NRMW T2610301830 | Tumbasogu, H.D. Kote"></textarea></div>
     <div class="btns"><button class="btn primary" id="smsAdd">Add to SOS requests</button><button class="btn" id="smsSample">Insert a sample SMS</button></div></div>
     <div class="stack"><div class="lbl">Code format (fits one SMS)</div><pre class="sitrep">RR1 lat,lon P# I# E# J# N(needs) T(yymmddhhmm UTC) [C phone] | landmark. note
 P people · I infants · E elderly · J injured
 Needs: R rescue · M medical · W water · F food · B baby/infant · S shelter</pre></div></div>`;
-  $('smsSample').onclick = () => { $('smsIn').value = RR.encodeSOS({lat:11.6742,lon:76.1302,people:27,infants:2,elderly:6,injured:0,needs:['water','food','shelter'],createdAt:Date.now()-40*60e3,place:'Muttil, Kuttamangalam school',note:'Roof leaking, 6 elderly'}); };
+  $('smsSample').onclick = () => { $('smsIn').value = RR.encodeSOS({lat:12.1420,lon:76.7700,people:27,infants:2,elderly:6,injured:0,needs:['water','food','shelter'],createdAt:Date.now()-40*60e3,place:'Suttur, near the Kapila bridge',note:'Roof leaking, 6 elderly'}); };
   $('smsAdd').onclick = () => { const found = $('smsIn').value.split(/(?=RR1\s)/).map(RR.decodeSOS).filter(Boolean);
     if(!found.length){ RR.toast('No ReliefReady code found. Codes start with RR1.'); return; }
     found.forEach(s => RR.store.put('sos', {...s, channel:'sms', status:'new'})); $('smsIn').value=''; RR.toast(found.length+' SOS added from SMS'); };
@@ -356,7 +342,7 @@ function tabZones(){
   const list = RR.store.all('zones').sort((a,b)=>(RR.ZONES[b.type]?.sev||0)-(RR.ZONES[a.type]?.sev||0) || (b.createdAt||0)-(a.createdAt||0));
   $('panel').innerHTML = `<div class="grid2" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:20px">
   <div class="stack"><div class="lbl">Mark a new zone</div>
-    <div class="grid2"><div class="field"><label for="z-name">Zone name</label><input type="text" id="z-name" placeholder="e.g. Kunnampatta slope, no entry"></div>
+    <div class="grid2"><div class="field"><label for="z-name">Zone name</label><input type="text" id="z-name" placeholder="e.g. Hejjige bridge approach, no entry"></div>
     <div class="field"><label for="z-type">Type</label><select id="z-type">${Object.entries(RR.ZONES).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('')}</select></div></div>
     <div class="field"><label for="z-src">Source</label><input type="text" id="z-src" placeholder="e.g. KSDMA order, NRSC flood map, field report"></div>
     <div class="btns"><button class="btn primary" id="z-draw">Draw on map</button></div>
@@ -422,7 +408,7 @@ document.addEventListener('click', e => {
   else if(D.clear) RR.store.del('reports', D.clear);
   else if(D.adv){ const e = RR.store.get('escalations', D.adv); const lbl = {acknowledged:'Acknowledged by '+e.to, dispatched:'Help dispatched by '+e.to, resolved:'Closed by control room'}[D.to];
     RR.store.put('escalations', {...e, status:D.to, timeline:[...(e.timeline||[]), {t:Date.now(), s:D.to, n:lbl}]}); }
-  else if(D.fwd){ const e = RR.store.get('escalations', D.fwd); const order = ['District control room','State EOC (KSDMA)','NDRF','Air support (IAF / Navy)']; const i = order.indexOf(e.to); const nx = i<0 ? 'State EOC (KSDMA)' : order[Math.min(order.length-1, i+1)];
+  else if(D.fwd){ const e = RR.store.get('escalations', D.fwd); const order = ['District control room','State EOC (KSDMA)','NDRF','Air support (IAF)']; const i = order.indexOf(e.to); const nx = i<0 ? 'State EOC (KSDMA)' : order[Math.min(order.length-1, i+1)];
     RR.store.put('escalations', {...e, to:nx, status:'sent', timeline:[...(e.timeline||[]), {t:Date.now(), s:'forwarded', n:'Forwarded to '+nx+' — no adequate response from '+e.to}]}); }
   else if(D.sitrep){ RR.copy(sitrep(RR.store.get('escalations', D.sitrep)), b); }
 });

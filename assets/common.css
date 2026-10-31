@@ -1,28 +1,28 @@
 /* ReliefReady shared styles. Operations-room look: deep navy chrome, white working surfaces, one blue accent, red reserved for emergencies. */
 :root{
-  --bg:#F2F4F7; --surface:#FFFFFF; --sunk:#F5F7FA; --ink:#0F1B2D; --muted:#5A6A7E; --line:#DDE3EA;
-  --accent:#1D5FB4; --accent-soft:#E4EEFA; --accent-ink:#FFFFFF;
-  --navy:#0E2240; --navy-2:#173158; --navy-ink:#EEF3FA; --navy-muted:#A3B4CB; --navy-line:#24406A;
+  --bg:#EEF0F2; --surface:#FFFFFF; --sunk:#F5F6F7; --ink:#15191E; --muted:#5D6670; --line:#D9DDE1;
+  --accent:#1F57A5; --accent-soft:#E6EDF7; --accent-ink:#FFFFFF;
+  --navy:#1A1D21; --navy-2:#2A2F35; --navy-ink:#F2F3F4; --navy-muted:#A8AFB7; --navy-line:#33383F;
   --sos:#D0361C; --sos-ink:#FFFFFF; --sos-soft:#FBE4DE;
   --ok:#23804D; --ok-bg:#DFF2E6; --warn:#A0600A; --warn-bg:#FBEBCF; --bad:#C2361A; --bad-bg:#FBE1DA;
   --map:#E3E8EE; --boat:#0B7A86;
-  --shadow:0 1px 2px rgba(15,27,45,.05),0 6px 20px rgba(15,27,45,.05);
+  --shadow:none;
   --f-display:"Archivo","Arial Narrow",Arial,sans-serif;
   --f-body:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
-  --r:10px;
+  --r:6px;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#0A111D; --surface:#111A29; --sunk:#0E1624; --ink:#E6ECF4; --muted:#93A3B8; --line:#22304A;
+  --bg:#111417; --surface:#181C20; --sunk:#14171B; --ink:#E9ECEF; --muted:#99A1AA; --line:#2A2F35;
   --accent:#72A9EE; --accent-soft:#16294A; --accent-ink:#0A111D;
-  --navy:#070E1A; --navy-2:#10203A; --navy-ink:#E6ECF4; --navy-muted:#8FA0B6; --navy-line:#1B2B45;
+  --navy:#0D0F12; --navy-2:#1C2026; --navy-ink:#E9ECEF; --navy-muted:#99A1AA; --navy-line:#262B31;
   --sos:#F0603F; --sos-ink:#170805; --sos-soft:#3D1F16;
   --ok:#62BE88; --ok-bg:#15301F; --warn:#E1AA4E; --warn-bg:#36290F; --bad:#F2825A; --bad-bg:#3B1C14;
   --map:#162131; --boat:#4FC3CF; --shadow:0 1px 2px rgba(0,0,0,.3); color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#0A111D; --surface:#111A29; --sunk:#0E1624; --ink:#E6ECF4; --muted:#93A3B8; --line:#22304A;
+  --bg:#111417; --surface:#181C20; --sunk:#14171B; --ink:#E9ECEF; --muted:#99A1AA; --line:#2A2F35;
   --accent:#72A9EE; --accent-soft:#16294A; --accent-ink:#0A111D;
-  --navy:#070E1A; --navy-2:#10203A; --navy-ink:#E6ECF4; --navy-muted:#8FA0B6; --navy-line:#1B2B45;
+  --navy:#0D0F12; --navy-2:#1C2026; --navy-ink:#E9ECEF; --navy-muted:#99A1AA; --navy-line:#262B31;
   --sos:#F0603F; --sos-ink:#170805; --sos-soft:#3D1F16;
   --ok:#62BE88; --ok-bg:#15301F; --warn:#E1AA4E; --warn-bg:#36290F; --bad:#F2825A; --bad-bg:#3B1C14;
   --map:#162131; --boat:#4FC3CF; --shadow:0 1px 2px rgba(0,0,0,.3); color-scheme:dark}
@@ -180,3 +180,17 @@ footer.foot{color:var(--muted);font-size:12.5px;padding-block:24px 32px}
 .leaflet-control-layers-expanded{padding:8px 10px;font-size:13px}
 .drawbar{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:700;background:var(--accent);color:var(--accent-ink);padding:6px 10px;border-radius:5px;font-weight:600;font-size:13px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;max-width:calc(100% - 20px)}
 .drawbar button{background:transparent;border:1px solid currentColor;color:inherit;border-radius:4px;padding:2px 8px;cursor:pointer;font-weight:600}
+
+/* district outline, live location, back button */
+.dmask{fill:#1A1D21}
+.dline{stroke:#1A1D21;stroke-dasharray:6 4}
+:root[data-theme="dark"] .dline{stroke:#E9ECEF}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .dline{stroke:#E9ECEF}}
+.locbtn{width:34px;height:34px;display:grid;place-items:center;background:var(--surface);color:var(--ink);border:2px solid rgba(0,0,0,.2);border-radius:4px;cursor:pointer;background-clip:padding-box}
+.locbtn.on{color:#1A73E8}
+.me{width:18px;height:18px;border-radius:50%;background:#1A73E8;border:3px solid #fff;box-shadow:0 0 0 0 rgba(26,115,232,.6);animation:mepulse 2s infinite}
+@keyframes mepulse{0%{box-shadow:0 0 0 0 rgba(26,115,232,.55)}100%{box-shadow:0 0 0 14px rgba(26,115,232,0)}}
+@media (prefers-reduced-motion:reduce){.me{animation:none}}
+.meacc{stroke:#1A73E8;fill:#1A73E8;fill-opacity:.12}
+.backbtn{display:inline-flex;align-items:center;gap:4px;color:var(--navy-ink);text-decoration:none;font-weight:600;font-size:13.5px;padding:6px 10px 6px 6px;border:1px solid var(--navy-line);border-radius:5px;white-space:nowrap}
+.backbtn:hover{background:var(--navy-2)}

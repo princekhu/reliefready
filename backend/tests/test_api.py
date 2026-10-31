@@ -41,7 +41,7 @@ def test_public_sos_and_status():
 
 
 def test_sms_webhook_parses_code():
-    body = "RR1 11.48550,76.15250 P42 I5 E9 J3 NRMW T2610301830 | Mundakkai school"
+    body = "RR1 12.03500,76.30500 P42 I5 E9 J3 NRMW T2610301830 | Tumbasogu temple"
     r = client.post("/api/sms/inbound", data={"From": "+919876543210", "Body": body})
     assert r.json()["parsed"] == 1
 
