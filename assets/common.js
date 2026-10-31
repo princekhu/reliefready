@@ -6,7 +6,7 @@ const RR = window.RR = {};
 /* ---------- Config ---------- */
 RR.CONFIG = {
   district: 'Mysuru, Karnataka',
-  smsGateway: '+919000000000',          // replace with your SMS gateway long-code before deployment
+  smsGateway: '+919000000000',          // set once for all devices in assets/config.js (RR_SMS_NUMBER)
   controlRoom: '1077',                  // district emergency operations centre (toll-free in India)
   emergency: '112',
   osrm: 'https://router.project-osrm.org',
@@ -15,10 +15,12 @@ RR.CONFIG = {
   wms: [],          // government WMS overlays added in Settings, e.g. Bhuvan flood hazard
   gibsDate: '',     // NASA daily satellite date (YYYY-MM-DD); empty = yesterday
 };
-try{ const c = JSON.parse(localStorage.getItem('rr.config')||'null'); if(c) Object.assign(RR.CONFIG, c); }catch(e){}
+try{ const c = JSON.parse(localStorage.getItem('rr.config')||'null'); if(c){ delete c.smsGateway; Object.assign(RR.CONFIG, c); } }catch(e){}
+// The SMS number must be identical on every phone and laptop, so it comes only from assets/config.js, never from one browser's storage.
+if(window.RR_SMS_NUMBER) RR.CONFIG.smsGateway = String(window.RR_SMS_NUMBER).replace(/[^\d+]/g,'');
 RR.CONFIG.api = (() => { try{ const v = localStorage.getItem('rr.api'); if(v!==null) return v; }catch(e){} return (window.RR_API_URL||''); })().replace(/\/+$/,'');
-RR.setApi = url => { try{ localStorage.setItem('rr.api', (url||'').trim()); }catch(e){} };
-RR.saveConfig = patch => { Object.assign(RR.CONFIG, patch); try{ localStorage.setItem('rr.config', JSON.stringify({smsGateway:RR.CONFIG.smsGateway, wms:RR.CONFIG.wms, gibsDate:RR.CONFIG.gibsDate})); }catch(e){} };
+RR.setApi = url => { try{ url = (url||'').trim(); if(url && url!==(window.RR_API_URL||'').replace(/\/+$/,'')) localStorage.setItem('rr.api', url); else localStorage.removeItem('rr.api'); }catch(e){} };
+RR.saveConfig = patch => { Object.assign(RR.CONFIG, patch); try{ localStorage.setItem('rr.config', JSON.stringify({wms:RR.CONFIG.wms, gibsDate:RR.CONFIG.gibsDate})); }catch(e){} };
 
 /* ---------- Demo accounts (replace with phone OTP / SSO in production) ---------- */
 RR.ACCOUNTS = [
@@ -159,7 +161,7 @@ store.put = (col, doc) => {
   if(!doc.id) doc.id = col.slice(0,3)+'-'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
   store.data[col] = store.data[col]||{}; store.data[col][doc.id] = clean(doc);
   saveLocal(); emit(true);
-  if(RR.CONFIG.api){ pushApi(col, clean(doc)); return doc; }
+  if(RR.CONFIG.api){ store.lastPush = pushApi(col, clean(doc)); return doc; }
   if(store.db) store.db.collection(col).doc(doc.id).set(clean(doc)).catch(err => RR.toast('Not saved to the shared log: '+(err&&err.code||'error')));
   return doc;
 };
@@ -182,13 +184,17 @@ RR.outbox = {
     if(!RR.online()) return 0;
     const a = this.all(); if(!a.length) return 0;
     try{ localStorage.setItem(OUT,'[]'); }catch(e){}
-    a.forEach(it => store.put(it.col, it.doc));
+    const pushes = a.map(it => { store.put(it.col, it.doc); return store.lastPush || Promise.resolve(true); });
+    RR.outbox.last = Promise.all(pushes).then(r => r.every(Boolean));
     return a.length;
   }
 };
 RR.publicStatus = async id => { if(!RR.CONFIG.api) return null; try{ return await api('/api/public/sos/'+encodeURIComponent(id)); }catch(e){ return null; } };
 if(RR.CONFIG.api){ const s0 = RR.session(); if(s0 && s0.token) setTimeout(store.startSync, 0); }
-window.addEventListener('online', () => { const n = RR.outbox.flush(); if(n) RR.toast(n+' queued message'+(n>1?'s':'')+' sent'); });
+const retryOutbox = () => { const n = RR.outbox.flush(); if(n) RR.outbox.last.then(ok => { if(ok){ RR.toast(n+' queued message'+(n>1?'s':'')+' sent'); document.dispatchEvent(new Event('rr-outbox-sent')); } }); };
+window.addEventListener('online', retryOutbox);
+// The free server sleeps when idle and takes up to a minute to wake: keep retrying anything still queued.
+setInterval(() => { if(RR.CONFIG.api && RR.outbox.all().length) retryOutbox(); }, 15000);
 
 /* ---------- SOS short code (fits one SMS, survives copy/paste, Bluetooth share or QR) ---------- */
 const NEEDS = RR.NEEDS = [
@@ -436,9 +442,9 @@ document.addEventListener('click', e => {
 RR.logo = `<svg viewBox="0 0 40 40" aria-hidden="true"><rect x="1" y="1" width="38" height="38" rx="6" fill="var(--accent)"/><path d="M9 26c4-3 7-3 11 0s7 3 11 0" fill="none" stroke="var(--accent-ink)" stroke-width="2.5" stroke-linecap="round"/><path d="M20 8v12M14 14h12" stroke="var(--accent-ink)" stroke-width="3" stroke-linecap="round"/></svg>`;
 /* Background photos (Wikimedia Commons). Put your own copy at the "local" path to use it instead. */
 RR.PHOTOS = {
-  admin:{url:'https://upload.wikimedia.org/wikipedia/commons/5/50/Distribution_of_food%2C_Assam_floods_2022.jpg', local:'assets/images/signin-admin.jpg',
+  admin:{alt:'https://commons.wikimedia.org/wiki/Special:FilePath/Distribution_of_food,_Assam_floods_2022.jpg?width=1600', url:'https://upload.wikimedia.org/wikipedia/commons/5/50/Distribution_of_food%2C_Assam_floods_2022.jpg', local:'assets/images/signin-admin.jpg',
     credit:'Indian Red Cross Society distributing food, Assam floods 2022 · <a href="https://commons.wikimedia.org/wiki/File:Distribution_of_food,_Assam_floods_2022.jpg" target="_blank" rel="noopener">Wikimedia Commons</a>, CC BY-SA 4.0'},
-  driver:{url:'https://upload.wikimedia.org/wikipedia/commons/9/99/The_National_Disaster_Response_Force_(NDRF)_rescue_operations_in_flood-hit_areas_of_Jammu_%26_Kashmir_on_September_11%2C_2014.jpg', local:'assets/images/signin-driver.jpg',
+  driver:{alt:'https://commons.wikimedia.org/wiki/Special:FilePath/The_National_Disaster_Response_Force_(NDRF)_rescue_operations_in_flood-hit_areas_of_Jammu_%26_Kashmir_on_September_11,_2014.jpg?width=1600', url:'https://upload.wikimedia.org/wikipedia/commons/9/99/The_National_Disaster_Response_Force_(NDRF)_rescue_operations_in_flood-hit_areas_of_Jammu_%26_Kashmir_on_September_11%2C_2014.jpg', local:'assets/images/signin-driver.jpg',
     credit:'NDRF rescue operations, Jammu &amp; Kashmir floods 2014 · <a href="https://commons.wikimedia.org/wiki/File:The_National_Disaster_Response_Force_(NDRF)_rescue_operations_in_flood-hit_areas_of_Jammu_%26_Kashmir_on_September_11,_2014.jpg" target="_blank" rel="noopener">Wikimedia Commons</a>'},
 };
 RR.renderSignIn = (root, role, onDone) => {
@@ -449,7 +455,7 @@ RR.renderSignIn = (root, role, onDone) => {
     : ['Your next stop, load and the safest road to it','Report bridges down, flooding and landslides for every driver','Carry SOS messages out of areas with no signal'];
   const ph = RR.PHOTOS[role==='admin'?'admin':'driver'];
   root.innerHTML = `<div class="signin">
-  <aside class="brandside" style="--photo:url('${ph.url}');--photo-local:url('${ph.local}')"><a class="logo" href="index.html">${RR.logo}<b>ReliefReady</b></a>
+  <aside class="brandside" style="--photo:url('${ph.url}');--photo-alt:url('${ph.alt}');--photo-local:url('${ph.local}')"><a class="logo" href="index.html">${RR.logo}<b>ReliefReady</b></a>
     <div><h2>${role==='admin'?'District control room':'Driver and boat crew app'}</h2>
       <p class="motto">${role==='admin'?'Every pin on this map is a family waiting for us. Reach the most urgent first, and reach every one.':'You are the last mile. Every load you carry and every road you report brings someone home safe.'}</p>
       <ul>${pitch.map(x=>`<li>${x}</li>`).join('')}</ul></div>

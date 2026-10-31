@@ -367,8 +367,7 @@ function tabZones(){
 }
 function tabSettings(){
   $('panel').innerHTML = `<div class="stack" style="max-width:560px">
-    <div class="field"><label for="cfg-sms">SMS gateway number shown in the SOS app</label><input type="tel" id="cfg-sms" value="${RR.esc(RR.CONFIG.smsGateway)}"></div>
-    <div class="btns"><button class="btn primary" id="cfg-save">Save</button></div>
+    <div class="field"><label for="cfg-sms">SMS number used by the SOS app (all devices)</label><input type="tel" id="cfg-sms" value="${RR.esc(RR.CONFIG.smsGateway)}" readonly><p class="hint">Same on every phone and laptop. To change it, edit <span class="mono">RR_SMS_NUMBER</span> in <span class="mono">assets/config.js</span> and push.</p></div>
     <div class="lbl" style="margin-top:8px">Demand model</div>
     <p class="hint">${RR.modelCard()||'Model file js/model.js not found.'}</p>
     <p class="hint">Retrain with <span class="mono">python ml/train_demand_model.py</span>. It updates the website and the API together.</p>
@@ -395,7 +394,6 @@ function tabSettings(){
     if(u){ try{ const r = await fetch(u+'/api/health'); if(!r.ok) throw 0; }catch(e){ RR.toast('No ReliefReady server answered at that address.'); return; } }
     RR.setApi(u); try{ localStorage.removeItem('rr.session'); }catch(e){} location.reload(); };
   const off = $('cfg-api-off'); if(off) off.onclick = () => { RR.setApi(''); try{ localStorage.removeItem('rr.session'); }catch(e){} location.reload(); };
-  $('cfg-save').onclick = () => { RR.saveConfig({smsGateway:$('cfg-sms').value.trim()||RR.CONFIG.smsGateway}); RR.toast('Saved for this browser'); };
   const r = $('cfg-reset'); if(r) r.onclick = () => { RR.store.reset(); RR.toast('Demo data restored'); };
 }
 window.escPill = s => ({sent:'<span class="pill warn">Awaiting response</span>',acknowledged:'<span class="pill info">Acknowledged</span>',dispatched:'<span class="pill info">Help dispatched</span>',resolved:'<span class="pill ok">Resolved</span>'}[s]||'');

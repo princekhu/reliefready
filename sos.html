@@ -180,12 +180,14 @@ $('send').onclick = () => {
   current = s;
   try{ const m = JSON.parse(localStorage.getItem('rr.mine')||'[]'); m.unshift(s.id); localStorage.setItem('rr.mine', JSON.stringify(m.slice(0,20))); localStorage.setItem('rr.mine.'+s.id, JSON.stringify(s)); }catch(e){}
   let net;
-  if(RR.online()){ RR.store.put('sos', s); net = 'sent'; } else { RR.outbox.add({col:'sos', doc:s}); net = 'queued'; }
+  if(!RR.CONFIG.api){ RR.store.put('sos', s); net = 'demo'; }
+  else if(RR.online()){ RR.store.put('sos', s); net = 'sending'; const p = RR.store.lastPush; p && p.then(ok => { if(current===s) renderDelivery(ok ? 'sent' : 'retry'); }); }
+  else { RR.outbox.add({col:'sos', doc:s}); net = 'queued'; }
   renderDelivery(net);
   $('delivery').hidden = false; $('delivery').scrollIntoView({behavior:'smooth'});
   renderMine();
 };
-window.addEventListener('online', () => { if(current) renderDelivery('sent'); });
+document.addEventListener('rr-outbox-sent', () => { if(current) renderDelivery('sent'); });
 
 function renderDelivery(net){
   const s = current, code = s.code;
@@ -193,8 +195,8 @@ function renderDelivery(net){
   const sms = `sms:${RR.CONFIG.smsGateway}?body=${encodeURIComponent(code)}`;
   let qr = ''; try{ const q = qrcode(0,'M'); q.addData(code); q.make(); qr = q.createSvgTag({cellSize:4, margin:2, scalable:true}); }catch(e){ qr=''; }
   $('channels').innerHTML = `
-  <li><span class="n">1</span><div class="body"><h3>Internet ${net==='sent'?'<span class="pill ok">Delivered to control room</span>':'<span class="pill warn">No signal, queued</span>'}</h3>
-    <p class="hint">${net==='sent'?'The district control room can see your request and location now.':'Saved on this phone. It sends by itself the moment any data signal returns. Use the options below meanwhile.'}</p></div></li>
+  <li><span class="n">1</span><div class="body"><h3>Internet ${({sent:'<span class="pill ok">Delivered to control room</span>', sending:'<span class="pill info">Sending…</span>', retry:'<span class="pill warn">Server not answering, retrying</span>', demo:'<span class="pill warn">Demo mode: not shared</span>'})[net] || '<span class="pill warn">No signal, queued</span>'}</h3>
+    <p class="hint">${({sent:'The district control room can see your request and location now.', sending:'Sending to the district control room. If the server was idle this can take up to a minute.', retry:'Saved on this phone. It is sent again automatically every 15 seconds until the control room server answers. Use SMS below meanwhile.', demo:'This site has no server address set, so the request is saved only on this phone and the control room cannot see it. Set RR_API_URL in assets/config.js.'})[net] || 'Saved on this phone. It sends by itself the moment any data signal returns. Use the options below meanwhile.'}</p></div></li>
   <li><span class="n">2</span><div class="body"><h3>SMS <span class="pill info">Needs only 1 bar of 2G</span></h3>
     <p class="hint">Sends this short code to the ReliefReady SMS line (${RR.esc(RR.CONFIG.smsGateway)}). The control room reads it automatically.</p>
     <div class="code" id="code">${RR.esc(code)}</div>
