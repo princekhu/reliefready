@@ -434,16 +434,26 @@ document.addEventListener('click', e => {
 
 /* ---------- Header / sign-in UI ---------- */
 RR.logo = `<svg viewBox="0 0 40 40" aria-hidden="true"><rect x="1" y="1" width="38" height="38" rx="6" fill="var(--accent)"/><path d="M9 26c4-3 7-3 11 0s7 3 11 0" fill="none" stroke="var(--accent-ink)" stroke-width="2.5" stroke-linecap="round"/><path d="M20 8v12M14 14h12" stroke="var(--accent-ink)" stroke-width="3" stroke-linecap="round"/></svg>`;
+/* Background photos (Wikimedia Commons). Put your own copy at the "local" path to use it instead. */
+RR.PHOTOS = {
+  admin:{url:'https://upload.wikimedia.org/wikipedia/commons/5/50/Distribution_of_food%2C_Assam_floods_2022.jpg', local:'assets/images/signin-admin.jpg',
+    credit:'Indian Red Cross Society distributing food, Assam floods 2022 · <a href="https://commons.wikimedia.org/wiki/File:Distribution_of_food,_Assam_floods_2022.jpg" target="_blank" rel="noopener">Wikimedia Commons</a>, CC BY-SA 4.0'},
+  driver:{url:'https://upload.wikimedia.org/wikipedia/commons/9/99/The_National_Disaster_Response_Force_(NDRF)_rescue_operations_in_flood-hit_areas_of_Jammu_%26_Kashmir_on_September_11%2C_2014.jpg', local:'assets/images/signin-driver.jpg',
+    credit:'NDRF rescue operations, Jammu &amp; Kashmir floods 2014 · <a href="https://commons.wikimedia.org/wiki/File:The_National_Disaster_Response_Force_(NDRF)_rescue_operations_in_flood-hit_areas_of_Jammu_%26_Kashmir_on_September_11,_2014.jpg" target="_blank" rel="noopener">Wikimedia Commons</a>'},
+};
 RR.renderSignIn = (root, role, onDone) => {
   const accts = RR.ACCOUNTS.filter(a => a.role===role);
   const title = role==='admin' ? 'Control room sign-in' : 'Driver sign-in';
   const pitch = role==='admin'
     ? ['Live map of SOS requests, vehicles, impact zones and road hazards','Requests ranked by priority, with the reason shown','Assign drivers in one click; track agency requests to resolution']
     : ['Your next stop, load and the safest road to it','Report bridges down, flooding and landslides for every driver','Carry SOS messages out of areas with no signal'];
+  const ph = RR.PHOTOS[role==='admin'?'admin':'driver'];
   root.innerHTML = `<div class="signin">
-  <aside class="brandside"><a class="logo" href="index.html">${RR.logo}<b>ReliefReady</b></a>
-    <div><h2>${role==='admin'?'District control room':'Driver and boat crew app'}</h2><ul style="margin-top:20px">${pitch.map(x=>`<li>${x}</li>`).join('')}</ul></div>
-    <span class="foot">${RR.esc(RR.CONFIG.district)} · relief operations</span></aside>
+  <aside class="brandside" style="--photo:url('${ph.url}');--photo-local:url('${ph.local}')"><a class="logo" href="index.html">${RR.logo}<b>ReliefReady</b></a>
+    <div><h2>${role==='admin'?'District control room':'Driver and boat crew app'}</h2>
+      <p class="motto">${role==='admin'?'Every pin on this map is a family waiting for us. Reach the most urgent first, and reach every one.':'You are the last mile. Every load you carry and every road you report brings someone home safe.'}</p>
+      <ul>${pitch.map(x=>`<li>${x}</li>`).join('')}</ul></div>
+    <div class="foot"><span>${RR.esc(RR.CONFIG.district)} · relief operations</span><span class="credit">Photo: ${ph.credit}</span></div></aside>
   <div class="formside"><div class="card">
     <h1>${title}</h1>
     <p class="hint">${role==='admin'?'For district and relief-agency staff.':'For aid vehicle drivers and boat crews.'}</p>
