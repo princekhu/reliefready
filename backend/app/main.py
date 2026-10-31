@@ -17,7 +17,7 @@ from contextlib import asynccontextmanager
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from sqlalchemy.orm import Session
 
-from .db import Record, User, get_db, init_db, SessionLocal
+from .db import Record, User, get_db, init_db, SessionLocal, engine
 from .logic import decode_sos, estimate_supplies, sos_priority
 from .security import hash_pin, make_token, read_token, verify_pin
 
@@ -169,7 +169,7 @@ def seed_if_empty():
     db = SessionLocal()
     try:
         if db.query(User).count() == 0 or os.getenv("RESEED") == "1":
-            seed = json.loads((Path(__file__).parent / "seed.json").read_text())
+            seed = json.loads((Path(__file__).parent / "seed.json").read_text(encoding="utf-8"))
             if os.getenv("RESEED") == "1":
                 db.query(Record).delete(); db.query(User).delete(); db.commit()
             for a in seed["accounts"]:
@@ -192,8 +192,15 @@ def seed_if_empty():
 
 # ---------------------------------------------------------------- routes
 @app.get("/api/health", tags=["system"])
-def health():
-    return {"ok": True, "time": now_ms()}
+def health(db: Session = Depends(get_db)):
+    """Shows which database the server is using and how many records it holds."""
+    try:
+        counts = {c: db.query(Record).filter(Record.collection == c).count() for c in COLLECTIONS}
+        users, db_ok = db.query(User).count(), True
+    except Exception:
+        counts, users, db_ok = {}, 0, False
+    return {"ok": db_ok, "time": now_ms(), "database": engine.dialect.name,
+            "persistent": engine.dialect.name == "postgresql", "users": users, "records": counts}
 
 
 @app.post("/api/auth/login", tags=["auth"])
