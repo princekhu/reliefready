@@ -18,7 +18,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from sqlalchemy.orm import Session
 
 from .db import Record, User, get_db, init_db, SessionLocal, engine
-from .logic import decode_sos, estimate_supplies, sos_priority
+from .logic import decode_sos, estimate_supplies, model_info, predict_demand, sos_priority
 from .security import hash_pin, make_token, read_token, verify_pin
 
 COLLECTIONS = ("sos", "stops", "reports", "escalations", "drivers", "zones")
@@ -110,10 +110,14 @@ class LoginIn(BaseModel):
 
 class EstimateIn(BaseModel):
     people: int = Field(..., ge=0)
-    infants: int = 0
-    elderly: int = 0
-    injured: int = 0
+    infants: int = Field(0, ge=0)
+    elderly: int = Field(0, ge=0)
+    pregnant: int = Field(0, ge=0)
+    injured: int = Field(0, ge=0)
+    safe_water_source: bool = False
+    days_since_aid: int = Field(0, ge=0, le=30)
     days: int = Field(1, ge=1, le=30)
+    requested: dict | None = Field(None, description="Optional {food, water, meds} to check against the model")
 
 
 # ---------------------------------------------------------------- helpers
@@ -305,8 +309,27 @@ async def sms_inbound(request: Request, token: str = "", db: Session = Depends(g
 
 @app.post("/api/demand/estimate", tags=["planning"])
 def demand_estimate(body: EstimateIn):
-    """Relief quantities for a group, from Sphere minimum standards."""
-    return estimate_supplies(body.people, body.infants, body.elderly, body.injured, body.days)
+    """Daily need for one location: the trained demand model's prediction, the Sphere minimum standard,
+    and, if `requested` is given, a flag for any quantity more than 35% away from the model."""
+    pred = predict_demand(body.people, body.infants, body.elderly, body.pregnant, body.injured,
+                          body.safe_water_source, body.days_since_aid)
+    if pred:
+        pred = {k: v * body.days for k, v in pred.items()}
+    flags = []
+    if pred and body.requested:
+        for k, v in body.requested.items():
+            if k in pred and pred[k] and abs(float(v) - pred[k]) / pred[k] > 0.35:
+                flags.append({"item": k, "requested": v, "expected": pred[k],
+                              "note": "higher than expected" if float(v) > pred[k] else "lower than expected"})
+    return {"model": pred, "flags": flags,
+            "sphere": estimate_supplies(body.people, body.infants, body.elderly, body.injured, body.days),
+            "model_info": model_info()}
+
+
+@app.get("/api/demand/model", tags=["planning"])
+def demand_model():
+    """The trained model: features, test accuracy and whether its training data is synthetic."""
+    return model_info() or {"available": False}
 
 
 @app.get("/api/priority/sos", tags=["planning"])

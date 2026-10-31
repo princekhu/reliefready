@@ -1,6 +1,8 @@
 """Domain logic shared with the web apps: SOS short code, priority score, supply estimates."""
+import json
 import re
 import time
+from pathlib import Path
 from datetime import datetime, timezone
 
 NEEDS = {"R": "rescue", "M": "medical", "W": "water", "F": "food", "B": "infant", "S": "shelter"}
@@ -68,3 +70,34 @@ def estimate_supplies(people: int, infants: int = 0, elderly: int = 0, injured: 
         "first_aid_kits": 1 if injured > 0 else 0,
         "basis": "Sphere Handbook 2018 minimum standards: 3 L drinking water and 15 L total water per person per day, 2,100 kcal per person per day.",
     }
+
+
+# ---------------------------------------------------------------- ML demand model
+# Linear regression trained by ml/train_demand_model.py, which also writes this file.
+_MODEL_PATHS = [Path(__file__).parent / "demand_model.json", Path(__file__).resolve().parents[2] / "ml" / "model.json"]
+DEMAND_MODEL = next((json.loads(p.read_text(encoding="utf-8")) for p in _MODEL_PATHS if p.exists()), None)
+
+
+def predict_demand(people: int, infants: int = 0, elderly: int = 0, pregnant: int = 0, injured: int = 0,
+                   safe_water_source: bool = False, days_since_aid: int = 0) -> dict | None:
+    """Daily food packets, water litres and medical kits for one location, from the trained model."""
+    if not DEMAND_MODEL:
+        return None
+    ws = 1 if safe_water_source else 0
+    x = {"people": people, "infants": infants, "elderly": elderly, "pregnant": pregnant, "injured": injured,
+         "water_source": ws, "days_since_aid": days_since_aid,
+         "people_x_water_source": people * ws, "people_x_days": people * days_since_aid}
+    out = {}
+    for target, t in DEMAND_MODEL["targets"].items():
+        v = t["intercept"] + sum(c * x.get(f, 0) for f, c in t["coef"].items())
+        out[target] = max(0, round(v))
+    return out
+
+
+def model_info() -> dict | None:
+    if not DEMAND_MODEL:
+        return None
+    return {"name": DEMAND_MODEL.get("name"), "type": DEMAND_MODEL.get("type"),
+            "trained_on": DEMAND_MODEL.get("trained_on"), "data_is_synthetic": DEMAND_MODEL.get("data_is_synthetic"),
+            "features": DEMAND_MODEL.get("features"),
+            "metrics": {t: v["metrics"] for t, v in DEMAND_MODEL["targets"].items()}}

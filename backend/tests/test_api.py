@@ -64,6 +64,13 @@ def test_invalid_zone_rejected():
     assert r.status_code == 422
 
 
-def test_estimate_follows_sphere():
-    r = client.post("/api/demand/estimate", json={"people": 100, "infants": 4}).json()
-    assert r["drinking_water_l"] == 300 and r["total_water_l"] == 1500 and r["infant_kits"] == 4
+def test_estimate_uses_model_and_sphere():
+    r = client.post("/api/demand/estimate", json={"people": 100, "infants": 4, "requested": {"water": 2000}}).json()
+    assert r["sphere"]["drinking_water_l"] == 300 and r["sphere"]["total_water_l"] == 1500
+    assert 250 < r["model"]["water"] < 450 and 80 < r["model"]["food"] < 130 and r["model"]["meds"] >= 3
+    assert r["flags"] and r["flags"][0]["item"] == "water"
+
+
+def test_model_info():
+    r = client.get("/api/demand/model").json()
+    assert r["data_is_synthetic"] is True and r["metrics"]["water"]["r2"] > 0.9
