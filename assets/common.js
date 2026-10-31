@@ -260,6 +260,20 @@ RR.sosPriority = s => { // 0–100, same spirit as the allocation planner
   return Math.min(100, Math.round(100*(.4*u+.25*people+.2*vul+.15*wait)) + zoneBoost);
 };
 
+/* ---------- Demand model (trained by ml/train_demand_model.py, loaded from js/model.js) ---------- */
+RR.demand = g => {
+  const M = window.DEMAND_MODEL; if(!M || !M.targets) return null;
+  const people = +g.people||0, ws = g.safeWater ? 1 : 0, days = Math.max(0, Math.round(+g.daysSinceAid||0));
+  const x = {people, infants:+g.infants||0, elderly:+g.elderly||0, pregnant:+g.pregnant||0, injured:+g.injured||0,
+    water_source:ws, days_since_aid:days, people_x_water_source:people*ws, people_x_days:people*days};
+  const out = {};
+  for(const [t, m] of Object.entries(M.targets)){ let v = m.intercept; for(const [f,c] of Object.entries(m.coef)) v += c*(x[f]||0); out[t] = Math.max(0, Math.round(v)); }
+  return out;
+};
+RR.demandForSOS = s => RR.demand({people:s.people, infants:s.infants, elderly:s.elderly, injured:s.injured, daysSinceAid:(Date.now()-(s.createdAt||Date.now()))/864e5});
+RR.modelCard = () => { const M = window.DEMAND_MODEL; if(!M) return '';
+  const m = M.targets; return `${RR.esc(M.name)} · ${RR.esc(M.type.replace('_',' '))} · trained on ${RR.esc(M.trained_on)}${M.data_is_synthetic && !/synthetic/i.test(M.trained_on)?' (synthetic data)':''} · test R² water ${m.water.metrics.r2}, food ${m.food.metrics.r2}, medical kits ${m.meds.metrics.r2}`; };
+
 /* ---------- Helpers ---------- */
 RR.esc = s => String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 RR.ago = t => { const m = Math.max(0, Math.round((Date.now()-t)/60e3)); return m<1?'just now':m<60?m+' min ago':m<1440?Math.round(m/60)+' h ago':Math.round(m/1440)+' d ago'; };
@@ -392,10 +406,16 @@ RR.logo = `<svg viewBox="0 0 40 40" aria-hidden="true"><rect x="1" y="1" width="
 RR.renderSignIn = (root, role, onDone) => {
   const accts = RR.ACCOUNTS.filter(a => a.role===role);
   const title = role==='admin' ? 'Control room sign-in' : 'Driver sign-in';
-  root.innerHTML = `<div class="signin"><div class="panel">
-    <a class="logo" href="index.html">${RR.logo}<b>ReliefReady</b></a>
-    <h1 style="margin-top:18px">${title}</h1>
-    <p class="hint">${role==='admin'?'District and relief-agency staff. See requests, assign drivers, escalate to state and national agencies.':'Aid vehicle drivers. See your next stops, safe routes, and report road conditions.'}</p>
+  const pitch = role==='admin'
+    ? ['Live map of SOS requests, vehicles, impact zones and road hazards','Requests ranked by priority, with the reason shown','Assign drivers in one click; track agency requests to resolution']
+    : ['Your next stop, load and the safest road to it','Report bridges down, flooding and landslides for every driver','Carry SOS messages out of areas with no signal'];
+  root.innerHTML = `<div class="signin">
+  <aside class="brandside"><a class="logo" href="index.html">${RR.logo}<b>ReliefReady</b></a>
+    <div><h2>${role==='admin'?'District control room':'Driver and boat crew app'}</h2><ul style="margin-top:20px">${pitch.map(x=>`<li>${x}</li>`).join('')}</ul></div>
+    <span class="foot">${RR.esc(RR.CONFIG.district)} · relief operations</span></aside>
+  <div class="formside"><div class="card">
+    <h1>${title}</h1>
+    <p class="hint">${role==='admin'?'For district and relief-agency staff.':'For aid vehicle drivers and boat crews.'}</p>
     <form id="si" novalidate>
       <div class="field"><label for="si-id">${role==='admin'?'Staff ID':'Driver ID'}</label><input type="text" id="si-id" autocomplete="username" placeholder="${accts[0].id}" required></div>
       <div class="field"><label for="si-pin">PIN</label><input type="password" id="si-pin" inputmode="numeric" autocomplete="current-password" required></div>
@@ -406,7 +426,7 @@ RR.renderSignIn = (root, role, onDone) => {
       ${accts.map(a=>`<button type="button" class="btn" data-demo="${a.id}"><span class="mono">${a.id}</span> · ${RR.esc(a.name)}${a.vehicle?' · '+RR.esc(a.vehicle):''} <span class="hint" style="margin-left:auto">PIN ${a.pin}</span></button>`).join('')}
     </details>
     <p class="hint" style="margin-top:14px">${RR.CONFIG.api?'Accounts are issued by the district control room.':'Demo mode: data is stored in this browser.'}</p>
-  </div></div>`;
+  </div></div></div>`;
   const f = root.querySelector('#si');
   f.addEventListener('submit', async e => { e.preventDefault(); const btn = f.querySelector('button[type=submit]'); btn.disabled = true; btn.textContent = 'Signing in…';
     const r = await RR.signIn(f.querySelector('#si-id').value, f.querySelector('#si-pin').value, role);

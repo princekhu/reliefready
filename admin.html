@@ -13,30 +13,57 @@
 /* Control room: fixed sidebar navigation, one working area per section. */
 body{min-height:100%}
 .shell{display:grid;grid-template-columns:232px minmax(0,1fr);min-height:100vh}
-.side{position:sticky;top:0;height:100vh;background:var(--surface);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:16px 12px calc(16px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
+.side{position:sticky;top:0;height:100vh;background:var(--navy);color:var(--navy-ink);border-right:1px solid var(--navy-line);display:flex;flex-direction:column;padding:16px 12px calc(16px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px))}
 .side .logo{padding:2px 6px 14px}
 .side .logo b{font-size:20px}
 .nav{display:flex;flex-direction:column;gap:2px;margin-top:6px}
-.nav .grp{font:600 10.5px/1 var(--f-body);letter-spacing:.09em;text-transform:uppercase;color:var(--muted);padding:14px 10px 6px}
-.nav button,.nav a{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border:0;border-radius:5px;background:none;color:var(--ink);font:500 14px var(--f-body);cursor:pointer;text-align:left;text-decoration:none}
-.nav button:hover,.nav a:hover{background:var(--sunk)}
-.nav button[aria-current=page]{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.nav .grp{font:600 10.5px/1 var(--f-body);letter-spacing:.1em;text-transform:uppercase;color:var(--navy-muted);padding:16px 12px 7px;opacity:.85}
+.nav button,.nav a{position:relative;display:flex;align-items:center;gap:11px;width:100%;padding:9px 12px;border:0;border-radius:7px;background:none;color:var(--navy-muted);font:500 14px var(--f-body);cursor:pointer;text-align:left;text-decoration:none}
+.nav button:hover,.nav a:hover{background:var(--navy-2);color:var(--navy-ink)}
+.nav button[aria-current=page]{background:var(--navy-2);color:#fff;font-weight:600}
+.nav button[aria-current=page]::before{content:"";position:absolute;left:-12px;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;background:var(--accent)}
 .nav svg{width:17px;height:17px;flex:none;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .nav .count{margin-left:auto}
-.side .foot2{margin-top:auto;border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:8px;font-size:13px}
-.conn{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--muted)}
+.side .foot2{margin-top:auto;border-top:1px solid var(--navy-line);padding-top:12px;display:flex;flex-direction:column;gap:8px;font-size:13px}
+.conn{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--navy-muted)}
+.side .btn{background:transparent;border-color:var(--navy-line);color:var(--navy-ink)}
+.side .btn:hover{border-color:var(--navy-muted);color:#fff}
 .conn::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--ok)}
 .conn.warn::before{background:var(--warn)} .conn.bad::before{background:var(--bad)}
 .main{min-width:0;padding:22px max(16px,env(safe-area-inset-right,0px)) 40px 24px;display:flex;flex-direction:column;gap:16px}
 .mh{display:flex;flex-wrap:wrap;gap:8px 20px;align-items:flex-end;justify-content:space-between}
-.mh h1{font-size:28px;font-weight:700}
+.mh h1{font-size:30px;font-weight:800}
+.mh .right{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .mh p{margin:4px 0 0;color:var(--muted);font-size:14px}
 .mh .when{font:500 13px var(--f-mono);color:var(--muted)}
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
-.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;display:flex;flex-direction:column;gap:4px}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (min-width:1700px){.kpis{grid-template-columns:repeat(6,minmax(0,1fr))}}
+@media (max-width:900px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:480px){.kpis{grid-template-columns:minmax(0,1fr)}}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px 16px 14px;display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 12px;box-shadow:var(--shadow);align-items:center}
+.kpi .ico{grid-row:span 3;width:40px;height:40px;border-radius:10px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);align-self:start}
+.kpi .ico svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.kpi.alert .ico{background:var(--bad-bg);color:var(--bad)} .kpi.good .ico{background:var(--ok-bg);color:var(--ok)}
 .kpi b{font:600 26px/1.1 var(--f-mono);font-variant-numeric:tabular-nums}
-.kpi span{font-size:12px;color:var(--muted)}
-.kpi.alert{border-color:color-mix(in srgb,var(--bad) 45%,var(--line))} .kpi.alert b{color:var(--bad)}
+.kpi .l{font-size:13px;font-weight:600}
+.kpi .s{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi.alert b{color:var(--bad)}
+.ov3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+@media (max-width:1180px){.ov3{grid-template-columns:minmax(0,1fr)}}
+.fleet{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.fleet li{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:3px 12px;padding:11px 0;border-bottom:1px solid var(--line);align-items:center}
+.fleet li:last-child{border-bottom:0}
+.fleet .veh{position:static;width:34px;height:34px;box-shadow:none;grid-row:span 2}
+.fleet .veh svg{width:19px;height:19px}
+.fleet .bar2{grid-column:2/-1;height:6px;border-radius:3px;background:var(--sunk);overflow:hidden;display:flex}
+.fleet .bar2 span{display:block;height:100%}
+.hbar{display:grid;grid-template-columns:104px minmax(0,1fr) auto;gap:8px;align-items:center;font-size:13px;padding:5px 0}
+.hbar .t{height:10px;border-radius:5px;background:var(--sunk);overflow:hidden}
+.hbar .t span{display:block;height:100%;border-radius:5px;background:var(--accent)}
+.hbar .t span.r{background:var(--bad)} .hbar .t span.w{background:var(--warn)}
+.hbar b{font:600 13px var(--f-mono);text-align:right;white-space:nowrap;min-width:64px}
+.pbar{grid-column:2;height:4px;border-radius:2px;background:var(--sunk);overflow:hidden;margin-top:2px}
+.pbar span{display:block;height:100%}
 .top{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:16px}
 .top.solo{grid-template-columns:minmax(0,1fr)}
 .top .mapbox{height:min(62vh,600px);border-radius:var(--r);overflow:hidden;border:1px solid var(--line)}
@@ -72,6 +99,7 @@ body{min-height:100%}
 
 <div id="root"></div>
 <script src="assets/leaflet.js"></script>
+<script src="js/model.js"></script>
 <script src="assets/config.js"></script>
 <script src="assets/common.js"></script>
 <script>
@@ -102,11 +130,16 @@ root.innerHTML = `
   <div class="foot2"><span class="conn" id="mode">Connecting…</span><span><b>${RR.esc(S.name)}</b></span><button class="btn small" id="out">Sign out</button></div>
 </aside>
 <main class="main">
-  <header class="mh"><div><h1 id="pt">Overview</h1><p id="ps"></p></div><span class="when" id="when"></span></header>
+  <header class="mh"><div><h1 id="pt">Overview</h1><p id="ps"></p></div><div class="right"><span class="livechip" id="live"><i></i>Live</span><span class="when" id="when"></span></div></header>
   <div class="kpis" id="kpis"></div>
   <div class="top" id="mapRow">
     <div><div class="mapbox" id="map"></div><div class="vlegend" style="margin-top:8px"><span>${RR.vehSvg('truck')}Truck</span><span>${RR.vehSvg('jeep')}4x4 jeep</span><span class="b">${RR.vehSvg('boat')}Rescue boat</span><span><span class="pin sos" style="display:inline-block;width:12px;height:12px;vertical-align:-1px;margin-right:4px"></span>SOS</span><span><span class="pin stop" style="display:inline-block;width:12px;height:12px;vertical-align:-1px;margin-right:4px"></span>Planned stop</span></div><div class="vlegend" style="margin-top:4px">${RR.zoneLegend()}</div></div>
-    <section class="panel" id="feedPanel"><div class="ph"><h2>Incoming SOS</h2><span class="sub">Highest priority first</span></div><div class="pb feed" id="feed"></div></section>
+    <section class="panel" id="feedPanel"><div class="ph"><h2>Priority queue</h2><span class="sub">Open SOS, highest first</span></div><div class="pb feed" id="feed"></div></section>
+  </div>
+  <div class="ov3" id="ovExtra">
+    <section class="panel"><div class="ph"><h2>Fleet status</h2><span class="sub">Stops delivered per vehicle</span></div><div class="pb" id="ovFleet"></div></section>
+    <section class="panel"><div class="ph"><h2>Open requests by need</h2><span class="sub">Requests (people)</span></div><div class="pb" id="ovNeeds"></div></section>
+    <section class="panel"><div class="ph"><h2>Agency requests</h2><span class="sub">Latest first</span></div><div class="pb" id="ovEsc"></div></section>
   </div>
   <section class="panel" id="panelWrap"><div class="tabpanel" id="panel"></div></section>
 </main>
@@ -115,7 +148,7 @@ $('out').onclick = RR.signOut;
 const tick = () => { $('when').textContent = RR.CONFIG.district + ' · ' + new Date().toLocaleString('en-IN',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}); };
 tick(); setInterval(tick, 30000);
 const SECTIONS = {
-  overview:['Overview','Live picture of requests, vehicles, zones and road conditions.', true, true, true],
+  overview:['Operations overview','Live picture of requests, vehicles, impact zones and road conditions across the district.', true, true, true],
   sos:['SOS requests','Every request from the SOS app, SMS line and driver relays, ranked by priority.', false, false, false],
   fleet:['Fleet and stops','Vehicles, their delivery stops and progress. Click the map to place a new stop.', true, false, false],
   zones:['Impact zones','Areas that block routes, raise SOS priority and decide boat or road delivery.', true, false, false],
@@ -149,14 +182,35 @@ function drawMap(){
     if(next) L.polyline([[d.lat,d.lon],[next.lat,next.lon]],{weight:2, dashArray:'4 6', className:'rt-line'}).addTo(lay); });
 }
 
+const KI = {
+  sos:'<svg viewBox="0 0 24 24"><path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/></svg>',
+  people:'<svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.2c2.8.4 5 2.8 5 5.8"/></svg>',
+  fleet:'<svg viewBox="0 0 24 24"><path d="M2 7h12v9H2zM14 10h4l3 3v3h-7"/><circle cx="6" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg>',
+  box:'<svg viewBox="0 0 24 24"><path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/></svg>',
+  roads:'<svg viewBox="0 0 24 24"><path d="M8 3L4 21M16 3l4 18M12 5v2M12 11v2M12 17v2"/></svg>',
+  esc:'<svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg>',
+};
 function renderKpis(){
   const o = openSOS(), crit = o.filter(s=>RR.sosPriority(s)>=70).length, ppl = o.reduce((t,s)=>t+(+s.people||0),0);
   const active = drivers().filter(d=>d.lastSeen && Date.now()-d.lastSeen<3600e3).length;
   const escOpen = RR.store.all('escalations').filter(e=>e.status!=='resolved').length;
   const unsafe = RR.store.all('reports').filter(r=>r.type!=='safe').length;
   const inZone = o.filter(s=>RR.impactZoneAt(s)).reduce((t,s)=>t+(+s.people||0),0);
-  $('kpis').innerHTML = [[o.length,'Open SOS'],[crit,'Critical',crit>0],[ppl,'People waiting'],[inZone,'People in impact zones',inZone>0],[active+' / '+drivers().length,'Drivers active'],[escOpen,'Open agency requests'],[unsafe,'Road hazards']]
-    .map(([b,s,a])=>`<div class="kpi ${a?'alert':''}"><b>${b}</b><span>${s}</span></div>`).join('');
+  const stops = RR.store.all('stops'), pend = stops.filter(x=>x.status==='pending'||x.status==='enroute'), done = stops.filter(x=>x.status==='delivered');
+  const water = pend.reduce((t,x)=>t+(+x.items?.water||0),0), food = pend.reduce((t,x)=>t+(+x.items?.food||0),0);
+  const awaiting = RR.store.all('escalations').filter(e=>e.status==='sent').length, zonesN = RR.store.all('zones').filter(z=>(RR.ZONES[z.type]?.sev||0)>=3).length;
+  const K = [
+    ['sos', o.length, 'Open SOS requests', `${o.filter(s=>s.status==='new').length} new · ${crit} critical`, crit>0?'alert':''],
+    ['people', ppl.toLocaleString('en-IN'), 'People waiting for aid', `${inZone.toLocaleString('en-IN')} inside impact zones`, inZone>0?'alert':''],
+    ['fleet', active+' / '+drivers().length, 'Vehicles active', `${pend.length} stops pending · ${done.length} delivered`, 'good'],
+    ['box', water.toLocaleString('en-IN')+' L', 'Water on the way', `${food.toLocaleString('en-IN')} food packets planned`, ''],
+    ['roads', unsafe, 'Road hazards', `${zonesN} danger zones marked`, unsafe>0?'alert':''],
+    ['esc', escOpen, 'Agency requests open', `${awaiting} awaiting response`, awaiting>0?'alert':''],
+  ];
+  $('kpis').innerHTML = K.map(([i,b,l,sub,c])=>`<div class="kpi ${c}"><span class="ico">${KI[i]}</span><b>${b}</b><span class="l">${l}</span><span class="s">${sub}</span></div>`).join('');
+  const live = $('live');
+  if(RR.CONFIG.api && RR.store.apiOk===false){ live.className='livechip off'; live.innerHTML='<i></i>Reconnecting'; }
+  else { live.className='livechip'; live.innerHTML = '<i></i>'+(RR.CONFIG.api ? 'Live · synced '+(RR.store.lastSync?RR.ago(RR.store.lastSync):'now') : 'Live · demo data'); }
   $('c-sos').textContent = o.filter(s=>s.status==='new').length || ''; $('c-roads').textContent = unsafe||''; $('c-esc').textContent = RR.store.all('escalations').filter(e=>e.status==='sent').length || '';
   const m = $('mode');
   if(RR.CONFIG.api){ const ok = RR.store.apiOk; m.textContent = ok===false ? 'Server unreachable, showing last data' : 'Connected to server'; m.className = 'conn'+(ok===false?' bad':''); }
@@ -164,7 +218,7 @@ function renderKpis(){
 }
 function renderFeed(){
   const o = openSOS();
-  $('feed').innerHTML = o.length ? '<ul class="rows">'+o.slice(0,12).map(s=>{ const p = RR.sosPriority(s); return `<li><span class="prio ${pcls(p)}">${p}</span><div><div class="rowhead"><b>${RR.esc(s.place||'GPS location')}</b><span class="pill ${ST[s.status]?.[1]}">${ST[s.status]?.[0]}</span>${RR.zonePill(s)}</div><span class="meta">${s.people} people${s.infants?' · '+s.infants+' infants':''}${s.injured?' · '+s.injured+' injured':''} · ${needTxt(s)} · ${chan[s.channel]||s.channel} · ${RR.ago(s.createdAt)}</span></div></li>`; }).join('')+'</ul>' : '<p class="hint">No open requests.</p>';
+  $('feed').innerHTML = o.length ? '<ul class="rows">'+o.slice(0,12).map(s=>{ const p = RR.sosPriority(s); return `<li><span class="prio ${pcls(p)}">${p}</span><div><div class="pbar" style="margin:0 0 6px"><span style="width:${p}%;background:${p>=70?'var(--bad)':p>=45?'var(--warn)':'var(--accent)'}"></span></div><div class="rowhead"><b>${RR.esc(s.place||'GPS location')}</b><span class="pill ${ST[s.status]?.[1]}">${ST[s.status]?.[0]}</span>${RR.zonePill(s)}</div><span class="meta">${s.people} people${s.infants?' · '+s.infants+' infants':''}${s.injured?' · '+s.injured+' injured':''} · ${needTxt(s)} · ${chan[s.channel]||s.channel} · ${RR.ago(s.createdAt)}</span></div></li>`; }).join('')+'</ul>' : '<p class="hint">No open requests.</p>';
 }
 
 /* tabs */
@@ -174,9 +228,9 @@ function renderTab(){
   document.querySelectorAll('#tabs [data-tab]').forEach(b => b.dataset.tab===tab ? b.setAttribute('aria-current','page') : b.removeAttribute('aria-current'));
   $('pt').textContent = t; $('ps').textContent = sub;
   const wasHidden = $('mapRow').hidden;
-  $('mapRow').hidden = !showMap; $('feedPanel').hidden = !showFeed; $('mapRow').classList.toggle('solo', !showFeed); $('kpis').hidden = !showKpi; $('panelWrap').hidden = tab==='overview';
+  $('mapRow').hidden = !showMap; $('feedPanel').hidden = !showFeed; $('mapRow').classList.toggle('solo', !showFeed); $('kpis').hidden = !showKpi; $('ovExtra').hidden = tab!=='overview'; $('panelWrap').hidden = tab==='overview';
   if(showMap) setTimeout(() => map.invalidateSize(), 30);
-  if(tab==='overview') return;
+  if(tab==='overview'){ renderOverview(); return; }
   if(document.activeElement && $('panel').contains(document.activeElement) && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
   ({sos:tabSOS, fleet:tabFleet, roads:tabRoads, zones:tabZones, esc:tabEsc, sms:tabSMS, settings:tabSettings})[tab]();
 }
@@ -184,11 +238,13 @@ const drvOpts = sel => drivers().map(d=>`<option value="${d.id}" ${d.id===sel?'s
 
 function tabSOS(){
   const all = RR.store.all('sos').sort((a,b)=>(a.status==='served')-(b.status==='served') || RR.sosPriority(b)-RR.sosPriority(a));
-  $('panel').innerHTML = `<p class="hint" style="margin-bottom:10px">Priority (0–100) weighs need type (rescue and medical first), people, share of infants, elderly and injured, and waiting time. Assigning creates a stop in that driver's app with suggested quantities (3 L water and 1 food packet per person, 1 kit per infant).</p>
-  <div class="tw"><table><thead><tr><th>Priority</th><th>Location</th><th>Need</th><th>Source</th><th>Status</th><th>Action</th></tr></thead><tbody>${all.map(s=>{const p=RR.sosPriority(s); return `<tr>
+  $('panel').innerHTML = `<p class="hint" style="margin-bottom:10px">Priority (0–100) weighs need type (rescue and medical first), people, share of infants, elderly and injured, and waiting time. Assigning creates a stop in that driver's app with the quantities predicted by the demand model for one day.</p>
+  <p class="hint" style="margin-bottom:10px">${RR.modelCard()}</p>
+  <div class="tw"><table><thead><tr><th>Priority</th><th>Location</th><th>Need</th><th>Model estimate / day</th><th>Source</th><th>Status</th><th>Action</th></tr></thead><tbody>${all.map(s=>{const p=RR.sosPriority(s); return `<tr>
     <td><span class="prio ${pcls(p)}">${p}</span></td>
     <td><b>${RR.esc(s.place||'GPS location')}</b><div class="meta mono">${s.lat?(+s.lat).toFixed(4)+', '+(+s.lon).toFixed(4):'no GPS'}</div>${s.note?`<div class="meta">${RR.esc(s.note)}</div>`:''}</td>
     <td>${s.people} people · ${s.infants||0} inf · ${s.elderly||0} eld · ${s.injured||0} inj<div class="meta">${needTxt(s)}</div></td>
+    <td class="mono" style="white-space:nowrap">${(d=>d?`${d.water} L water<br>${d.food} food<br>${d.meds} med kits`:'<span class="hint">model not loaded</span>')(RR.demandForSOS(s))}</td>
     <td>${chan[s.channel]||s.channel}<div class="meta">${RR.ago(s.createdAt)}${s.relayedBy?' · via '+RR.esc(s.relayedBy):''}</div></td>
     <td><span class="pill ${ST[s.status]?.[1]}">${ST[s.status]?.[0]}</span>${RR.zonePill(s)}${s.assignedTo?`<div class="meta">${RR.esc(s.assignedTo)}</div>`:''}</td>
     <td>${s.status==='served'?'':`<div class="inline">${s.status==='new'?`<button class="btn small" data-verify="${s.id}">Verify</button>`:''}
@@ -317,6 +373,9 @@ function tabSettings(){
   $('panel').innerHTML = `<div class="stack" style="max-width:560px">
     <div class="field"><label for="cfg-sms">SMS gateway number shown in the SOS app</label><input type="tel" id="cfg-sms" value="${RR.esc(RR.CONFIG.smsGateway)}"></div>
     <div class="btns"><button class="btn primary" id="cfg-save">Save</button></div>
+    <div class="lbl" style="margin-top:8px">Demand model</div>
+    <p class="hint">${RR.modelCard()||'Model file js/model.js not found.'}</p>
+    <p class="hint">Retrain with <span class="mono">python ml/train_demand_model.py</span>. It updates the website and the API together.</p>
     <div class="lbl" style="margin-top:8px">Server</div>
     <div class="field"><label for="cfg-api">ReliefReady API address</label><input type="text" id="cfg-api" placeholder="https://reliefready-api.onrender.com" value="${RR.esc(RR.CONFIG.api)}"></div>
     <div class="btns"><button class="btn" id="cfg-api-save">Connect</button>${RR.CONFIG.api?'<button class="btn" id="cfg-api-off">Use demo mode</button>':''}${RR.CONFIG.api?`<a class="btn" href="${RR.esc(RR.CONFIG.api)}/docs" target="_blank" rel="noopener">API documentation</a>`:''}</div>
@@ -351,10 +410,11 @@ document.addEventListener('click', e => {
   else if(D.served) RR.store.patch('sos', D.served, {status:'served'});
   else if(D.assign){ const s = RR.store.get('sos', D.assign), drv = $('as-'+s.id).value; if(!s.lat){ RR.toast('This request has no GPS position. Add a stop manually in Drivers and stops.'); return; }
     const max = Math.max(0,...RR.store.all('stops').filter(x=>x.driverId===drv).map(x=>x.order));
-    RR.store.put('stops',{driverId:drv,name:s.place||'SOS location',lat:s.lat,lon:s.lon,items:{water:(s.people||0)*3,food:s.people||0,infant:s.infants||0},order:max+1,status:'pending',note:`SOS: ${needTxt(s)}. ${s.note||''}`.trim(),source:'sos',sosId:s.id,createdAt:Date.now()});
+    RR.store.put('stops',{driverId:drv,name:s.place||'SOS location',lat:s.lat,lon:s.lon,items:(d => d ? {water:d.water, food:d.food, infant:s.infants||0, meds:d.meds} : {water:(s.people||0)*3, food:s.people||0, infant:s.infants||0})(RR.demandForSOS(s)),order:max+1,status:'pending',note:`SOS: ${needTxt(s)}. ${s.note||''}`.trim(),source:'sos',sosId:s.id,createdAt:Date.now()});
     RR.store.patch('sos', s.id, {status:'assigned', assignedTo:drv}); RR.toast('Assigned. It is now in the driver\'s stop list.'); }
   else if(D.escsos){ const s = RR.store.get('sos', D.escsos); escDraft = {to:(s.needs||[]).includes('rescue')?'NDRF':(s.needs||[]).includes('medical')?'Health / 108 ambulance':'State EOC (KSDMA)', type:(s.needs||[]).includes('rescue')?'Rescue team':(s.needs||[]).includes('medical')?'Medical evacuation':'More supplies', urgency:RR.sosPriority(s)>=70?'Critical':'High', place:s.place||'GPS location', people:s.people, note:`${s.people} people (${s.infants||0} infants, ${s.elderly||0} elderly, ${s.injured||0} injured). Needs: ${needTxt(s)}. ${s.note||''}`, lat:s.lat, lon:s.lon, sosId:s.id};
     tab='esc'; renderTab(); $('e-note').focus(); }
+  else if(D.goto){ tab = D.goto; renderTab(); }
   else if(D.delstop) RR.store.del('stops', D.delstop);
   else if(D.zzoom){ const z = RR.store.get('zones', D.zzoom); if(z){ map.fitBounds(L.polygon(z.coords).getBounds(), {padding:[30,30]}); $('map').scrollIntoView({behavior:'smooth', block:'center'}); } }
   else if(D.zdel) RR.store.del('zones', D.zdel);
@@ -367,7 +427,24 @@ document.addEventListener('click', e => {
   else if(D.sitrep){ RR.copy(sitrep(RR.store.get('escalations', D.sitrep)), b); }
 });
 
-function render(){ renderKpis(); drawMap(); renderFeed(); renderTab(); }
+function renderOverview(){
+  if(tab!=='overview') return;
+  const stops = RR.store.all('stops');
+  $('ovFleet').innerHTML = '<ul class="fleet">'+drivers().map(d=>{ const st = stops.filter(x=>x.driverId===d.id), dn = st.filter(x=>x.status==='delivered').length, bad = st.filter(x=>x.status==='unreachable').length;
+    const nx = st.filter(x=>x.status==='pending'||x.status==='enroute').sort((a,b)=>a.order-b.order)[0];
+    const pct = st.length ? dn/st.length*100 : 0, bp = st.length ? bad/st.length*100 : 0, on = d.lastSeen && Date.now()-d.lastSeen<3600e3;
+    return `<li><span class="veh ${d.type||'truck'}">${RR.vehSvg(d.type)}</span><span><b>${RR.esc(d.name)}</b> <span class="hint">· ${RR.esc(d.vehicle)}</span></span><span class="pill ${on?'ok':''}">${on?RR.esc(d.status||'active'):'offline'}</span>
+      <span class="meta" style="grid-column:2/-1">${dn}/${st.length} delivered${nx?' · next: '+RR.esc(nx.name):''}</span>
+      <span class="bar2"><span style="width:${pct}%;background:var(--ok)"></span><span style="width:${bp}%;background:var(--bad)"></span></span></li>`; }).join('')+'</ul>';
+  const o = openSOS(), maxN = Math.max(1,...RR.NEEDS.map(n=>o.filter(s=>(s.needs||[]).includes(n.k)).length));
+  $('ovNeeds').innerHTML = RR.NEEDS.map(n=>{ const list = o.filter(s=>(s.needs||[]).includes(n.k)), c = list.length, ppl = list.reduce((t,s)=>t+(+s.people||0),0);
+    return `<div class="hbar"><span>${n.en.split(' /')[0]}</span><span class="t"><span class="${n.k==='rescue'||n.k==='medical'?'r':n.k==='water'?'w':''}" style="width:${c/maxN*100}%"></span></span><b>${c} <span class="hint">(${ppl})</span></b></div>`; }).join('')
+    + `<p class="hint" style="margin-top:10px">${o.length} open requests · ${o.reduce((t,s)=>t+(+s.people||0),0)} people · rescue and medical shown in red</p>`;
+  const es = RR.store.all('escalations').sort((a,b)=>b.createdAt-a.createdAt).slice(0,4);
+  $('ovEsc').innerHTML = es.length ? '<ul class="rows">'+es.map(e=>{ const last = (e.timeline||[]).slice(-1)[0];
+    return `<li><div class="rowhead"><b>${RR.esc(e.type)}</b>${escPill(e.status)}</div><span class="meta">${RR.esc(e.to)} · ${RR.esc(e.place)} · ${RR.ago(e.createdAt)}</span>${last?`<span class="meta">${RR.esc(last.n||'')}</span>`:''}</li>`; }).join('')+'</ul><button class="btn small" type="button" data-goto="esc" style="margin-top:8px">Open agency requests</button>' : '<p class="hint">No requests to agencies yet.</p>';
+}
+function render(){ renderKpis(); drawMap(); renderFeed(); renderTab(); renderOverview(); }
 RR.store.on(render); render();
 }
 })();

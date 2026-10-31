@@ -153,7 +153,7 @@ function renderNext(){
   <div class="pb">
     <h2 class="place">${RR.esc(n.name)}</h2>
     ${n.note?`<p class="hint" style="margin:0">${RR.esc(n.note)}</p>`:''}
-    <div class="items"><div><b>${n.items.water||0}</b><span>Water L</span></div><div><b>${n.items.food||0}</b><span>Food pkts</span></div><div><b>${n.items.infant||0}</b><span>Infant kits</span></div>
+    <div class="items"><div><b>${n.items.water||0}</b><span>Water L</span></div><div><b>${n.items.food||0}</b><span>Food pkts</span></div><div><b>${n.items.infant||0}</b><span>Infant kits</span></div>${n.items.meds?`<div><b>${n.items.meds}</b><span>Med kits</span></div>`:''}
       ${a?`<div><b>${RR.km(a.distance)}</b><span>Distance</span></div><div><b>${Math.round(a.duration/60)} min</b><span>${a.estimate?'Rough estimate':'Drive time'}</span></div>`:''}</div>
     <div class="rowhead">${verdict}${RR.zonePill(n)}${isBoat?'':(RR.zonesAt(n).some(z=>z.type==='flooded')?'<span class="pill info">Boat recommended</span>':'')}${a&&a.confirmed?`<span class="pill ok">${a.confirmed} stretch${a.confirmed>1?'es':''} confirmed safe</span>`:''}${a&&a.boat?'<span class="pill info">Boat: direct water route. Check depth, current and power lines.</span>':a&&a.estimate?'<span class="pill">Offline: straight-line estimate</span>':''}</div>
     ${hz.length?`<ul class="hazlist">${hz.map(h=>`<li><b>${RR.hitLabel(h)}</b>: ${RR.esc(h.note||'')} <span class="hint">(${RR.ago(h.createdAt)})</span></li>`).join('')}</ul>`:''}
@@ -201,7 +201,7 @@ function renderStops(){
   const ST = {pending:['Pending',''], enroute:['On the way','info'], delivered:['Delivered','ok'], unreachable:['Unreachable','bad']};
   $('stops').innerHTML = '<ul class="rows">'+list.map((s,i)=>`<li><div class="rowhead"><span class="stopnum ${s.status==='delivered'?'done':''}">${i+1}</span><b>${RR.esc(s.name)}</b><span class="pill ${ST[s.status][1]}">${ST[s.status][0]}</span>${s.source==='driver'?'<span class="pill">Added by you</span>':''}
     <span style="margin-left:auto" class="btns">${s.status!=='delivered'?`<button class="btn small" data-up="${s.id}" aria-label="Move up">↑</button><button class="btn small" data-down="${s.id}" aria-label="Move down">↓</button>`:''}${s.status==='unreachable'?`<button class="btn small" data-retry="${s.id}">Retry</button>`:''}</span></div>
-    <span class="meta">${s.items.water||0} L water · ${s.items.food||0} food · ${s.items.infant||0} infant kits${s.note?' · '+RR.esc(s.note):''}</span></li>`).join('')+'</ul>';
+    <span class="meta">${s.items.water||0} L water · ${s.items.food||0} food · ${s.items.infant||0} infant kits${s.items.meds?' · '+s.items.meds+' med kits':''}${s.note?' · '+RR.esc(s.note):''}</span></li>`).join('')+'</ul>';
 }
 function move(id, d){
   const open = myStops().filter(s=>s.status!=='delivered'); const i = open.findIndex(s=>s.id===id), j = i+d;

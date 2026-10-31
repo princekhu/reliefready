@@ -12,8 +12,9 @@
 <style>
 /* Layout: field-console. Two working columns (situation + controls | plan + outcome), full-width reference below. */
 :root{
-  --bg:#ECEFEE; --surface:#FFFFFF; --sunk:#F4F6F5; --ink:#15202A; --muted:#56636C; --line:#D3DAD8;
-  --accent:#1C5A97; --accent-soft:#DCE7F2; --accent-ink:#FFFFFF;
+  --bg:#F2F4F7; --surface:#FFFFFF; --sunk:#F5F7FA; --ink:#0F1B2D; --muted:#5A6A7E; --line:#DDE3EA;
+  --navy:#0E2240; --navy-2:#173158; --navy-ink:#EEF3FA; --navy-muted:#A3B4CB; --navy-line:#24406A;
+  --accent:#1D5FB4; --accent-soft:#E4EEFA; --accent-ink:#FFFFFF;
   --flood:#CFE1EC; --flood-edge:#9FC1D6; --land:#E3E8E1;
   --ok:#2C7A4B; --ok-bg:#DFEFE5; --warn:#9C5F0C; --warn-bg:#F6EAD3; --bad:#B4370F; --bad-bg:#F7DFD5;
   --c-urgency:#C2551C; --c-people:#1C5A97; --c-vuln:#7A4E9C; --c-wait:#8A8F3A; --c-iso:#4A7F86;
@@ -23,20 +24,23 @@
   --r:6px;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#0E1418; --surface:#162027; --sunk:#111A20; --ink:#E2E9EC; --muted:#93A2AA; --line:#2A3740;
+  --bg:#0A111D; --surface:#111A29; --sunk:#0E1624; --ink:#E6ECF4; --muted:#93A3B8; --line:#22304A;
+  --navy:#070E1A; --navy-2:#10203A; --navy-ink:#E6ECF4; --navy-muted:#8FA0B6; --navy-line:#1B2B45;
   --accent:#78AEE0; --accent-soft:#1D3347; --accent-ink:#0E1418;
   --flood:#183041; --flood-edge:#2B5470; --land:#18222A;
   --ok:#62BE88; --ok-bg:#173326; --warn:#E1AA4E; --warn-bg:#3A2C14; --bad:#F2825A; --bad-bg:#3D1F16;
   --c-urgency:#EE8550; --c-people:#78AEE0; --c-vuln:#B892D6; --c-wait:#C4C86A; --c-iso:#79B9C0;
   color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#0E1418; --surface:#162027; --sunk:#111A20; --ink:#E2E9EC; --muted:#93A2AA; --line:#2A3740;
+  --bg:#0A111D; --surface:#111A29; --sunk:#0E1624; --ink:#E6ECF4; --muted:#93A3B8; --line:#22304A;
+  --navy:#070E1A; --navy-2:#10203A; --navy-ink:#E6ECF4; --navy-muted:#8FA0B6; --navy-line:#1B2B45;
   --accent:#78AEE0; --accent-soft:#1D3347; --accent-ink:#0E1418;
   --flood:#183041; --flood-edge:#2B5470; --land:#18222A;
   --ok:#62BE88; --ok-bg:#173326; --warn:#E1AA4E; --warn-bg:#3A2C14; --bad:#F2825A; --bad-bg:#3D1F16;
   --c-urgency:#EE8550; --c-people:#78AEE0; --c-vuln:#B892D6; --c-wait:#C4C86A; --c-iso:#79B9C0;
   color-scheme:dark}
 *{box-sizing:border-box}
+html,body{margin:0}
 body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-body)}
 h1,h2,h3{font-family:var(--f-display);font-stretch:82%;margin:0;text-wrap:balance;letter-spacing:.005em}
 .num,td.n,.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
@@ -45,23 +49,25 @@ button,input,select{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
 /* header */
-.top{background:var(--surface);border-bottom:1px solid var(--line)}
+.top{background:var(--navy);color:var(--navy-ink);border-bottom:1px solid var(--navy-line)}
+.top .btn{background:transparent;border-color:var(--navy-line);color:var(--navy-ink)}
+.top .btn:hover{border-color:var(--navy-muted);color:#fff}
 .top .wrap{padding-block:18px 16px;display:flex;flex-wrap:wrap;gap:14px 40px;align-items:flex-end;justify-content:space-between}
 .brand{display:flex;gap:14px;align-items:center;min-width:0}
 .mark{width:40px;height:40px;flex:none}
 .brand h1{font-size:30px;font-weight:800;line-height:1}
-.brand p{margin:4px 0 0;color:var(--muted);font-size:13.5px}
+.brand p{margin:4px 0 0;color:var(--navy-muted);font-size:13.5px}
 .kpis{display:flex;flex-wrap:wrap;gap:8px 28px}
 .kpi{display:flex;flex-direction:column;gap:1px;min-width:0}
 .kpi b{font:600 22px/1.1 var(--f-mono);font-variant-numeric:tabular-nums}
-.kpi span{font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+.kpi span{font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--navy-muted)}
 
 /* layout */
 .layout{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:20px;padding-block:20px 12px;align-items:start}
 .col{display:flex;flex-direction:column;gap:20px;min-width:0}
 .full{padding-block:8px 48px;display:flex;flex-direction:column;gap:20px}
 @media (max-width:980px){.layout{grid-template-columns:minmax(0,1fr)}}
-.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);min-width:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:10px;min-width:0;box-shadow:0 1px 2px rgba(15,27,45,.05),0 6px 20px rgba(15,27,45,.05)}
 .ph{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:baseline;justify-content:space-between;padding:14px 16px 10px;border-bottom:1px solid var(--line)}
 .ph h2{font-size:19px;font-weight:700}
 .ph .sub{color:var(--muted);font-size:13px}
@@ -260,6 +266,7 @@ footer{color:var(--muted);font-size:12.5px;padding-block:0 32px}
   <footer class="wrap">ReliefReady allocation planner. Place names are real; quantities are illustrative. No live inventory is connected; edits are kept in this browser only.</footer>
 </main>
 
+<script src="js/model.js"></script>
 <script>
 /* ===================== Model ===================== */
 const RES=[
@@ -404,6 +411,17 @@ function compare(B,P){
   for(const id in bm)rows.push({kind:'removed',o:bm[id]});
   return rows;
 }
+
+/* ===================== Demand model (ml/train_demand_model.py) ===================== */
+function predict(g){
+  const M = window.DEMAND_MODEL; if(!M) return null;
+  const p = +g.people||0, d = Math.round(+g.days||0);
+  const x = {people:p, infants:+g.infants||0, elderly:+g.elderly||0, pregnant:0, injured:0, water_source:0, days_since_aid:d, people_x_water_source:0, people_x_days:p*d};
+  const o = {}; for(const [t,m] of Object.entries(M.targets)){ let v = m.intercept; for(const [f,c] of Object.entries(m.coef)) v += c*(x[f]||0); o[t] = Math.max(0, Math.round(v)); }
+  return o;
+}
+function modelLine(){ const M = window.DEMAND_MODEL; return M ? `Demand model: ${M.type.replace('_',' ')} trained on ${M.trained_on}${M.data_is_synthetic && !/synthetic/i.test(M.trained_on)?' (synthetic data)':''}. Test R² water ${M.targets.water.metrics.r2}, food ${M.targets.food.metrics.r2}.` : 'Demand model not loaded (js/model.js missing).'; }
+const modelFlag = (req, exp) => exp && req && Math.abs(req-exp)/exp > 0.35;
 
 /* ===================== Formatting ===================== */
 const fmt=n=>Math.round(n).toLocaleString('en-IN');
@@ -643,7 +661,8 @@ function renderTwist(){
         <div class="field"><label for="na-food">Food request (pkts)</label><input type="number" min="0" id="na-food" value="120"></div>
         <div class="field"><label for="na-kits">Infant kits request</label><input type="number" min="0" id="na-kits" value="4"></div>
       </div>
-      <div class="btns" style="margin-top:10px"><button type="button" class="btn" data-act="addArea">Add area</button></div>
+      <div class="btns" style="margin-top:10px"><button type="button" class="btn" data-act="estimate">Fill requests from demand model</button><button type="button" class="btn" data-act="addArea">Add area</button></div>
+      <p class="hint" style="margin-top:6px" id="modelNote">${modelLine()}</p>
     </details>
     <div class="subhead" style="margin-top:18px">Change log</div>
     ${logH}
@@ -659,11 +678,12 @@ function renderData(){
     <td><input type="text" aria-label="Name" data-loc="${l.id}" data-k="name" value="${esc(l.name)}" style="min-width:140px"></td>
     ${['people','infants','vulnerable','days'].map(k=>`<td><input type="number" min="0" aria-label="${k}" data-loc="${l.id}" data-k="${k}" value="${l[k]}"></td>`).join('')}
     <td><select aria-label="Urgency" data-loc="${l.id}" data-k="urgency">${[1,2,3,4,5].map(u=>`<option ${u==l.urgency?'selected':''}>${u}</option>`).join('')}</select></td>
-    ${RES.map(r=>`<td><input type="number" min="0" aria-label="${r.name} requested" data-loc="${l.id}" data-req="${r.id}" value="${l.req[r.id]||0}"></td>`).join('')}
+    ${(()=>{ const e = predict({people:l.people, infants:l.infants, elderly:l.vulnerable, days:l.days}); return RES.map(r=>{ const exp = e && (r.id==='water'?e.water:r.id==='food'?e.food:null); const flag = modelFlag(l.req[r.id]||0, exp);
+      return `<td><input type="number" min="0" aria-label="${r.name} requested" data-loc="${l.id}" data-req="${r.id}" value="${l.req[r.id]||0}">${exp!=null?`<span class="was" style="${flag?'color:var(--warn);font-weight:600':''}">${flag?'Check: model ':'model '}${fmt(exp)}</span>`:''}</td>`; }).join(''); })()}
     <td><div class="rts">${l.routes.map(r=>`<label><input type="checkbox" data-loc="${l.id}" data-route="${r.id}" ${r.open?'checked':''}> ${esc(r.name)} <input type="number" min="0.1" step="0.1" aria-label="hours" data-loc="${l.id}" data-rh="${r.id}" value="${r.hours}" style="width:62px"> h</label>`).join('')}</div></td>
     <td><button type="button" class="btn small" data-remove="${l.id}">Remove</button></td></tr>`).join('');
   document.getElementById('data').innerHTML=`<table class="data"><thead><tr><th>Location</th><th>People</th><th>Infants</th><th>Other vulnerable</th><th>Days w/o aid</th><th>Urgency</th>${RES.map(r=>`<th>${r.short} req. (${r.unit})</th>`).join('')}<th>Routes (open, one-way hours)</th><th></th></tr></thead><tbody>${rows}</tbody></table>
-  <p class="hint" style="padding:10px 16px 14px">Other vulnerable = elderly, pregnant women, people with disabilities. Edits here are logged as changes against the baseline.</p>`;
+  <p class="hint" style="padding:10px 16px 14px">Other vulnerable = elderly, pregnant women, people with disabilities. Edits here are logged as changes against the baseline. Under each request, the demand model's daily estimate is shown; requests more than 35% away from it are marked “Check” for a human to verify.</p>`;
 }
 
 function renderHow(){
@@ -723,6 +743,8 @@ document.addEventListener('click',e=>{
   else if(p==='pickup'){S.vehicles.push({id:'v2',name:'Pickup 2',cap:300,hours:10});logEvent('Second vehicle arrives: Pickup 2, 300 kg per trip, 10 h');}
   else if(a==='toggleRoute'){const [lid,rid]=document.getElementById('tw-route').value.split('|');const l=locById(lid),r=l?.routes.find(x=>x.id===rid);if(r){r.open=!r.open;logEvent(`${l.name}: ${r.name} ${r.open?'reopened':'blocked'}`);}}
   else if(a==='stock'){const res=document.getElementById('tw-res').value,amt=Math.round(+document.getElementById('tw-amt').value||0);if(amt){const old=S.stock[res];S.stock[res]=Math.max(0,old+amt);logEvent(`${RBY[res].name} ${amt<0?'reduced':'increased'} by ${fmt(Math.abs(amt))} ${RBY[res].unit} (${fmt(old)} → ${fmt(S.stock[res])})`);}}
+  else if(a==='estimate'){ const g = id=>document.getElementById(id); const e = predict({people:g('na-people').value, infants:g('na-inf').value, days:0});
+    if(!e){ return; } g('na-water').value = e.water; g('na-food').value = e.food; g('na-kits').value = g('na-inf').value||0; return; }
   else if(a==='addArea'){
     const g=id=>document.getElementById(id);const name=g('na-name').value.trim()||'New area';
     const id='area-'+Date.now().toString(36);const ang=(S.locations.length*67)%360*Math.PI/180;

@@ -9,46 +9,81 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="assets/common.css">
 <style>
-.hero{padding-block:36px 10px;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:28px;align-items:end}
-@media (max-width:860px){.hero{grid-template-columns:minmax(0,1fr)}}
-.hero h1{font-size:clamp(36px,6vw,60px);font-weight:800;line-height:.95;font-stretch:78%}
-.hero p{font-size:17px;max-width:58ch;margin:14px 0 0;color:var(--muted)}
-.hero .stat{font:500 13px/1.6 var(--f-mono);color:var(--muted);border-left:3px solid var(--accent);padding-left:12px}
-.apps{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:12px;padding-block:22px}
-.app{display:flex;flex-direction:column;gap:8px;padding:18px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);text-decoration:none;color:var(--ink);min-height:170px}
-.app:hover{border-color:var(--accent)}
-.app .who{font:600 11.5px/1 var(--f-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
-.app h2{font-size:24px}
-.app p{margin:0;font-size:14px;color:var(--muted)}
-.app .go{margin-top:auto;font-weight:700;color:var(--accent)}
-.app.sos{background:var(--sos);border-color:var(--sos);color:var(--sos-ink)}
-.app.sos .who,.app.sos p,.app.sos .go{color:var(--sos-ink)}
-.app.sos p{opacity:.92}
-section.blk{padding-block:26px;border-top:1px solid var(--line)}
-section.blk>h2{font-size:30px;margin-bottom:6px}
-section.blk>.lead{color:var(--muted);max-width:68ch;margin:0 0 18px}
-.flow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr) minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:stretch}
-@media (max-width:900px){.flow{grid-template-columns:minmax(0,1fr)}}
-.col{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:8px}
-.col h3{font-size:18px}
-.col .k{font:600 11px/1 var(--f-mono);color:var(--accent);letter-spacing:.08em;text-transform:uppercase}
-.ch{display:grid;grid-template-columns:auto minmax(0,1fr);gap:2px 10px;padding:8px 0;border-top:1px dashed var(--line);font-size:13.5px}
-.ch:first-of-type{border-top:0}
-.ch b{grid-column:2}
-.ch span{grid-column:2;color:var(--muted)}
-.ch i{grid-row:span 2;font:600 11px/1 var(--f-mono);font-style:normal;padding:4px 6px;border-radius:3px;background:var(--accent-soft);color:var(--accent);height:max-content;margin-top:2px}
-.cmp td,.cmp th{text-align:center}
-.cmp td:first-child,.cmp th:first-child{text-align:left;min-width:170px}
-.cmp tr.us td{background:var(--accent-soft);font-weight:600}
-.y,.p,.n{display:inline-block;min-width:58px;padding:2px 6px;border-radius:999px;font-size:12px;font-weight:600}
+/* Landing: navy hero with a live status card, then roles, process, capabilities, comparison, architecture. */
+.bar .navlinks{display:flex;gap:4px;flex-wrap:wrap}
+.bar .navlinks a{color:var(--navy-muted);text-decoration:none;font-size:14px;font-weight:500;padding:6px 10px;border-radius:6px}
+.bar .navlinks a:hover{color:#fff;background:var(--navy-2)}
+@media (max-width:860px){.bar .navlinks{display:none}}
+.hero{background:var(--navy);color:var(--navy-ink);border-bottom:1px solid var(--navy-line);
+  background-image:linear-gradient(var(--navy-line) 1px,transparent 1px),linear-gradient(90deg,var(--navy-line) 1px,transparent 1px);background-size:48px 48px;background-position:-1px -1px}
+.hero .wrap{padding-block:56px 64px;display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:40px;align-items:center}
+@media (max-width:900px){.hero .wrap{grid-template-columns:minmax(0,1fr);padding-block:36px 40px}}
+.eyebrow{font:600 12px/1 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--navy-muted)}
+.hero h1{font-size:clamp(34px,4.3vw,54px);line-height:1.05;font-weight:800;margin:14px 0 0;max-width:20ch}
+.hero p.lead{font-size:18px;color:var(--navy-muted);max-width:52ch;margin:18px 0 0}
+.cta{display:flex;flex-wrap:wrap;gap:10px;margin-top:28px}
+.cta .btn{padding:12px 18px;font-size:15px}
+.cta .btn.ghost{background:transparent;color:var(--navy-ink);border-color:var(--navy-line)}
+.cta .btn.ghost:hover{border-color:var(--navy-muted);color:#fff}
+.status{background:var(--surface);color:var(--ink);border-radius:14px;padding:20px;box-shadow:0 20px 50px rgba(0,0,0,.25);display:flex;flex-direction:column;gap:14px}
+.status .top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.status .top b{font:700 15px var(--f-display)}
+.sgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.sgrid div{background:var(--sunk);border:1px solid var(--line);border-radius:10px;padding:12px}
+.sgrid b{display:block;font:600 26px/1.1 var(--f-mono)}
+.sgrid span{font-size:12.5px;color:var(--muted)}
+.sgrid .alert b{color:var(--bad)}
+.topsos{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.topsos li{display:grid;grid-template-columns:44px minmax(0,1fr);gap:12px;align-items:center;font-size:13.5px}
+.topsos .p{font:700 15px var(--f-mono);text-align:center;border-radius:6px;padding:4px 0;background:var(--bad-bg);color:var(--bad)}
+.topsos .p.mid{background:var(--warn-bg);color:var(--warn)}
+.topsos span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+section.blk{padding-block:56px 8px}
+section.blk>.wrap>h2{font-size:clamp(26px,3vw,36px);font-weight:800}
+section.blk>.wrap>.lead{color:var(--muted);max-width:66ch;margin:10px 0 26px;font-size:16px}
+.roles{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:16px}
+.role{display:flex;flex-direction:column;gap:10px;padding:22px;border:1px solid var(--line);border-radius:14px;background:var(--surface);text-decoration:none;color:var(--ink);box-shadow:var(--shadow);transition:transform .15s,border-color .15s}
+.role:hover{border-color:var(--accent);transform:translateY(-2px)}
+.role .ic{width:44px;height:44px;border-radius:11px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent)}
+.role .ic svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.role.sos .ic{background:var(--sos-soft);color:var(--sos)}
+.role h3{font-size:21px;font-weight:700}
+.role p{margin:0;font-size:14px;color:var(--muted)}
+.role .who{font:600 11.5px/1 var(--f-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.role .go{margin-top:auto;font-weight:700;color:var(--accent);font-size:14px}
+.role.sos .go{color:var(--sos)}
+.steps{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;border:1px solid var(--line);border-radius:14px;background:var(--surface);overflow:hidden;box-shadow:var(--shadow)}
+@media (max-width:900px){.steps{grid-template-columns:minmax(0,1fr)}}
+.step{padding:22px;border-right:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
+.step:last-child{border-right:0}
+@media (max-width:900px){.step{border-right:0;border-bottom:1px solid var(--line)}.step:last-child{border-bottom:0}}
+.step .n{font:600 12px var(--f-mono);color:var(--accent);letter-spacing:.08em}
+.step h3{font-size:18px}
+.step p{margin:0;font-size:14px;color:var(--muted)}
+.chan{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.chan span{font-size:12.5px;font-weight:600;padding:4px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}
+.caps{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:18px 28px}
+.cap{display:grid;grid-template-columns:40px minmax(0,1fr);gap:4px 14px}
+.cap .ic{grid-row:span 2;width:40px;height:40px;border-radius:10px;display:grid;place-items:center;background:var(--navy);color:var(--navy-ink)}
+.cap .ic svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.cap h3{font-size:17px}
+.cap p{margin:0;font-size:14px;color:var(--muted)}
+.cmpw{border:1px solid var(--line);border-radius:14px;overflow:auto;background:var(--surface);box-shadow:var(--shadow)}
+.cmp{min-width:820px}
+.cmp td,.cmp th{text-align:center;padding:11px 10px}
+.cmp td:first-child,.cmp th:first-child{text-align:left;padding-left:18px}
+.cmp th.us,.cmp td.us{background:var(--accent-soft)}
+.cmp th.us{color:var(--accent)}
+.y,.p,.n{display:inline-block;min-width:58px;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:600}
 .y{background:var(--ok-bg);color:var(--ok)} .p{background:var(--warn-bg);color:var(--warn)} .n{background:var(--sunk);color:var(--muted)}
-.better{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:18px 28px;margin-top:20px}
-.better h3{font-size:18px;margin-bottom:4px}
-.better p{margin:0;font-size:14.5px;max-width:60ch}
-.limits{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:14px}
-.limits .col p{margin:0;font-size:14px}
-.src{font-size:12.5px;color:var(--muted)}
-.src a{color:var(--muted)}
+.arch{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:14px}
+.arch .t{border:1px solid var(--line);border-radius:12px;padding:18px;background:var(--surface);box-shadow:var(--shadow)}
+.arch .k{font:600 11.5px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.arch h3{font-size:17px;margin:6px 0}
+.arch p{margin:0;font-size:13.5px;color:var(--muted)}
+.foot2{margin-top:56px;background:var(--navy);color:var(--navy-muted);font-size:13px}
+.foot2 .wrap{padding-block:28px;display:flex;flex-direction:column;gap:10px}
+.foot2 a{color:var(--navy-ink)}
 </style>
 <style>[hidden]{display:none!important}img{max-width:100%}</style>
 </head>
@@ -56,93 +91,110 @@ section.blk>.lead{color:var(--muted);max-width:68ch;margin:0 0 18px}
 
 
 <header class="bar"><div class="wrap">
-  <a class="logo" href="index.html" id="logo"><b>ReliefReady</b><span>Wayanad demo district</span></a>
+  <a class="logo" href="index.html" id="logo"><b>ReliefReady</b><span>Relief logistics</span></a>
+  <nav class="navlinks"><a href="#how">How it works</a><a href="#features">Capabilities</a><a href="#compare">Comparison</a><a href="#arch">Architecture</a></nav>
   <span class="grow"></span><span class="net" id="net">Online</span>
 </div></header>
 
-<main class="wrap">
-  <div class="hero">
-    <div>
-      <h1>Get relief to the right places, even when the network is gone.</h1>
-      <p>One system from the person trapped on a roof to the truck on the road: an SOS that works without internet, a control room that ranks and allocates, drivers who see which roads are safe, and a tracked line to state and national agencies.</p>
-    </div>
-    <div class="stat">Demonstration district: Wayanad, Kerala<br>Place names and locations are real; request figures are illustrative.</div>
+<section class="hero"><div class="wrap">
+  <div>
+    <span class="eyebrow">Disaster relief logistics</span>
+    <h1>Critical supplies to the right places, even when the network is down.</h1>
+    <p class="lead">An SOS that works without internet, a control room that ranks every request and plans deliveries, drivers routed around danger, and a tracked line to state and national agencies.</p>
+    <div class="cta"><a class="btn primary" href="admin.html">Open control room</a><a class="btn danger" href="sos.html">Send an SOS</a><a class="btn ghost" href="driver.html">Driver app</a></div>
   </div>
-
-  <div class="apps">
-    <a class="app sos" href="sos.html"><span class="who">People in the affected area</span><h2>I need help</h2><p>Send an SOS by internet, SMS, Bluetooth or QR. No sign-in, no install, works offline.</p><span class="go">Open SOS →</span></a>
-    <a class="app" href="driver.html"><span class="who">Aid vehicle drivers · sign in</span><h2>Driver app</h2><p>Next stops, safe route options on the real road map, road reports, carrying SOS out of dead zones.</p><span class="go">Open driver app →</span></a>
-    <a class="app" href="admin.html"><span class="who">District control room · sign in</span><h2>Control room</h2><p>Live SOS feed and map, assign drivers, road conditions, request help from higher authorities.</p><span class="go">Open control room →</span></a>
-    <a class="app" href="planner.html"><span class="who">Relief officers</span><h2>Allocation planner</h2><p>Rank requests, split limited stock under vehicle limits, simulate a blocked route and compare plans.</p><span class="go">Open planner →</span></a>
+  <div class="status" aria-live="polite">
+    <div class="top"><b>Wayanad, Kerala · right now</b><span class="livechip" id="live"><i></i>Live</span></div>
+    <div class="sgrid" id="sgrid"></div>
+    <div><div class="lbl" style="margin-bottom:6px">Highest-priority requests</div><ul class="topsos" id="topsos"></ul></div>
   </div>
+</div></section>
 
-  <section class="blk">
-    <h2>How an SOS gets out with no network</h2>
-    <p class="lead">A browser cannot form a Bluetooth mesh or make calls without a network. So ReliefReady uses the paths that do work on every ordinary phone, and turns aid drivers into couriers for messages from dead zones.</p>
-    <div class="flow">
-      <div class="col"><span class="k">Trapped person</span><h3>SOS app on any phone</h3><p class="hint">Needs, head-count, infants, injured and GPS (GPS works without data). Saved on the phone first, so nothing is lost. Hindi and English.</p></div>
-      <div class="col"><span class="k">Four ways out, tried in order</span>
-        <div class="ch"><i>1</i><b>Internet</b><span>Sent at once. If there is no data it is queued and sends itself when any signal returns.</span></div>
-        <div class="ch"><i>2</i><b>SMS, 1 bar of 2G</b><span>A 160-character code holds the whole request. The control room reads it automatically.</span></div>
-        <div class="ch"><i>3</i><b>Bluetooth / Quick Share</b><span>Passes the SOS to a nearby phone with no network. Whoever reaches signal first forwards it.</span></div>
-        <div class="ch"><i>4</i><b>QR to a rescuer</b><span>Drivers scan it offline and carry it out (store-and-forward).</span></div>
-        <div class="ch"><i>+</i><b>Call 112, light and whistle</b><span>Emergency calls use any operator's tower in range. The screen flashes SOS for helicopters.</span></div></div>
-      <div class="col"><span class="k">Control room</span><h3>Rank, assign, escalate</h3><p class="hint">Each request gets a priority score. One click turns it into a driver's stop with suggested quantities, or a tracked request to NDRF, the state EOC or air support.</p></div>
-      <div class="col"><span class="k">Driver</span><h3>Deliver on a safe road</h3><p class="hint">Real OpenStreetMap routes, checked against live road reports. Marking a stop delivered updates the person's SOS status to “Aid delivered”.</p></div>
-    </div>
-  </section>
+<section class="blk"><div class="wrap">
+  <h2>One system, four roles</h2>
+  <p class="lead">Each person in the relief chain gets the screen they need, and all four share the same live data.</p>
+  <div class="roles">
+    <a class="role sos" href="sos.html"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17h.01"/></svg></span><span class="who">People in the affected area</span><h3>SOS</h3><p>Ask for rescue, water, food or medical help by internet, SMS, Bluetooth or QR. No sign-in, works offline.</p><span class="go">Send an SOS →</span></a>
+    <a class="role" href="admin.html"><span class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg></span><span class="who">District control room</span><h3>Control room</h3><p>Live map and priority queue, assign vehicles, mark impact zones, request help from higher authorities.</p><span class="go">Open control room →</span></a>
+    <a class="role" href="driver.html"><span class="ic"><svg viewBox="0 0 24 24"><path d="M2 7h12v9H2zM14 10h4l3 3v3h-7"/><circle cx="6" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg></span><span class="who">Drivers and boat crews</span><h3>Driver app</h3><p>Next stop and load, the safest road to it, road reports, and SOS messages carried out of dead zones.</p><span class="go">Open driver app →</span></a>
+    <a class="role" href="planner.html"><span class="ic"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span><span class="who">Relief officers</span><h3>Allocation planner</h3><p>Split limited stock under vehicle limits, see who is left short, and compare plans when a route is blocked.</p><span class="go">Open planner →</span></a>
+  </div>
+</div></section>
 
-  <section class="blk">
-    <h2>Where ReliefReady fits among existing tools</h2>
-    <p class="lead">Each tool below does one part well. None of them joins a victim's SOS, the allocation decision, the driver's road and the escalation into one loop. Based on each product's public description; check before quoting in a pitch.</p>
-    <div class="tw"><table class="cmp">
-      <thead><tr><th>Capability</th><th>ReliefReady</th><th>112 India (ERSS)</th><th>NDMA Sachet</th><th>Sahana Eden</th><th>Ushahidi</th><th>Bridgefy</th><th>Meshtastic</th></tr></thead>
-      <tbody>
-        <tr><td>SOS from victims to responders</td><td><span class="y">Yes</span></td><td><span class="y">Yes</span></td><td><span class="n">Alerts only</span></td><td><span class="p">Requests</span></td><td><span class="y">Reports</span></td><td><span class="p">Chat</span></td><td><span class="p">Chat</span></td></tr>
-        <tr><td>Works with no data connection</td><td><span class="y">4 paths</span></td><td><span class="p">Call / SMS</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td><td><span class="p">SMS</span></td><td><span class="y">Bluetooth</span></td><td><span class="y">LoRa radio</span></td></tr>
-        <tr><td>No app install needed</td><td><span class="y">Web / PWA</span></td><td><span class="n">App</span></td><td><span class="n">App</span></td><td><span class="y">Web</span></td><td><span class="y">Web</span></td><td><span class="n">App on every phone</span></td><td><span class="n">Radio + app</span></td></tr>
-        <tr><td>Allocates stock under truck limits</td><td><span class="y">Yes</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td><td><span class="p">Inventory</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td></tr>
-        <tr><td>Explains priority and shortfalls</td><td><span class="y">Yes</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td></tr>
-        <tr><td>What-if recalculation</td><td><span class="y">Yes</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td></tr>
-        <tr><td>Safe routes from field reports</td><td><span class="y">Yes</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td><td><span class="p">Map layers</span></td><td><span class="p">Map of reports</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td></tr>
-        <tr><td>Tracked escalation to agencies</td><td><span class="y">Yes</span></td><td><span class="p">Internal</span></td><td><span class="n">No</span></td><td><span class="p">Partial</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td></tr>
-      </tbody></table></div>
+<section class="blk" id="how"><div class="wrap">
+  <h2>How a request becomes a delivery</h2>
+  <p class="lead">Every step is recorded, so the coordinator can explain each decision.</p>
+  <div class="steps">
+    <div class="step"><span class="n">STEP 1</span><h3>Ask for help</h3><p>The person picks needs and head-count; GPS works without data. The request leaves by the first channel available.</p><div class="chan"><span>Internet</span><span>SMS · 2G</span><span>Bluetooth</span><span>QR</span><span>112</span></div></div>
+    <div class="step"><span class="n">STEP 2</span><h3>Rank</h3><p>A 0–100 priority from need type, people, infants, elderly and injured, waiting time and whether it sits in a danger zone.</p></div>
+    <div class="step"><span class="n">STEP 3</span><h3>Deliver</h3><p>One click turns it into a driver's stop with quantities from the demand model. The route avoids reported hazards.</p></div>
+    <div class="step"><span class="n">STEP 4</span><h3>Escalate</h3><p>No road in? The control room requests a boat, airlift or NDRF team and tracks it to resolution.</p></div>
+  </div>
+</div></section>
 
-    <div class="better">
-      <div><h3>One loop, not five tools</h3><p>A trapped family's SOS becomes a ranked request, then a driver's stop with quantities, then a delivery, and the family's phone shows “Aid delivered”. The control room never re-types anything between systems.</p></div>
-      <div><h3>Offline without special hardware</h3><p>SMS, 112, Bluetooth hand-off and QR work on any phone people already own. Bridgefy needs the app on every phone in the chain, and Meshtastic needs radio hardware.</p></div>
-      <div><h3>Drivers carry messages out</h3><p>Trucks move between dead zones and coverage every day. The driver app scans SOS codes offline and uploads them on reaching signal, so messages get out on vehicles that are already making the trip.</p></div>
-      <div><h3>Decisions a coordinator can defend</h3><p>Every allocation shows its score breakdown, the quantity short and why (stock, truck time, or no road). A blocked route or a new village reruns the plan and shows who gained and who lost.</p></div>
-      <div><h3>Roads judged by the people on them</h3><p>Real road routes from OpenStreetMap are checked against drivers' live reports of bridges down, flooding and landslides. The safest option is picked first, and unsafe-only routes trigger a boat or airlift request.</p></div>
-      <div><h3>A paper trail upward</h3><p>Requests to the state EOC, NDRF or air support carry a timeline (sent, acknowledged, dispatched, resolved), a “forward higher” step when nobody answers, and a one-click situation report for the official channel.</p></div>
-    </div>
-  </section>
+<section class="blk" id="features"><div class="wrap">
+  <h2>Capabilities</h2>
+  <p class="lead">Built for the conditions after a flood or landslide: weak signal, blocked roads, not enough stock.</p>
+  <div class="caps">
+    <div class="cap"><span class="ic"><svg viewBox="0 0 24 24"><path d="M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0M12 19.5h.01"/><path d="M3 3l18 18"/></svg></span><h3>Offline-first SOS</h3><p>Queued on the phone, sent by SMS in one 160-character code, handed to nearby phones, or scanned by a driver.</p></div>
+    <div class="cap"><span class="ic"><svg viewBox="0 0 24 24"><path d="M4 6l5-2 6 2 5-2v14l-5 2-6-2-5 2z"/><path d="M9 4v14M15 6v14"/></svg></span><h3>Impact zones</h3><p>Red, landslide and flooded zones block routes and raise priority. Includes the NRSC/ISRO-mapped 2024 Chooralmala landslide area.</p></div>
+    <div class="cap"><span class="ic"><svg viewBox="0 0 24 24"><path d="M8 3L4 21M16 3l4 18M12 5v2M12 11v2M12 17v2"/></svg></span><h3>Safe routing</h3><p>Real road routes from OpenStreetMap, each checked against live driver reports of bridges down, flooding and landslides.</p></div>
+    <div class="cap"><span class="ic"><svg viewBox="0 0 24 24"><path d="M4 19h16M6 15l4-5 3 3 5-7"/></svg></span><h3>Demand model</h3><p>An explainable regression model estimates daily water, food and medical kits per location and flags requests that look wrong.</p></div>
+    <div class="cap"><span class="ic"><svg viewBox="0 0 24 24"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span><h3>Fair allocation</h3><p>Every reachable place gets a minimum share first, then stock goes by priority, within vehicle capacity and hours.</p></div>
+    <div class="cap"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 19V5M5 12l7-7 7 7"/></svg></span><h3>Escalation trail</h3><p>Requests to SDMA, NDRF, health or air support with a sent → acknowledged → dispatched → resolved timeline.</p></div>
+  </div>
+</div></section>
 
-  <section class="blk">
-    <h2>Map layers and impact zones</h2>
-    <p class="lead">The control room marks impact zones on the map: red (no entry), landslide, flooded, caution and relief areas. Every road route that crosses a red, landslide or flooded zone is marked unsafe, SOS requests inside them move up the queue, and flooded stops go to the boat crew. Each zone shows how many people, SOS requests, stops and vehicles are inside it.</p>
-    <div class="limits">
-      <div class="col"><h3>Government data</h3><p>The demo includes the area mapped by NRSC/ISRO's rapid-mapping product for the 30 July 2024 Chooralmala landslide (International Charter activation 1029), and a debris-flow corridor drawn from ISRO's reported headscarp location. Bhuvan (ISRO) WMS layers, such as flood hazard maps, can be added from Settings.</p></div>
-      <div class="col"><h3>Satellite and terrain</h3><p>The layers button on every map switches between the OpenStreetMap street map, Esri satellite imagery and OpenTopoMap terrain. You can also add NASA's daily MODIS satellite image for any date to see cloud cover and flood water.</p></div>
-      <div class="col"><h3>Demo zones are labelled</h3><p>Zones that are not from an official source say so in their source line, so a demo zone is never mistaken for government data.</p></div>
-    </div>
-  </section>
+<section class="blk" id="compare"><div class="wrap">
+  <h2>Compared with existing tools</h2>
+  <p class="lead">Each tool covers one part of the problem. ReliefReady connects the request, the allocation, the road and the escalation. Based on each product's public description.</p>
+  <div class="cmpw"><table class="cmp">
+    <thead><tr><th>Capability</th><th class="us">ReliefReady</th><th>112 India</th><th>NDMA Sachet</th><th>Sahana Eden</th><th>Ushahidi</th><th>Bridgefy</th><th>Meshtastic</th></tr></thead>
+    <tbody>
+      <tr><td>SOS from victims to responders</td><td class="us"><span class="y">Yes</span></td><td><span class="y">Yes</span></td><td><span class="n">Alerts only</span></td><td><span class="p">Requests</span></td><td><span class="y">Reports</span></td><td><span class="p">Chat</span></td><td><span class="p">Chat</span></td></tr>
+      <tr><td>Works with no data connection</td><td class="us"><span class="y">4 paths</span></td><td><span class="p">Call / SMS</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td><td><span class="p">SMS</span></td><td><span class="y">Bluetooth</span></td><td><span class="y">LoRa radio</span></td></tr>
+      <tr><td>No app install needed</td><td class="us"><span class="y">Web</span></td><td><span class="n">App</span></td><td><span class="n">App</span></td><td><span class="y">Web</span></td><td><span class="y">Web</span></td><td><span class="n">App</span></td><td><span class="n">Hardware</span></td></tr>
+      <tr><td>Allocates stock under vehicle limits</td><td class="us"><span class="y">Yes</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td><td><span class="p">Inventory</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td></tr>
+      <tr><td>Explains priority and shortfalls</td><td class="us"><span class="y">Yes</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td></tr>
+      <tr><td>Safe routes from field reports and zones</td><td class="us"><span class="y">Yes</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td><td><span class="p">Map layers</span></td><td><span class="p">Map</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td></tr>
+      <tr><td>Tracked escalation to agencies</td><td class="us"><span class="y">Yes</span></td><td><span class="p">Internal</span></td><td><span class="n">No</span></td><td><span class="p">Partial</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td><td><span class="n">No</span></td></tr>
+    </tbody></table></div>
+</div></section>
 
-  <section class="blk">
-    <h2>Architecture and roadmap</h2>
-    <p class="lead">How the system runs today, and what comes next.</p>
-    <div class="limits">
-      <div class="col"><h3>Bluetooth mesh and offline calling</h3><p>Browsers cannot advertise Bluetooth or relay between phones, so a true mesh or walkie-talkie voice needs a small Android companion app (Nearby Connections over Bluetooth and Wi-Fi Direct). It would reuse the same RR1 code.</p></div>
-      <div class="col"><h3>Zero-network valleys</h3><p>For places with no tower at all, LoRa mesh radios (Meshtastic) reach several kilometres per hop. A gateway node at the control room would read RR1 codes straight into this inbox.</p></div>
-      <div class="col"><h3>Server and database</h3><p>A FastAPI server with a PostgreSQL database stores every request, stop, road report, zone and agency request. Sign-in uses hashed PINs and expiring tokens, and the API is documented at <span class="mono">/docs</span>. SMS gateways post messages to <span class="mono">/api/sms/inbound</span>.</p></div>
-    </div>
-    <p class="src" style="margin-top:16px">References: <a href="https://apps.apple.com/app/id1441951304" target="_blank" rel="noopener">112 India app</a> · <a href="https://nicobartimes.com/?p=5925" target="_blank" rel="noopener">NDMA Sachet</a> · <a href="https://archive.flossmanuals.net/sahana-eden/what-is-sahana-eden" target="_blank" rel="noopener">Sahana Eden</a> · <a href="https://techxlab.org/solutions/bridgefy/" target="_blank" rel="noopener">Bridgefy</a> · <a href="https://circuitdigest.com/news/meshtastic-an-opensource-off-grid-communication-platform" target="_blank" rel="noopener">Meshtastic</a> · <a href="https://bhuvan-app1.nrsc.gov.in/disaster/usrtasks/landslide/doc/Charter_1029_VAP_7_6Aug2024.pdf" target="_blank" rel="noopener">NRSC/ISRO Chooralmala landslide map</a> · <a href="https://eos.org/thelandslideblog/wayanad-landslides" target="_blank" rel="noopener">ISRO figures via The Landslide Blog</a> · <a href="https://bhuvan.nrsc.gov.in/wiki/index.php/How_to_use_WMS_services" target="_blank" rel="noopener">Bhuvan WMS services</a></p>
-  </section>
-  <footer class="foot">ReliefReady · Map data © OpenStreetMap contributors · routing by OSRM · imagery Esri, NASA GIBS · landslide extent NRSC/ISRO.</footer>
-</main>
+<section class="blk" id="arch"><div class="wrap">
+  <h2>Architecture</h2>
+  <p class="lead">Small, inexpensive to run, and replaceable piece by piece.</p>
+  <div class="arch">
+    <div class="t"><span class="k">Web apps</span><h3>HTML, CSS, JavaScript</h3><p>Installable and offline-capable. Leaflet maps with Esri, OpenStreetMap, NASA GIBS and Bhuvan WMS layers.</p></div>
+    <div class="t"><span class="k">API</span><h3>Python FastAPI</h3><p>Token sign-in with roles, schema-validated records, public SOS intake, SMS webhook, documented at /docs.</p></div>
+    <div class="t"><span class="k">Database</span><h3>PostgreSQL</h3><p>Requests, stops, road reports, zones, vehicles and agency requests. PINs stored as salted hashes.</p></div>
+    <div class="t"><span class="k">Model</span><h3>Demand regression</h3><p>Trained with scikit-learn, exported as coefficients so the website and API give the same estimate.</p></div>
+  </div>
+</div></section>
+
+<footer class="foot2"><div class="wrap">
+  <span><b style="color:var(--navy-ink)">ReliefReady</b> · Demonstration district: Wayanad, Kerala. Place names and locations are real; request figures are illustrative.</span>
+  <span>Map data © OpenStreetMap contributors · Esri · NASA EOSDIS GIBS · landslide extent <a href="https://bhuvan-app1.nrsc.gov.in/disaster/usrtasks/landslide/doc/Charter_1029_VAP_7_6Aug2024.pdf" target="_blank" rel="noopener">NRSC/ISRO</a> · routing OSRM. Comparison sources: <a href="https://apps.apple.com/app/id1441951304" target="_blank" rel="noopener">112 India</a>, <a href="https://archive.flossmanuals.net/sahana-eden/what-is-sahana-eden" target="_blank" rel="noopener">Sahana Eden</a>, <a href="https://techxlab.org/solutions/bridgefy/" target="_blank" rel="noopener">Bridgefy</a>, <a href="https://circuitdigest.com/news/meshtastic-an-opensource-off-grid-communication-platform" target="_blank" rel="noopener">Meshtastic</a>.</span>
+</div></footer>
+
 <script src="assets/config.js"></script>
 <script src="assets/common.js"></script>
-<script>document.getElementById('logo').insertAdjacentHTML('afterbegin', RR.logo); RR.netBadge(document.getElementById('net'));</script>
+<script>
+document.getElementById('logo').insertAdjacentHTML('afterbegin', RR.logo);
+RR.netBadge(document.getElementById('net'));
+function renderStatus(){
+  const o = RR.store.all('sos').filter(s=>s.status!=='served').sort((a,b)=>RR.sosPriority(b)-RR.sosPriority(a));
+  const ppl = o.reduce((t,s)=>t+(+s.people||0),0), crit = o.filter(s=>RR.sosPriority(s)>=70).length;
+  const veh = RR.store.all('drivers').length, zones = RR.store.all('zones').filter(z=>(RR.ZONES[z.type]?.sev||0)>=3).length;
+  const sess = RR.session(), canSee = !RR.CONFIG.api || (sess && sess.token);
+  document.getElementById('sgrid').innerHTML = canSee
+    ? [[o.length,'Open SOS requests'],[crit,'Critical',crit>0],[ppl.toLocaleString('en-IN'),'People waiting'],[veh+' · '+zones,'Vehicles · danger zones']].map(([b,l,a])=>`<div class="${a?'alert':''}"><b>${b}</b><span>${l}</span></div>`).join('')
+    : '<div style="grid-column:1/-1"><b style="font-size:16px;font-family:var(--f-body)">Sign in to see live figures</b><span>Operational data is shown to control-room staff and drivers only.</span></div>';
+  document.getElementById('topsos').innerHTML = canSee ? o.slice(0,3).map(s=>{ const p = RR.sosPriority(s); return `<li><span class="p ${p<70?'mid':''}">${p}</span><span><b>${RR.esc(s.place||'GPS location')}</b> · ${s.people} people</span></li>`; }).join('') || '<li class="hint">No open requests.</li>' : '';
+  const live = document.getElementById('live'); live.innerHTML = '<i></i>' + (RR.CONFIG.api ? 'Live' : 'Live · demo data');
+}
+RR.store.on(renderStatus); renderStatus();
+</script>
 
 </body>
 </html>

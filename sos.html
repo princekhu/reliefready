@@ -50,6 +50,10 @@ body:lang(hi){font-family:"Noto Sans Devanagari",var(--f-body)}
 .lang{display:inline-flex}
 .mine .rows>li{gap:3px}
 .tips li{margin-bottom:6px}
+.sn{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--sos);color:var(--sos-ink);font:700 13px var(--f-mono);margin-right:10px;vertical-align:2px}
+.q{font:700 17px var(--f-display);font-stretch:92%;margin-bottom:10px}
+.big{box-shadow:0 8px 24px rgba(15,27,45,.12)}
+.sosmain{gap:18px}
 </style>
 <style>[hidden]{display:none!important}img{max-width:100%}</style>
 </head>
@@ -71,15 +75,15 @@ body:lang(hi){font-family:"Noto Sans Devanagari",var(--f-body)}
   <div class="callrow"><a class="btn small" href="tel:1077" data-t="call1077">District control room 1077</a><button class="btn small" type="button" id="strobeBtn" data-t="signal">Flash light + whistle for rescuers</button></div>
 
   <section class="panel" id="form" aria-labelledby="h-need">
-    <div class="ph"><h2 id="h-need" data-t="what">What do you need?</h2><span class="sub" data-t="pick">Tap all that apply</span></div>
+    <div class="ph"><h2 id="h-need"><span class="sn">1</span><span data-t="what">What do you need?</span></h2><span class="sub" data-t="pick">Tap all that apply</span></div>
     <div class="pb stack">
       <div class="needs" id="needs"></div>
       <div>
-        <div class="lbl" style="margin-bottom:8px" data-t="who">How many people are with you?</div>
+        <div class="q"><span class="sn">2</span><span data-t="who">How many people are with you?</span></div>
         <div class="counts" id="counts"></div>
       </div>
       <div class="loc">
-        <div class="lbl" data-t="where">Where are you?</div>
+        <div class="q"><span class="sn">3</span><span data-t="where">Where are you?</span></div>
         <div class="locstate" id="locState">Location not added yet</div>
         <div class="btns"><button type="button" class="btn primary" id="gps" data-t="gps">Use my GPS location</button></div>
         <p class="hint" data-t="gpsnote">GPS works without mobile data. Indoors it can take a minute.</p>
