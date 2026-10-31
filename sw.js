@@ -1,7 +1,7 @@
 // ReliefReady offline support. Pages and scripts: network first (so updates show at once), cached copy when offline.
-const CACHE = 'reliefready-v5';
+const CACHE = 'reliefready-v6';
 const FILES = ['./','index.html','sos.html','driver.html','admin.html','planner.html','manifest.webmanifest','icon.svg',
-  'assets/common.css','assets/common.js','js/model.js','assets/config.js','assets/images/layers.png','assets/images/layers-2x.png',
+  'assets/common.css','assets/common.js','assets/maptools.css','assets/maptools.js','js/model.js','assets/config.js','assets/images/layers.png','assets/images/layers-2x.png',
   'assets/leaflet.css','assets/leaflet.js','assets/qrcode.js','assets/jsQR.js'];
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE && k !== 'rr-tiles').map(k => caches.delete(k)))).then(() => self.clients.claim())); });

@@ -10,32 +10,33 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="assets/leaflet.css">
+<link rel="stylesheet" href="assets/maptools.css">
 <style>
 /* Layout: field-console. Two working columns (situation + controls | plan + outcome), full-width reference below. */
 :root{
-  --bg:#EEF0F2; --surface:#FFFFFF; --sunk:#F5F6F7; --ink:#15191E; --muted:#5D6670; --line:#D9DDE1;
-  --navy:#1A1D21; --navy-2:#2A2F35; --navy-ink:#F2F3F4; --navy-muted:#A8AFB7; --navy-line:#33383F;
-  --accent:#1D5FB4; --accent-soft:#E4EEFA; --accent-ink:#FFFFFF;
+  --bg:#F1EFE9; --surface:#FFFFFF; --sunk:#F7F5F0; --ink:#17201D; --muted:#59645E; --line:#DCD8CE;
+  --navy:#0F2A28; --navy-2:#173B38; --navy-ink:#EDF3F0; --navy-muted:#93ACA5; --navy-line:#214643;
+  --accent:#0D6B5B; --accent-soft:#DCEEE8; --accent-ink:#FFFFFF; --map:#E4E6DE;
   --flood:#CFE1EC; --flood-edge:#9FC1D6; --land:#E3E8E1;
   --ok:#2C7A4B; --ok-bg:#DFEFE5; --warn:#9C5F0C; --warn-bg:#F6EAD3; --bad:#B4370F; --bad-bg:#F7DFD5;
-  --c-urgency:#C2551C; --c-people:#1C5A97; --c-vuln:#7A4E9C; --c-wait:#8A8F3A; --c-iso:#4A7F86;
+  --c-urgency:#C2551C; --c-people:#0D6B5B; --c-vuln:#7A4E9C; --c-wait:#8A8F3A; --c-iso:#4A7F86;
   --f-display:"Archivo","Arial Narrow",Arial,sans-serif;
   --f-body:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
   --r:6px;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#0A111D; --surface:#111A29; --sunk:#0E1624; --ink:#E6ECF4; --muted:#93A3B8; --line:#22304A;
-  --navy:#070E1A; --navy-2:#10203A; --navy-ink:#E6ECF4; --navy-muted:#8FA0B6; --navy-line:#1B2B45;
-  --accent:#78AEE0; --accent-soft:#1D3347; --accent-ink:#0E1418;
+  --bg:#0C1312; --surface:#131C1A; --sunk:#101816; --ink:#E6EEEA; --muted:#94A49E; --line:#25322E;
+  --navy:#081210; --navy-2:#12221F; --navy-ink:#E6EEEA; --navy-muted:#8DA39C; --navy-line:#1C2F2B;
+  --accent:#5BC6AC; --accent-soft:#12372F; --accent-ink:#04110D; --map:#14201D;
   --flood:#183041; --flood-edge:#2B5470; --land:#18222A;
   --ok:#62BE88; --ok-bg:#173326; --warn:#E1AA4E; --warn-bg:#3A2C14; --bad:#F2825A; --bad-bg:#3D1F16;
   --c-urgency:#EE8550; --c-people:#78AEE0; --c-vuln:#B892D6; --c-wait:#C4C86A; --c-iso:#79B9C0;
   color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#0A111D; --surface:#111A29; --sunk:#0E1624; --ink:#E6ECF4; --muted:#93A3B8; --line:#22304A;
-  --navy:#070E1A; --navy-2:#10203A; --navy-ink:#E6ECF4; --navy-muted:#8FA0B6; --navy-line:#1B2B45;
-  --accent:#78AEE0; --accent-soft:#1D3347; --accent-ink:#0E1418;
+  --bg:#0C1312; --surface:#131C1A; --sunk:#101816; --ink:#E6EEEA; --muted:#94A49E; --line:#25322E;
+  --navy:#081210; --navy-2:#12221F; --navy-ink:#E6EEEA; --navy-muted:#8DA39C; --navy-line:#1C2F2B;
+  --accent:#5BC6AC; --accent-soft:#12372F; --accent-ink:#04110D; --map:#14201D;
   --flood:#183041; --flood-edge:#2B5470; --land:#18222A;
   --ok:#62BE88; --ok-bg:#173326; --warn:#E1AA4E; --warn-bg:#3A2C14; --bad:#F2825A; --bad-bg:#3D1F16;
   --c-urgency:#EE8550; --c-people:#78AEE0; --c-vuln:#B892D6; --c-wait:#C4C86A; --c-iso:#79B9C0;
@@ -56,7 +57,7 @@ button,input,select{font:inherit;color:inherit}
 .top .wrap{padding-block:14px 14px;display:flex;flex-wrap:wrap;gap:14px 32px;align-items:center;justify-content:space-between}
 .backbtn{display:inline-flex;align-items:center;gap:4px;color:var(--navy-ink);text-decoration:none;font-weight:600;font-size:13.5px;padding:6px 10px 6px 6px;border:1px solid var(--navy-line);border-radius:5px}
 .backbtn:hover{background:var(--navy-2)}
-.dmask{fill:#1A1D21}.dline{stroke:#1A1D21;stroke-dasharray:6 4}
+.dmask{fill:#0F2A28}.dline{stroke:#0F2A28;stroke-dasharray:6 4}
 .brand{display:flex;gap:14px;align-items:center;min-width:0}
 .mark{width:40px;height:40px;flex:none}
 .brand h1{font-size:30px;font-weight:800;line-height:1}
@@ -81,7 +82,7 @@ button,input,select{font:inherit;color:inherit}
 
 /* map */
 .map #map{height:480px;background:var(--sunk);position:relative}
-.map .leaflet-container{font:13px var(--f-body);background:#E3E8EE}
+.map .leaflet-container{font:13px var(--f-body);background:var(--map,#E4E6DE)}
 .leaflet-popup-content{margin:10px 12px;font-size:13px;line-height:1.45}
 .leaflet-tooltip.lbl-loc{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:3px 7px;font:600 12px/1.25 var(--f-body);box-shadow:0 2px 6px rgba(0,0,0,.15)}
 .leaflet-tooltip.lbl-loc small{display:block;font-weight:400;color:var(--muted)}
@@ -309,6 +310,7 @@ footer{color:var(--muted);font-size:12.5px;padding-block:0 32px}
 <script src="assets/leaflet.js"></script>
 <script src="assets/config.js"></script>
 <script src="assets/common.js"></script>
+<script src="assets/maptools.js"></script>
 <script src="js/model.js"></script>
 <script>
 /* ===================== Model ===================== */
@@ -526,15 +528,21 @@ function initMap(){
   const sat=L.layerGroup([L.tileLayer(E+'World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Imagery © Esri, Maxar'}),L.tileLayer(E+'Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}',{maxZoom:19})]);
   const topo=L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png',{maxZoom:17,attribution:'© OpenStreetMap contributors, SRTM · © OpenTopoMap'});
   const zones=L.layerGroup().addTo(MAP); MAP.rrZones=zones;
-  L.control.layers({'Street map':street,'Satellite':sat,'Terrain':topo},{'Impact zones':zones},{position:'topright'}).addTo(MAP);
-  L.control.scale({imperial:false}).addTo(MAP);
-  LAY=L.layerGroup().addTo(MAP);
+  LAY=L.layerGroup().addTo(MAP); const ref={};
   let ok=0,bad=0; const note=document.createElement('div'); note.className='mapnote'; note.hidden=true; el.appendChild(note);
   street.on('tileload',()=>{ok++;note.hidden=true;}); street.on('tileerror',()=>{ if(++bad>3&&!ok){note.hidden=false;note.textContent='Map tiles need an internet connection. Locations, routes and zones are still accurate.';} });
   if(window.RR&&RR.DISTRICT){ const world=[[-85,-179.9],[85,-179.9],[85,179.9],[-85,179.9]];
     const dl=L.layerGroup([L.polygon([world,RR.DISTRICT.coords],{className:'dmask',weight:0,fillOpacity:.3,interactive:false}),L.polygon(RR.DISTRICT.coords,{className:'dline',fill:false,weight:2.2,interactive:false})]).addTo(MAP);
-    MAP.attributionControl.addAttribution('District boundary: Census of India 2011'); }
+    MAP.attributionControl.addAttribution('District boundary: Census of India 2011'); ref['District boundary']=dl; }
   if(window.RR&&RR.addLocate) RR.addLocate(MAP);
+  if(window.RR&&RR.mapTools){ RR.mapTools(MAP,{bases:{'Street map (English)':street,'Satellite with labels':sat,'Terrain':topo}, reference:ref, aoiActions:[{label:'Add to plan as a location', run:(a,st)=>{
+      const g=id=>document.getElementById(id), c=st.centre, km=RR.dist({lat:S.depot.lat,lon:S.depot.lon},c)/1000;
+      g('na-name').value=a.name; g('na-people').value=Math.max(1,st.people||Math.round(st.area*150)); g('na-inf').value=st.infants||0;
+      g('na-urg').value=st.critical?5:st.graded.some(x=>x.t==='flooded'||x.t==='red')?4:3; g('na-hours').value=Math.max(0.2,km*1.3/30).toFixed(1);
+      window.RR_AOI_LL=[+c.lat.toFixed(4),+c.lon.toFixed(4)];
+      const est=document.querySelector('[data-act="estimate"]'), add=document.querySelector('[data-act="addArea"]'); est&&est.click(); add&&add.click();
+      RR.toast(a.name+' added to the plan. Allocation recalculated.'); }}]});
+    RR.addMapLayer(MAP,'Plan: depot, locations and routes',LAY,'<i class="rr-line-sw"></i>'); }
   if(window.RR&&RR.drawZones){ RR.drawZones(MAP); RR.store.on(()=>RR.drawZones(MAP)); }
 }
 function renderMap(){
@@ -902,7 +910,7 @@ document.addEventListener('click',e=>{
   else if(a==='addArea'){
     const g=id=>document.getElementById(id);const name=g('na-name').value.trim()||'New area';
     const id='area-'+Date.now().toString(36);const ang=(S.locations.length*67)%360*Math.PI/180;
-    const lat=+(S.depot.lat+Math.sin(ang)*0.09).toFixed(4),lon=+(S.depot.lon+Math.cos(ang)*0.09).toFixed(4);
+    let lat=+(S.depot.lat+Math.sin(ang)*0.09).toFixed(4),lon=+(S.depot.lon+Math.cos(ang)*0.09).toFixed(4); if(window.RR_AOI_LL){[lat,lon]=window.RR_AOI_LL; window.RR_AOI_LL=null;}
     const hours=Math.max(0.1,+g('na-hours').value||1);
     S.locations.push({id,name,lat,lon,people:Math.max(1,+g('na-people').value||1),infants:+g('na-inf').value||0,vulnerable:0,days:0,urgency:Math.min(5,Math.max(1,+g('na-urg').value||3)),
       req:{water:+g('na-water').value||0,infant:+g('na-kits').value||0,food:+g('na-food').value||0},routes:[{id:id+'-road',name:'Road',hours,open:true}]});

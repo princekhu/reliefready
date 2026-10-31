@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="assets/leaflet.css">
 <link rel="stylesheet" href="assets/common.css">
+<link rel="stylesheet" href="assets/maptools.css">
 <style>
 /* Control room: one top bar with tabs (no sidebar); map-first overview; flat panels separated by rules. */
 .hdr{position:sticky;top:env(safe-area-inset-top,0px);z-index:900}
@@ -85,6 +86,7 @@
 <script src="js/model.js"></script>
 <script src="assets/config.js"></script>
 <script src="assets/common.js"></script>
+<script src="assets/maptools.js"></script>
 <script>
 (function(){
 const root = document.getElementById('root');
@@ -153,8 +155,16 @@ const pcls = p => p>=70?'hi':p>=45?'mid':'';
 const ST = {new:['New','warn'],verified:['Verified','info'],assigned:['Assigned','info'],served:['Served','ok'],escalated:['Escalated','bad']};
 
 /* map */
-const map = RR.makeMap($('map'), {fitDistrict:true, locate:true});
+const map = RR.makeMap($('map'), {fitDistrict:true, locate:true, saveZone:true, aoiActions:[{label:'Request help for this area', run:(a, st) => {
+  const flood = st.graded.find(g => g.t==='flooded');
+  escDraft = {to: flood && flood.pct>30 ? 'NDRF' : 'State EOC (KSDMA)', type: st.critical ? 'Rescue team' : 'More supplies', urgency: st.critical ? 'Critical' : 'High',
+    place:a.name, lat:+st.centre.lat.toFixed(5), lon:+st.centre.lon.toFixed(5), people:st.people,
+    note:`Area of interest ${a.name}: ${st.area.toFixed(1)} km². ${st.sos.length} open SOS, ${st.people} people waiting (${st.infants} infants, ${st.elderly} elderly, ${st.injured} injured). `
+      + (st.graded.length ? st.graded.map(g => g.label+' '+g.pct.toFixed(0)+'%').join(', ')+'. ' : '') + (st.hazards.length ? st.hazards.length+' road hazards reported. ' : '')
+      + `Daily need (Sphere): ${st.needs.water} L water, ${st.needs.food} food rations.`};
+  tab = 'esc'; renderTab(); const n = $('e-note'); if(n){ n.scrollIntoView({behavior:'smooth', block:'center'}); n.focus(); } }}]});
 const lay = L.layerGroup().addTo(map);
+RR.addMapLayer(map, 'SOS requests, vehicles and road reports', lay, '<i class="rr-dot" style="background:var(--sos)"></i>');
 function drawMap(){
   RR.drawZones(map);
   lay.clearLayers();
@@ -257,7 +267,7 @@ function tabFleet(){
     RR.store.put('stops',{driverId:d,name:n,lat:+$('ns-lat').value,lon:+$('ns-lon').value,items:{water:+$('ns-w').value||0,food:+$('ns-f').value||0,infant:+$('ns-i').value||0},order:max+1,status:'pending',note:'',source:'admin',createdAt:Date.now()});
     RR.toast('Stop sent to the driver'); };
 }
-map.on('click', e => { if(draw){ draw.pts.push([+e.latlng.lat.toFixed(5), +e.latlng.lng.toFixed(5)]); drawTemp(); return; } if(tab==='fleet' && $('ns-lat')){ $('ns-lat').value = e.latlng.lat.toFixed(4); $('ns-lon').value = e.latlng.lng.toFixed(4); } });
+map.on('click', e => { if(map.rrBusy) return; if(draw){ draw.pts.push([+e.latlng.lat.toFixed(5), +e.latlng.lng.toFixed(5)]); drawTemp(); return; } if(tab==='fleet' && $('ns-lat')){ $('ns-lat').value = e.latlng.lat.toFixed(4); $('ns-lon').value = e.latlng.lng.toFixed(4); } });
 
 function tabRoads(){
   const r = RR.store.all('reports').sort((a,b)=>b.createdAt-a.createdAt);

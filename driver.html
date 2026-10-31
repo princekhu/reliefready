@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="assets/leaflet.css">
 <link rel="stylesheet" href="assets/common.css">
+<link rel="stylesheet" href="assets/maptools.css">
 <style>
 .app{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:16px;padding-block:16px 40px;align-items:start}
 .mapcol{position:sticky;top:calc(env(safe-area-inset-top,0px) + 66px)}
@@ -53,6 +54,7 @@ details>summary .sub{font:400 13px var(--f-body);color:var(--muted);margin-left:
 <script src="assets/jsQR.js"></script>
 <script src="assets/config.js"></script>
 <script src="assets/common.js"></script>
+<script src="assets/maptools.js"></script>
 <script>
 (function(){
 const root = document.getElementById('root');
@@ -107,6 +109,8 @@ function updOutbox(){ const n = RR.outbox.all().length; $('outbox').hidden = !n;
 /* map */
 const map = RR.makeMap($('map'), {fitDistrict:true});
 const layers = {base:L.layerGroup().addTo(map), route:L.layerGroup().addTo(map)};
+RR.addMapLayer(map, 'My stops, SOS and road reports', layers.base, '<i class="rr-dot" style="background:var(--sos)"></i>');
+RR.addMapLayer(map, 'Planned route', layers.route, '<i class="rr-line-sw"></i>');
 let pick = null, pickBar = null;
 function startPick(kind){
   pick = kind; $('map').classList.add('picking');
@@ -115,7 +119,7 @@ function startPick(kind){
   $('map').scrollIntoView({behavior:'smooth', block:'center'});
 }
 function endPick(){ pick=null; $('map').classList.remove('picking'); pickBar && pickBar.remove(); }
-map.on('click', e => { if(!pick) return; const p = {lat:e.latlng.lat, lon:e.latlng.lng}; if(pick==='stop') addStop(p); else addReport(p); endPick(); });
+map.on('click', e => { if(!pick || map.rrBusy) return; const p = {lat:e.latlng.lat, lon:e.latlng.lng}; if(pick==='stop') addStop(p); else addReport(p); endPick(); });
 
 function drawBase(){
   RR.drawZones(map);

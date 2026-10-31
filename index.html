@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..100,500..800&family=IBM+Plex+Mono:wght@400;500;600&family=Public+Sans:wght@400;500;600;700&display=swap">
 <link rel="stylesheet" href="assets/leaflet.css">
 <link rel="stylesheet" href="assets/common.css">
+<link rel="stylesheet" href="assets/maptools.css">
 <style>
 /* Home: one screen per tab (no long scroll). Live district map first, apps beside it. */
 .navtabs{background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:calc(env(safe-area-inset-top,0px) + 55px);z-index:800}
@@ -101,7 +102,7 @@ section.view{display:flex;flex-direction:column;gap:14px}
 
 <div id="splash" aria-hidden="true">
   <div class="in">
-    <svg class="mark" viewBox="0 0 40 40"><rect x="1" y="1" width="38" height="38" rx="7" fill="#1F57A5"/><path class="wave" d="M9 26c4-3 7-3 11 0s7 3 11 0" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><g class="plus"><path d="M20 8v12M14 14h12" stroke="#fff" stroke-width="3" stroke-linecap="round"/></g></svg>
+    <svg class="mark" viewBox="0 0 40 40"><rect x="1" y="1" width="38" height="38" rx="7" fill="#0D6B5B"/><path class="wave" d="M9 26c4-3 7-3 11 0s7 3 11 0" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><g class="plus"><path d="M20 8v12M14 14h12" stroke="#fff" stroke-width="3" stroke-linecap="round"/></g></svg>
     <div class="word">ReliefReady</div>
     <div class="tag">Relief logistics · Mysuru district</div>
     <div class="load"><span></span></div>
@@ -204,6 +205,7 @@ section.view{display:flex;flex-direction:column;gap:14px}
 <script src="assets/leaflet.js"></script>
 <script src="assets/config.js"></script>
 <script src="assets/common.js"></script>
+<script src="assets/maptools.js"></script>
 <script>
 (function(){
 const $ = id => document.getElementById(id);
@@ -226,6 +228,7 @@ window.addEventListener('hashchange', show);
 /* live district map */
 const map = RR.makeMap($('map'), {fitDistrict:true, locate:true});
 const lay = L.layerGroup().addTo(map);
+RR.addMapLayer(map, 'SOS requests, vehicles and road reports', lay, '<i class="rr-dot" style="background:var(--sos)"></i>');
 const sess = RR.session(), canSee = !RR.CONFIG.api || (sess && sess.token);
 function draw(){
   RR.drawZones(map); lay.clearLayers();

@@ -308,7 +308,10 @@ RR.makeMap = (el, opts={}) => {
   }
   if(opts.locate) RR.addLocate(map);
   (RR.CONFIG.wms||[]).forEach(w => { try{ overlays[w.name] = L.tileLayer.wms(w.url, {layers:w.layers, format:'image/png', transparent:true, version:w.version||'1.1.1', opacity:.7, attribution:w.attribution||w.name}); }catch(e){} });
-  L.control.layers({'Street map (English)':street, 'Satellite with labels':sat, 'Terrain':topo, 'OpenStreetMap (local names)':osm}, overlays, {collapsed:true, position:'topright'}).addTo(map);
+  const bases = {'Street map (English)':street, 'Satellite with labels':sat, 'Terrain':topo, 'OpenStreetMap (local names)':osm};
+  delete overlays['Impact zones'];
+  if(RR.mapTools) RR.mapTools(map, {bases, reference:overlays, aoiActions:opts.aoiActions, saveZone:opts.saveZone});
+  else L.control.layers(bases, overlays, {collapsed:true, position:'topright'}).addTo(map);
   let fails = 0, loaded = 0;
   const note = document.createElement('div'); note.className='mapnote'; note.hidden = true; el.appendChild(note);
   street.on('tileload', () => { loaded++; note.hidden = true; });
@@ -339,8 +342,8 @@ RR.addLocate = map => {
   new Ctl().addTo(map);
 };
 RR.drawZones = (map, popup) => {
-  const g = map.rrZones; g.clearLayers();
-  RR.store.all('zones').filter(z => z.coords && z.coords.length>2).sort((a,b)=>(RR.ZONES[a.type]?.sev||0)-(RR.ZONES[b.type]?.sev||0)).forEach(z => {
+  const g = map.rrZones; g.clearLayers(); map.rrZonePopup = popup; const hid = map.rrHidden || new Set();
+  RR.store.all('zones').filter(z => z.coords && z.coords.length>2 && !hid.has(z.type)).sort((a,b)=>(RR.ZONES[a.type]?.sev||0)-(RR.ZONES[b.type]?.sev||0)).forEach(z => {
     const info = z.type==='info';
     const poly = L.polygon(z.coords, {className:'zn zn-'+z.type, weight:info?2:1.5, fillOpacity:info?0.03:(z.type==='relief'?0.15:0.22), dashArray:info?'6 5':null, interactive:true});
     poly.bindPopup(() => popup ? popup(z) : RR.zonePopup(z));

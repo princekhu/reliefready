@@ -1,11 +1,11 @@
-/* ReliefReady shared styles. Operations-room look: deep navy chrome, white working surfaces, one blue accent, red reserved for emergencies. */
+/* ReliefReady shared styles. Operations-room look: deep petrol-green chrome, warm paper working surfaces, one teal accent, red reserved for emergencies. */
 :root{
-  --bg:#EEF0F2; --surface:#FFFFFF; --sunk:#F5F6F7; --ink:#15191E; --muted:#5D6670; --line:#D9DDE1;
-  --accent:#1F57A5; --accent-soft:#E6EDF7; --accent-ink:#FFFFFF;
-  --navy:#1A1D21; --navy-2:#2A2F35; --navy-ink:#F2F3F4; --navy-muted:#A8AFB7; --navy-line:#33383F;
-  --sos:#D0361C; --sos-ink:#FFFFFF; --sos-soft:#FBE4DE;
-  --ok:#23804D; --ok-bg:#DFF2E6; --warn:#A0600A; --warn-bg:#FBEBCF; --bad:#C2361A; --bad-bg:#FBE1DA;
-  --map:#E3E8EE; --boat:#0B7A86;
+  --bg:#F1EFE9; --surface:#FFFFFF; --sunk:#F7F5F0; --ink:#17201D; --muted:#59645E; --line:#DCD8CE;
+  --accent:#0D6B5B; --accent-soft:#DCEEE8; --accent-ink:#FFFFFF;
+  --navy:#0F2A28; --navy-2:#173B38; --navy-ink:#EDF3F0; --navy-muted:#93ACA5; --navy-line:#214643;
+  --sos:#C42B1C; --sos-ink:#FFFFFF; --sos-soft:#F8E0DA;
+  --ok:#2A7845; --ok-bg:#DCEFE2; --warn:#975A00; --warn-bg:#F7E7C6; --bad:#BA2E1C; --bad-bg:#F7DDD7;
+  --map:#E4E6DE; --boat:#0B7380;
   --shadow:none;
   --f-display:"Archivo","Arial Narrow",Arial,sans-serif;
   --f-body:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
@@ -13,19 +13,19 @@
   --r:6px;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#111417; --surface:#181C20; --sunk:#14171B; --ink:#E9ECEF; --muted:#99A1AA; --line:#2A2F35;
-  --accent:#72A9EE; --accent-soft:#16294A; --accent-ink:#0A111D;
-  --navy:#0D0F12; --navy-2:#1C2026; --navy-ink:#E9ECEF; --navy-muted:#99A1AA; --navy-line:#262B31;
-  --sos:#F0603F; --sos-ink:#170805; --sos-soft:#3D1F16;
+  --bg:#0C1312; --surface:#131C1A; --sunk:#101816; --ink:#E6EEEA; --muted:#94A49E; --line:#25322E;
+  --accent:#5BC6AC; --accent-soft:#12372F; --accent-ink:#04110D;
+  --navy:#081210; --navy-2:#12221F; --navy-ink:#E6EEEA; --navy-muted:#8DA39C; --navy-line:#1C2F2B;
+  --sos:#F06A4F; --sos-ink:#170805; --sos-soft:#3D1F16;
   --ok:#62BE88; --ok-bg:#15301F; --warn:#E1AA4E; --warn-bg:#36290F; --bad:#F2825A; --bad-bg:#3B1C14;
-  --map:#162131; --boat:#4FC3CF; --shadow:0 1px 2px rgba(0,0,0,.3); color-scheme:dark}}
+  --map:#14201D; --boat:#4FC3CF; --shadow:0 1px 2px rgba(0,0,0,.3); color-scheme:dark}}
 :root[data-theme="dark"]{
-  --bg:#111417; --surface:#181C20; --sunk:#14171B; --ink:#E9ECEF; --muted:#99A1AA; --line:#2A2F35;
-  --accent:#72A9EE; --accent-soft:#16294A; --accent-ink:#0A111D;
-  --navy:#0D0F12; --navy-2:#1C2026; --navy-ink:#E9ECEF; --navy-muted:#99A1AA; --navy-line:#262B31;
-  --sos:#F0603F; --sos-ink:#170805; --sos-soft:#3D1F16;
+  --bg:#0C1312; --surface:#131C1A; --sunk:#101816; --ink:#E6EEEA; --muted:#94A49E; --line:#25322E;
+  --accent:#5BC6AC; --accent-soft:#12372F; --accent-ink:#04110D;
+  --navy:#081210; --navy-2:#12221F; --navy-ink:#E6EEEA; --navy-muted:#8DA39C; --navy-line:#1C2F2B;
+  --sos:#F06A4F; --sos-ink:#170805; --sos-soft:#3D1F16;
   --ok:#62BE88; --ok-bg:#15301F; --warn:#E1AA4E; --warn-bg:#36290F; --bad:#F2825A; --bad-bg:#3B1C14;
-  --map:#162131; --boat:#4FC3CF; --shadow:0 1px 2px rgba(0,0,0,.3); color-scheme:dark}
+  --map:#14201D; --boat:#4FC3CF; --shadow:0 1px 2px rgba(0,0,0,.3); color-scheme:dark}
 *{box-sizing:border-box}
 html,body{margin:0}
 body{background:var(--bg);color:var(--ink);font:15px/1.55 var(--f-body)}
@@ -182,8 +182,8 @@ footer.foot{color:var(--muted);font-size:12.5px;padding-block:24px 32px}
 .drawbar button{background:transparent;border:1px solid currentColor;color:inherit;border-radius:4px;padding:2px 8px;cursor:pointer;font-weight:600}
 
 /* district outline, live location, back button */
-.dmask{fill:#1A1D21}
-.dline{stroke:#1A1D21;stroke-dasharray:6 4}
+.dmask{fill:#0F2A28}
+.dline{stroke:#0F2A28;stroke-dasharray:6 4}
 :root[data-theme="dark"] .dline{stroke:#E9ECEF}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .dline{stroke:#E9ECEF}}
 .locbtn{width:34px;height:34px;display:grid;place-items:center;background:var(--surface);color:var(--ink);border:2px solid rgba(0,0,0,.2);border-radius:4px;cursor:pointer;background-clip:padding-box}
